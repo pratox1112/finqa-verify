@@ -5,7 +5,9 @@
      messages, tools, tool choice), so reruns are free and exactly reproducible;
   2. a client-side requests/tokens-per-minute limiter (Groq limits are per organization);
   3. retries with exponential backoff on HTTP 429 and 5xx;
-  4. a log line per call with the thinking setting and token usage.
+  4. a log line per call with the thinking setting and token usage;
+  5. Langfuse tracing (when keys are set): real calls with a run_id and question_id are
+     recorded in that question's trace. Cache hits are logged but not traced.
 
 `LLM.structured` asks for output matching a Pydantic schema via a forced tool call.
 """
@@ -34,6 +36,7 @@ from tenacity import (
 )
 
 from finqa.config import CONFIGS_DIR, Config, Secrets
+from finqa.tracing import Tracer
 
 logger = logging.getLogger(__name__)
 
@@ -178,12 +181,14 @@ class LLM:
         chat_model: Any = None,
         *,
         cache_dir: Path | None = None,
+        tracer: Tracer | None = None,
         clock: Callable[[], float] = time.monotonic,
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         if cfg.model.thinking not in THINKING_PARAMS:
             raise ValueError(f"unknown thinking setting {cfg.model.thinking!r}")
         self.cfg = cfg
+        self.tracer = tracer if tracer is not None else Tracer()
         self._model = chat_model if chat_model is not None else self._build_model()
         self.cache = ResponseCache(cache_dir or REPO_ROOT / cfg.llm.cache_dir)
         self.limiter = RateLimiter(
@@ -242,11 +247,15 @@ class LLM:
 
         model = self._model.bind_tools(tools, tool_choice=tool_choice) if tools else self._model
         estimate = _estimate_tokens(messages) + m.max_tokens
+        callbacks = self.tracer.llm_callbacks() if run_id and question_id else []
 
         def attempt() -> AIMessage:
             self.limiter.acquire(estimate)
             try:
-                response = model.invoke(list(messages))
+                if callbacks:
+                    response = model.invoke(list(messages), config={"callbacks": callbacks})
+                else:
+                    response = model.invoke(list(messages))
             except Exception:
                 self.limiter.record(0)  # a failed request still counts against RPM
                 raise
@@ -254,7 +263,12 @@ class LLM:
             return response
 
         start = self._clock()
-        response = self._retrying(attempt)
+        if callbacks:
+            assert run_id is not None and question_id is not None
+            with self.tracer.question(run_id, question_id):
+                response = self._retrying(attempt)
+        else:
+            response = self._retrying(attempt)
         if not isinstance(response, AIMessage):
             raise TypeError(f"chat model returned {type(response).__name__}, not AIMessage")
         latency_s = self._clock() - start

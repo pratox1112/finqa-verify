@@ -60,9 +60,9 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 | P0.10 | Progress check | done | Pratosh Karthikeyan | [#5](https://github.com/pratox1112/finqa-verify/pull/5) | 2026-10-30 | scripts/check_progress.py in `checks`; new PR-only `progress-updated` job (label no-progress-update exempts). 8 tests. |
 | P0.11 | Claude Code guardrails | done | Pratosh Karthikeyan | [#6](https://github.com/pratox1112/finqa-verify/pull/6) | 2026-10-30 | .claude/settings.json: Bash + PowerShell deny rules for state-changing git and gh, read-only allow list, GitHub API WebFetch denied. Known gaps: `git branch <name>` creation, calling git by full path. Manual acceptance test after merge. |
 | P0.2 | Configuration system | done | Pratosh Karthikeyan | [#7](https://github.com/pratox1112/finqa-verify/pull/7) | 2026-10-30 | base.yaml + 6 grid configs, src/finqa/config.py (merge + validation, Secrets from .env), CI config-validation step. Model ID is a placeholder until P0.6. |
-| P0.3 | Shared schemas | review | Pratosh Karthikeyan | `shared-schemas` | 2026-10-30 | schemas.py from guide §0.4 plus the 5 schema-review decisions (question_id, error, answer_claim_id, period/unit formats; docs/DECISIONS.md). Needs a teammate approval before merge; frozen after. |
+| P0.3 | Shared schemas | review | Pratosh Karthikeyan | [#9](https://github.com/pratox1112/finqa-verify/pull/9), [#10](https://github.com/pratox1112/finqa-verify/pull/10) | 2026-10-30 | Frozen on main with the 5 review decisions (#10 via approved-freeze-change). Merged by Pratosh without a second review: team review still needed before Gate 0. |
 | P0.4 | LLM wrapper | done | Pratosh Karthikeyan | [#8](https://github.com/pratox1112/finqa-verify/pull/8) | 2026-10-30 | src/finqa/llm.py: cache, 429/5xx retry, RPM/TPM limiter, thinking control, token logging, structured output. RPM/TPM and the thinking parameter to confirm in P0.6. |
-| P0.5 | Tracing | todo | | | | |
+| P0.5 | Tracing | review | Pratosh Karthikeyan | `tracing` | 2026-10-30 | src/finqa/tracing.py: one Langfuse trace per (run, question), tagged with both IDs; LLM calls and tool spans join it; off without keys. Manual check: tests/test_tracing_integration.py with Langfuse keys. |
 | P0.6 | Model pilot | todo | | | 2026-10-30 | Model ID, thinking parameter and free-tier limits confirmed (docs/DECISIONS.md). Pilot script not started; paid-tier decision open. |
 | G0 | **GATE 0** | todo | | | | |
 
@@ -243,4 +243,6 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.11 · Claude Code permission rules enforcing T17 · https://github.com/pratox1112/finqa-verify/pull/6 (acceptance test passed)
 - 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.2 · Configuration system and grid configs · https://github.com/pratox1112/finqa-verify/pull/7
 - 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.4 · LLM wrapper · https://github.com/pratox1112/finqa-verify/pull/8
-- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.3, P0.6 · Shared schemas drafted; Groq model ID, thinking parameter and limits confirmed · PR link pending
+- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.3, P0.6 · Shared schemas; Groq model ID, thinking parameter and limits confirmed · https://github.com/pratox1112/finqa-verify/pull/9
+- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.3 · Schema review decisions merged with approved-freeze-change (missed #9) · https://github.com/pratox1112/finqa-verify/pull/10
+- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.5 · Langfuse tracing with run_id and question_id tags · PR link pending
