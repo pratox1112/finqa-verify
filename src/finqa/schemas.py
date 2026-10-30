@@ -2,13 +2,25 @@
 
 FROZEN once on main: changes need team approval, two reviews, and the
 approved-freeze-change label (ROADMAP rule 5, CONTRIBUTING.md).
+
+Conventions (docs/DECISIONS.md, 2026-10-30 schema review):
+  - Claim IDs are short and local to a draft ("c1", "c2"); an annotation is identified by
+    (run_id, question_id, claim_id). A revised claim keeps its claim_id.
+  - Values are in full units, never pre-scaled ($394.3B is 394300000000); percentages are
+    the percent number (12.5% is 12.5).
+  - Periods use the company's own fiscal year: "FY2022", "Q3 FY2022", or year-to-date
+    "6M FY2022" / "9M FY2022".
 """
 
 from __future__ import annotations
 
 from enum import Enum
+from typing import Annotated, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+Unit = Literal["USD", "USD/share", "%", "shares", "ratio", "days"]
+Period = Annotated[str, Field(pattern=r"^(FY\d{4}|Q[1-4] FY\d{4}|[69]M FY\d{4})$")]
 
 
 class Chunk(BaseModel):
@@ -17,7 +29,7 @@ class Chunk(BaseModel):
     ticker: str
     form: str
     fiscal_year: int
-    period: str | None
+    period: Period | None
     section: str
     is_table: bool
     unit_scale: float | None  # 1e3, 1e6, 1e9 or None
@@ -28,9 +40,9 @@ class Chunk(BaseModel):
 class Claim(BaseModel):
     claim_id: str
     metric: str  # e.g. "total revenue"
-    value: float
-    unit: str  # "USD", "%", "shares", "ratio"
-    period: str  # e.g. "FY2022"
+    value: float  # full units; percentages as 12.5, not 0.125
+    unit: Unit
+    period: Period
     chunk_ids: list[str]  # evidence cited
     derived_from: list[str] = []  # claim_ids used to compute this one
     expression: str | None = None  # e.g. "(a - b) / b" for derived values
@@ -41,11 +53,13 @@ class Draft(BaseModel):
     retrieval_arm: str
     answer_text: str
     claims: list[Claim]
+    answer_claim_id: str | None = None  # the claim that answers the question; None if qualitative
     evidence: dict[str, Chunk]  # every chunk the generator saw
     trace_id: str
     latency_s: float
     tokens_in: int
     tokens_out: int
+    error: str | None = None  # set when generation failed; scored as incorrect, never dropped
 
 
 class Verdict(BaseModel):
@@ -67,6 +81,7 @@ class VerifiedResult(BaseModel):
     latency_s: float
     tokens_in: int
     tokens_out: int
+    error: str | None = None  # set when verification failed; then claims_after = claims_before
 
 
 class ErrorType(str, Enum):  # noqa: UP042  (str values serialize as plain strings)
@@ -80,6 +95,7 @@ class ErrorType(str, Enum):  # noqa: UP042  (str values serialize as plain strin
 
 
 class Annotation(BaseModel):
+    question_id: str
     claim_id: str
     run_id: str
     annotator: str

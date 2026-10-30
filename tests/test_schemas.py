@@ -3,7 +3,7 @@
 import json
 
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from finqa.schemas import (
     Annotation,
@@ -54,6 +54,7 @@ DRAFT = Draft(
     retrieval_arm="rag",
     answer_text="Apple's FY2022 net sales were $394.3 billion.",
     claims=[CLAIM, DERIVED],
+    answer_claim_id="c1",
     evidence={CHUNK.chunk_id: CHUNK, TEXT_CHUNK.chunk_id: TEXT_CHUNK},
     trace_id="trace-1",
     latency_s=2.5,
@@ -76,6 +77,7 @@ RESULT = VerifiedResult(
     tokens_out=0,
 )
 ANNOTATION = Annotation(
+    question_id="financebench_id_00001",
     claim_id="c1",
     run_id="2026-11-10_r0_v2_a1b2c3d",
     annotator="annotator-1",
@@ -84,6 +86,11 @@ ANNOTATION = Annotation(
     note="reported millions as billions",
 )
 CORRECT_ANNOTATION = ANNOTATION.model_copy(update={"correct": True, "error_type": None})
+FAILED_DRAFT = DRAFT.model_copy(
+    update={"claims": [], "answer_claim_id": None, "error": "structured_output_invalid"}
+)
+FAILED_RESULT = RESULT.model_copy(update={"error": "api_error: 429"})
+QUARTER_CLAIM = CLAIM.model_copy(update={"claim_id": "c4", "period": "Q3 FY2023"})
 
 EXAMPLES: list[BaseModel] = [
     CHUNK,
@@ -96,6 +103,9 @@ EXAMPLES: list[BaseModel] = [
     RESULT,
     ANNOTATION,
     CORRECT_ANNOTATION,
+    FAILED_DRAFT,
+    FAILED_RESULT,
+    QUARTER_CLAIM,
 ]
 
 
@@ -131,3 +141,47 @@ def test_claim_defaults_are_not_shared() -> None:
     b = Claim(claim_id="b", metric="m", value=1, unit="USD", period="FY2022", chunk_ids=[])
     a.derived_from.append("x")
     assert b.derived_from == []
+
+
+def claim(**overrides: object) -> Claim:
+    return Claim.model_validate({**CLAIM.model_dump(), **overrides})
+
+
+@pytest.mark.parametrize("period", ["FY2022", "Q1 FY2023", "Q4 FY2019", "6M FY2022", "9M FY2024"])
+def test_valid_periods(period: str) -> None:
+    assert claim(period=period).period == period
+
+
+@pytest.mark.parametrize(
+    "period", ["2022", "FY 2022", "fy2022", "Q5 FY2022", "Q3 2022", "3M FY2022", "FY22", ""]
+)
+def test_invalid_periods_rejected(period: str) -> None:
+    with pytest.raises(ValidationError):
+        claim(period=period)
+
+
+def test_chunk_period_uses_same_format() -> None:
+    with pytest.raises(ValidationError):
+        Chunk.model_validate({**CHUNK.model_dump(), "period": "2022"})
+
+
+@pytest.mark.parametrize("unit", ["USD", "USD/share", "%", "shares", "ratio", "days"])
+def test_valid_units(unit: str) -> None:
+    assert claim(unit=unit).unit == unit
+
+
+@pytest.mark.parametrize("unit", ["usd", "$", "USD millions", "percent", "x"])
+def test_invalid_units_rejected(unit: str) -> None:
+    with pytest.raises(ValidationError):
+        claim(unit=unit)
+
+
+def test_new_fields_default_to_none() -> None:
+    minimal = Draft.model_validate(DRAFT.model_dump(exclude={"answer_claim_id", "error"}))
+    assert minimal.answer_claim_id is None and minimal.error is None
+    assert RESULT.error is None
+
+
+def test_annotation_requires_question_id() -> None:
+    with pytest.raises(ValidationError):
+        Annotation.model_validate(ANNOTATION.model_dump(exclude={"question_id"}))
