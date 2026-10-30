@@ -30,11 +30,18 @@ def test_scope_keeps_10k_and_10q_only() -> None:
     assert by_id["fb_synth_004"]["exclusion_reason"] == "document type earnings release"
 
 
-def test_answer_has_number() -> None:
+def test_gold_columns() -> None:
     by_id = {r["financebench_id"]: r for r in rows()}
-    assert by_id["fb_synth_001"]["answer_has_number"]
-    assert by_id["fb_synth_002"]["answer_has_number"]
-    assert not by_id["fb_synth_003"]["answer_has_number"]
+    first = by_id["fb_synth_001"]  # "$1,200.00" for a question asking "in USD millions"
+    assert (first["answer_kind"], first["gold_value"], first["gold_unit"]) == (
+        "number",
+        "1200000000.0",
+        "USD",
+    )
+    second = by_id["fb_synth_002"]  # "Yes, it is 1.4."
+    assert (second["answer_kind"], second["gold_value"]) == ("text_with_numbers", "")
+    assert second["answer_numbers"] == "1.4 ?"
+    assert by_id["fb_synth_003"]["answer_kind"] == "text"
 
 
 def test_audit_csv_round_trip(tmp_path: Path) -> None:
@@ -52,4 +59,5 @@ def test_scope_report_counts() -> None:
     assert "| **In scope** | **2** | **1** |" in report
     assert "| Excluded | 2 | 1 |" in report
     assert "- OtherCorp" in report
-    assert "contains a number: 2 of 2" in report
+    assert "| a single number (`gold_value` set) | 1 |" in report
+    assert "| text containing numbers | 1 |" in report

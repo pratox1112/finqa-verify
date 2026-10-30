@@ -98,3 +98,9 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 6. **Long jobs** (filing download, embedding) are run by Claude Code in the session, with the counts reported; outputs stay in gitignored `data/`.
 7. **Restatement check (P1.8):** Claude Code proposes a candidate restated item from the XBRL data; a human confirms it against the filings.
 8. **Quality checks (P1.9):** Pratosh inspects a few companies now; the team completes the rest later. Gate 1 stays open until every company is checked.
+
+## 2026-10-30 · Pratosh Karthikeyan (drafted by Claude Code) · Gold values and units from the question
+
+**Decision:** `finqa.verifiers.numbers` reads every number as (value, unit) in full units. For a gold answer that is a single number, the unit comes from the answer itself when it has one (`$`, `%`, `x`, "per share"), otherwise from the question: "in USD millions/billions/thousands" → USD at that scale (the answer is scaled unless it already carries a scale word); "percent", "%", "margin", "growth rate" → %; "per share", EPS → USD/share; "days", cash conversion cycle, DSO/DIO/DPO → days; "ratio", "turnover", "times", return on assets/equity → ratio. Bare four-digit years are not numbers. Result on the 127 in-scope questions: 52 single-number gold answers (19 USD, 15 %, 13 ratio, 4 days, 1 unitless zero), 49 text answers containing numbers, 26 text only (`data/SCOPE.md`).
+
+**Open for P2.3 (scoring):** for the 49 text answers containing numbers, which number is "the" gold value, or whether they are scored claim by claim against all extracted numbers, is a scoring decision to make before P2.3.
