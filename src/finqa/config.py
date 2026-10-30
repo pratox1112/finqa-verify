@@ -34,6 +34,15 @@ class ModelConfig(_Section):
     max_tokens: int = Field(gt=0)
 
 
+class LLMConfig(_Section):
+    """Call mechanics (not part of the frozen model settings)."""
+
+    max_retries: int = Field(ge=0)  # on HTTP 429 / 5xx, exponential backoff
+    requests_per_minute: int | None = Field(default=None, gt=0)  # None = no client-side limit
+    tokens_per_minute: int | None = Field(default=None, gt=0)
+    cache_dir: str  # on-disk response cache, relative to the repo root
+
+
 class RetrievalConfig(_Section):
     arm: Literal["closed_book", "rag", "agentic"]
     calculator: bool
@@ -58,6 +67,7 @@ class DataConfig(_Section):
 class Config(_Section):
     name: str  # config file stem, used in run IDs (ROADMAP T13)
     model: ModelConfig
+    llm: LLMConfig
     retrieval: RetrievalConfig
     verification: VerificationConfig
     embedding: EmbeddingConfig
