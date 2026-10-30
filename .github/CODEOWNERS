@@ -1,0 +1,34 @@
+# Code owners (ROADMAP T11). A PR touching an area needs approval from its owner.
+# Later lines override earlier ones. Roles: docs/IMPLEMENTATION_GUIDE.md §1.
+#
+# TODO: replace each @ROLE-x placeholder with that role owner's GitHub username,
+# then uncomment the line. Until then, everything defaults to the repo owner.
+
+*                                   @pratox1112
+
+# Role A: Data
+# /src/finqa/ingestion/             @ROLE-A
+# /src/finqa/rq2/restatements.py    @ROLE-A
+# /data/                            @ROLE-A
+
+# Role B: Evaluation
+# /src/finqa/eval/                  @ROLE-B
+
+# Role C: Agent
+# /src/finqa/generators/            @ROLE-C
+# /src/finqa/prompts/               @ROLE-C
+
+# Role D: Tools and infra
+# /src/finqa/tools/                 @ROLE-D
+# /.github/                         @ROLE-D
+# /app/                             @ROLE-D
+
+# Role E: Verification
+# /src/finqa/verifiers/             @ROLE-E
+# /src/finqa/rq2/perturb.py         @ROLE-E
+
+# Frozen files: listed with two owners. Note: CODEOWNERS means *either* owner can approve;
+# the "two reviewers" rule for frozen files is enforced by process (CONTRIBUTING.md).
+# /src/finqa/schemas.py             @ROLE-B @ROLE-E
+# /data/splits.json                 @ROLE-A @ROLE-B
+# /src/finqa/prompts/FROZEN.txt     @ROLE-C @ROLE-E
