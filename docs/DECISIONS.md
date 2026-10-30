@@ -16,4 +16,10 @@ Every research-design and process decision, newest at the bottom. Format: date, 
 
 **Why:** Team convention; IDs are internal planning references.
 
-**Open follow-up (P0.10):** the progress check can no longer detect "task branches" by name prefix. Decide how it decides which PRs must change `PROGRESS.md` (e.g. every PR, with a label to exempt).
+**Open follow-up (P0.10) — naming:** the progress check can no longer detect "task branches" by name prefix. Decide how it decides which PRs must change `PROGRESS.md` (e.g. every PR, with a label to exempt).
+
+## 2026-10-30 · Pratosh Karthikeyan · How the frozen-file guard decides what is frozen
+
+**Decision:** `scripts/check_frozen.py` (run in CI on every PR) treats as frozen: `src/finqa/schemas.py`, `data/splits.json`, the `model:` section of `configs/base.yaml`, the manifest `src/finqa/prompts/FROZEN.txt`, and every prompt listed in it. A file is guarded only once it exists on `main`, so the PR that first creates it does not need the label. A PR that changes a guarded file fails unless it has the `approved-freeze-change` label. Freezing a prompt means adding its file name to `FROZEN.txt` (which itself needs the label once the manifest exists on `main`).
+
+**Why:** Each frozen file is created before the team approves and freezes it; a manifest makes "which prompts are frozen" explicit and reviewable, and guarding the manifest stops silent unfreezing.
