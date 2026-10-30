@@ -1,0 +1,32 @@
+company,cik,ticker,tickers,sec_name,former_names,aliases,fiscal_year_end
+3M,0000066740,MMM,MMM,3M CO,MINNESOTA MINING & MANUFACTURING CO,3M;3M Company;Minnesota Mining and Manufacturing,1231
+AES Corporation,0000874761,AES,AES,AES CORP,AES CORPORATION,AES Corporation;AES;AES Corp,1231
+AMD,0000002488,AMD,AMD,ADVANCED MICRO DEVICES INC,,AMD;Advanced Micro Devices,1226
+Activision Blizzard,0000718877,ATVI,ATVI,"Activision Blizzard, Inc.",ACTIVISION INC /NY,Activision Blizzard;Activision;Blizzard,1231
+Adobe,0000796343,ADBE,ADBE,ADOBE INC.,ADOBE SYSTEMS INC,Adobe;Adobe Inc;Adobe Systems,1127
+Amazon,0001018724,AMZN,AMZN,AMAZON COM INC,,Amazon;Amazon.com;AWS,1231
+Amcor,0001748790,AMCR,AMCR;AMCCF,Amcor plc,ARCTIC JERSEY Ltd,Amcor;Amcor plc,1231
+American Express,0000004962,AXP,AXP,AMERICAN EXPRESS CO,,American Express;AmEx;AMEX,1231
+American Water Works,0001410636,AWK,AWK,"American Water Works Company, Inc.",,American Water Works;American Water,1231
+Best Buy,0000764478,BBY,BBY,BEST BUY CO INC,,Best Buy;Best Buy Co,0130
+Block,0001512673,XYZ,XYZ;BSQKZ;SQ,"Block, Inc.","Square, Inc.",Block;Square;Square Inc;Block Inc;Cash App,1231
+Boeing,0000012927,BA,BA;BA-PA,BOEING CO,,Boeing;The Boeing Company,1231
+CVS Health,0000064803,CVS,CVS,CVS HEALTH Corp,CVS CAREMARK CORP;CVS/CAREMARK CORP;CVS CORP;MELVILLE CORP,CVS Health;CVS;CVS Caremark,1231
+Coca-Cola,0000021344,KO,KO,COCA COLA CO,,Coca-Cola;Coca Cola;The Coca-Cola Company;Coke,1231
+Corning,0000024741,GLW,GLW,CORNING INC /NY,,Corning;Corning Inc,1231
+Costco,0000909832,COST,COST,COSTCO WHOLESALE CORP /NEW,COSTCO COMPANIES INC;PRICE/COSTCO INC,Costco;Costco Wholesale,0830
+General Mills,0000040704,GIS,GIS,GENERAL MILLS INC,,General Mills;General Mills Inc,0530
+JPMorgan,0000019617,JPM,JPM;JPM-PC;AMJB;JPM-PD;JPM-PJ;JPM-PK;JPM-PL;JPM-PM;VYLD,JPMORGAN CHASE & CO,JPMORGAN CHASE & CO;J P MORGAN CHASE & CO;CHASE MANHATTAN CORP /DE/;CHEMICAL BANKING CORP,JPMorgan;JPMorgan Chase;JP Morgan;Chase;JPM,1231
+Johnson & Johnson,0000200406,JNJ,JNJ,JOHNSON & JOHNSON,JOHNSON & JOHNSON ET AL,Johnson & Johnson;J&J;Johnson and Johnson,0103
+Kraft Heinz,0001637459,KHC,KHC,Kraft Heinz Co,H.J. Heinz Holding Corp,Kraft Heinz;Kraft;Heinz;The Kraft Heinz Company,1226
+Lockheed Martin,0000936468,LMT,LMT,LOCKHEED MARTIN CORP,LOCKHEED MARTIN CORP,Lockheed Martin;Lockheed,1231
+MGM Resorts,0000789570,MGM,MGM,MGM Resorts International,MGM MIRAGE;MGM GRAND INC,MGM Resorts;MGM Resorts International;MGM,1231
+Microsoft,0000789019,MSFT,MSFT,MICROSOFT CORP,,Microsoft;Microsoft Corporation;MSFT,0630
+Netflix,0001065280,NFLX,NFLX,NETFLIX INC,NETFLIX COM INC,Netflix;Netflix Inc,1231
+Nike,0000320187,NKE,NKE,"NIKE, Inc.",NIKE INC,Nike;Nike Inc,0531
+Paypal,0001633917,PYPL,PYPL,"PayPal Holdings, Inc.",,Paypal;PayPal;PayPal Holdings,1231
+PepsiCo,0000077476,PEP,PEP,PEPSICO INC,,PepsiCo;Pepsi;PepsiCo Inc,1226
+Pfizer,0000078003,PFE,PFE,PFIZER INC,PFIZER INC,Pfizer;Pfizer Inc,1231
+Ulta Beauty,0001403568,ULTA,ULTA,"Ulta Beauty, Inc.","Ulta Salon, Cosmetics & Fragrance, Inc.",Ulta Beauty;Ulta;Ulta Salon,0130
+Verizon,0000732712,VZ,VZ,VERIZON COMMUNICATIONS INC,BELL ATLANTIC CORP,Verizon;Verizon Communications,1231
+Walmart,0000104169,WMT,WMT,Walmart Inc.,Walmart Inc.;WAL MART STORES INC,Walmart;Wal-Mart;Walmart Inc,0131

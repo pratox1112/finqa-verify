@@ -32,6 +32,7 @@ data/xbrl/
 data/index/
 data/chroma/
 data/cache/
+data/sec/
 data/financebench/
 
 # Claude Code personal overrides
