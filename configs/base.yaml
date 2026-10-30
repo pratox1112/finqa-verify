@@ -5,6 +5,11 @@ model:
   temperature: 0
   thinking: "off"               # fixed for every run
   max_tokens: 2048
+llm:
+  max_retries: 6                # retries on HTTP 429 / 5xx with exponential backoff
+  requests_per_minute: null     # PLACEHOLDER: set from Groq console limits (P0.6); null = no limit
+  tokens_per_minute: null       # PLACEHOLDER: set from Groq console limits (P0.6); null = no limit
+  cache_dir: ".cache/llm"       # gitignored; share via the shared artifact location
 retrieval:
   arm: "rag"                    # closed_book | rag | agentic
   calculator: false             # R0 has no calculator, R1 does; see docs/DECISIONS.md
