@@ -58,8 +58,8 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 | P0.8 | Frozen-file guard | done | Pratosh Karthikeyan | [#3](https://github.com/pratox1112/finqa-verify/pull/3) | 2026-10-30 | scripts/check_frozen.py + `frozen-files` CI job; prompt manifest src/finqa/prompts/FROZEN.txt. 9 unit tests. Live schemas.py check possible only after P0.3 merges. |
 | P0.9 | Branch protection and local hooks | in-progress | Pratosh Karthikeyan | [#4](https://github.com/pratox1112/finqa-verify/pull/4) | 2026-10-30 | Hooks, CONTRIBUTING.md, CODEOWNERS draft merged; ruleset on main active. Pending: teammate usernames for CODEOWNERS, then approvals=1 + code-owner review; shared artifact location. |
 | P0.10 | Progress check | done | Pratosh Karthikeyan | [#5](https://github.com/pratox1112/finqa-verify/pull/5) | 2026-10-30 | scripts/check_progress.py in `checks`; new PR-only `progress-updated` job (label no-progress-update exempts). 8 tests. |
-| P0.11 | Claude Code guardrails | review | Pratosh Karthikeyan | `claude-guardrails` | 2026-10-30 | .claude/settings.json: Bash + PowerShell deny rules for state-changing git and gh, read-only allow list, GitHub API WebFetch denied. Known gaps: `git branch <name>` creation, calling git by full path. Manual acceptance test after merge. |
-| P0.2 | Configuration system | todo | | | | |
+| P0.11 | Claude Code guardrails | review | Pratosh Karthikeyan | [#6](https://github.com/pratox1112/finqa-verify/pull/6) | 2026-10-30 | .claude/settings.json: Bash + PowerShell deny rules for state-changing git and gh, read-only allow list, GitHub API WebFetch denied. Known gaps: `git branch <name>` creation, calling git by full path. Manual acceptance test after merge. |
+| P0.2 | Configuration system | review | Pratosh Karthikeyan | `config-system` | 2026-10-30 | base.yaml + 6 grid configs, src/finqa/config.py (merge + validation, Secrets from .env), CI config-validation step. Model ID is a placeholder until P0.6. |
 | P0.3 | Shared schemas | todo | | | | |
 | P0.4 | LLM wrapper | todo | | | | |
 | P0.5 | Tracing | todo | | | | |
@@ -240,4 +240,5 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.8 · Frozen-file guard in CI with approved-freeze-change label override · https://github.com/pratox1112/finqa-verify/pull/3
 - 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.9 · Pre-commit hooks, CONTRIBUTING.md, CODEOWNERS draft · https://github.com/pratox1112/finqa-verify/pull/4
 - 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.10 · PROGRESS.md validation and every-PR update rule in CI · https://github.com/pratox1112/finqa-verify/pull/5
-- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.11 · Claude Code permission rules enforcing T17 · PR link pending
+- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.11 · Claude Code permission rules enforcing T17 · https://github.com/pratox1112/finqa-verify/pull/6 (acceptance test pending)
+- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.2 · Configuration system and grid configs · PR link pending

@@ -1,0 +1,6 @@
+# R0-V1: single-shot RAG, LLM self-check
+retrieval:
+  arm: "rag"
+  calculator: false
+verification:
+  arm: "self_check"

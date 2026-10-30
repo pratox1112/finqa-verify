@@ -1,0 +1,6 @@
+# R0-V2: single-shot RAG, grounded verification
+retrieval:
+  arm: "rag"
+  calculator: false
+verification:
+  arm: "grounded"

@@ -52,8 +52,10 @@ jobs:
       - name: PROGRESS.md is valid
         run: uv run --no-sync python scripts/check_progress.py
 
+      - name: Configs are valid
+        run: uv run --no-sync python -m finqa.config
+
       # Added by later tasks:
-      #   - Config validation: load every YAML in configs/ (configuration system, P0.2)
       #   - Pipeline smoke test: dummy generator + verifier through both runner stages (runner, P2.2)
 
   # Every PR updates PROGRESS.md unless it carries the no-progress-update label (T5).
