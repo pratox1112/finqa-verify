@@ -71,7 +71,7 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
-| P1.1 | FinanceBench audit | in-progress | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | |
+| P1.1 | FinanceBench audit | review | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | data/financebench_audit.csv (150 rows) + data/SCOPE.md: 127 of 150 questions in scope (10-K/10-Q), 31 companies; Foot Locker excluded. |
 | P1.2 | Gold value extraction | in-progress | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | |
 | P1.3 | Company table | in-progress | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | |
 | P1.4 | Filing download | in-progress | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | |
