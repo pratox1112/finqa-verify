@@ -5,6 +5,8 @@ on:
   push:
     branches: ["**"]
   pull_request:
+    # labeled/unlabeled re-run the frozen-file guard when approved-freeze-change is added or removed
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 
 # A new push cancels the outdated run on the same branch.
 concurrency:
@@ -50,4 +52,30 @@ jobs:
       # Added by later tasks:
       #   - Config validation: load every YAML in configs/ (configuration system, P0.2)
       #   - Pipeline smoke test: dummy generator + verifier through both runner stages (runner, P2.2)
-      #   - Frozen-file guard (P0.8) and progress check (P0.10)
+      #   - Progress check (P0.10)
+
+  # Fails a PR that changes a frozen file unless it carries the approved-freeze-change label (rule 5).
+  frozen-files:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # HEAD is the PR merged into its base; HEAD^1 is that base
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install Python (from .python-version)
+        run: uv python install
+
+      - name: Install exactly from uv.lock
+        run: uv sync --frozen
+
+      - name: Frozen-file guard
+        run: >-
+          uv run --no-sync python scripts/check_frozen.py --base HEAD^1 --head HEAD
+          ${{ contains(github.event.pull_request.labels.*.name, 'approved-freeze-change') && '--approved' || '' }}

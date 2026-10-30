@@ -1,0 +1,4 @@
+# Frozen prompts: one file name per line, relative to this folder.
+# Adding a name freezes that prompt; the CI frozen-file guard then blocks edits to it
+# (and to this file) unless the PR has the approved-freeze-change label.
+# Record each freeze, with the commit hash, in docs/DECISIONS.md.
