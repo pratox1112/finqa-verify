@@ -55,3 +55,35 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 3. **Answer-level scoring.** `Draft` gains `answer_claim_id: str | None` (None for qualitative questions). Answer-level correctness = the answer claim's value against the gold value within tolerance; claim-level correctness checks every claim. Scoring reads claims only, so no revised answer text is stored. Qualitative questions are scored from `Draft.answer_text`, separately; verification does not change them, so RQ1's verification comparison covers numeric questions (state this in Methods). *Why:* without it, answer-level scoring would have to guess which claim answers the question.
 4. **Periods.** `Claim.period` and `Chunk.period` must match `FY2022`, `Q3 FY2022`, or year-to-date `6M FY2022` / `9M FY2022`, always the company's own fiscal year as reported (Apple FY2022 ends September 2022), with "as of" balance-sheet values using the period they close. *Why:* consistent with XBRL fiscal periods, which the `wrong_period` rule needs; typos fail validation instead of silently never matching.
 5. **Units and values.** `Claim.unit` is one of `USD`, `USD/share`, `%`, `shares`, `ratio`, `days`. Values are in full units, never pre-scaled ($394.3B is `394300000000`; `unit_scale` is applied when the claim is made). Percentages are stored as the percent number (12.5% is `12.5`). If the FinanceBench audit (P1.1) finds non-USD answers, the unit list is extended through a recorded schema change. *Why:* `wrong_unit_or_scale` detection depends on unscaled values; scoring, verification and gold parsing (P1.2) must share one convention.
+
+## 2026-10-30 · Pratosh Karthikeyan · Model pilot design
+
+**Decision:** The model pilot (P0.6) runs on 20 questions proposed by `scripts/select_pilot_questions.py` (fixed seed; 7 metrics-generated, 7 domain-relevant, 6 novel-generated; ~3/4 with a number in the gold answer; 10-K and 10-Q only; spread across companies) and approved by a human in `data/pilot_questions.json`. **These 20 questions are reserved for the dev split (P2.1).** FinanceBench's gold evidence stands in for retrieval. Tool-call success = valid tool calls / attempted tool calls, where a Groq `tool_use_failed` error or answering without any tool call counts as one invalid call; structured-output validity = a forced `PilotAnswer` call that parses with the shared `Unit` and `Period` formats.
+
+**Why:** Prompts and tool descriptions may be adjusted while looking at pilot output, so these questions must never be scored as test questions. Using gold evidence isolates the model's mechanics (tool calling, structured output, token use) from retrieval quality, which doesn't exist yet.
+
+**Data licence:** the FinanceBench public sample is CC-BY-NC-4.0 (PatronusAI); the raw file stays out of Git (`data/financebench/`), and only question IDs and derived files are committed.
+
+## 2026-10-30 · Pratosh Karthikeyan · Start Phase 1 before Gate 0 sign-off
+
+**Decision:** Phase 1 starts once the model pilot (P0.6) has been run and reviewed, without waiting for the remaining Gate 0 items that need teammates: the post-merge team review of `schemas.py` (P0.3), CODEOWNERS usernames, approvals back to 1 and code-owner review (P0.9), and every teammate running the checks locally. Gate 0 stays `todo` in `PROGRESS.md` until those are done.
+
+**Why:** The outstanding items are review and setup steps; no Phase 1 code depends on them, and the midterm timeline is tight. Risk: if the schema review asks for changes, Phase 1 code that uses the schemas must follow, through the normal freeze-change process.
+
+## 2026-10-30 · Pratosh Karthikeyan · Phase 1 on one branch
+
+**Decision:** All of Phase 1 (P1.1–P1.9) is built on one branch, `phase-1-data`, with **one commit per task** (descriptive messages, no task IDs). A draft PR is opened at the first push so CI runs on every commit. Each task's `PROGRESS.md` row moves to `review` when its commit lands and to `done` (with the shared PR link) when the branch merges. The PR is merged with **Rebase and merge**, so each task stays a separate commit on `main` (still linear history). This is an exception to T7 (one task per branch), T8 (small PRs) and T10 (squash merge) for Phase 1 only.
+
+**Why:** One person is working, and the Phase 1 tasks depend on each other in sequence (download → parse → chunk → index). One commit per task, CI on every push, and rebase-merge keep the reviewability and history the rules protect. [HUMAN] steps (P1.1 scope decision, P1.9 quality checks) still stop for a person.
+
+## 2026-10-30 · Pratosh Karthikeyan · Free tier caps a single request at 7,000 input tokens
+
+**Finding:** During the pilot, Groq refused a 7,810-input-token request with HTTP 413: the free tier has a separate **input-tokens-per-minute limit of 7,000** (below the 8,000 total TPM on the limits page), so any single request larger than that can never succeed on this tier. The wrapper does not retry 413 (retrying can't help).
+
+**Decision:** The pilot reports such tests as "skipped: request too large for the Groq plan" and leaves them out of both rates (they measure the plan, not the model); the dummy search returns the evidence only once per question so the conversation doesn't grow by a full copy per search. This strengthens the case for the Developer tier before agent (R1) runs, whose growing context will exceed 7,000 input tokens.
+
+## 2026-10-30 · Pratosh Karthikeyan · Model pilot passed
+
+**Result:** `docs/PILOT.md` (run `2026-10-30_pilot_6de325e`): tool-call success 55/55 (100.0%), structured-output validity 20/20 (100.0%), no requests skipped; tokens per call mean 1,344, max 2,783. Target was >= 95% on both, so the model and thinking setting stand and the project continues as planned.
+
+**Also found:** the free tier limits **output tokens to 1,000 per minute** (OTPM), in addition to 7,000 input tokens per minute and 1,000 requests / 200,000 tokens per day. The wrapper's 429 retries absorbed it during the pilot; long generations on the free tier will be slow.

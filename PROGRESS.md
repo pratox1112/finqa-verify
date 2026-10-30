@@ -62,8 +62,8 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 | P0.2 | Configuration system | done | Pratosh Karthikeyan | [#7](https://github.com/pratox1112/finqa-verify/pull/7) | 2026-10-30 | base.yaml + 6 grid configs, src/finqa/config.py (merge + validation, Secrets from .env), CI config-validation step. Model ID is a placeholder until P0.6. |
 | P0.3 | Shared schemas | review | Pratosh Karthikeyan | [#9](https://github.com/pratox1112/finqa-verify/pull/9), [#10](https://github.com/pratox1112/finqa-verify/pull/10) | 2026-10-30 | Frozen on main with the 5 review decisions (#10 via approved-freeze-change). Merged by Pratosh without a second review: team review still needed before Gate 0. |
 | P0.4 | LLM wrapper | done | Pratosh Karthikeyan | [#8](https://github.com/pratox1112/finqa-verify/pull/8) | 2026-10-30 | src/finqa/llm.py: cache, 429/5xx retry, RPM/TPM limiter, thinking control, token logging, structured output. RPM/TPM and the thinking parameter to confirm in P0.6. |
-| P0.5 | Tracing | review | Pratosh Karthikeyan | `tracing` | 2026-10-30 | src/finqa/tracing.py: one Langfuse trace per (run, question), tagged with both IDs; LLM calls and tool spans join it; off without keys. Manual check: tests/test_tracing_integration.py with Langfuse keys. |
-| P0.6 | Model pilot | todo | | | 2026-10-30 | Model ID, thinking parameter and free-tier limits confirmed (docs/DECISIONS.md). Pilot script not started; paid-tier decision open. |
+| P0.5 | Tracing | done | Pratosh Karthikeyan | [#11](https://github.com/pratox1112/finqa-verify/pull/11) | 2026-10-30 | src/finqa/tracing.py: one Langfuse trace per (run, question), tagged with both IDs; LLM calls and tool spans join it; off without keys. Manual check: tests/test_tracing_integration.py with Langfuse keys. |
+| P0.6 | Model pilot | review | Pratosh Karthikeyan | `model-pilot` | 2026-10-30 | PASS: tool calls 55/55 (100%), structured output 20/20 (100%); tokens/call mean 1,344, max 2,783 (docs/PILOT.md). 20 pilot questions reserved for dev. |
 | G0 | **GATE 0** | todo | | | | |
 
 
@@ -245,4 +245,5 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.4 · LLM wrapper · https://github.com/pratox1112/finqa-verify/pull/8
 - 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.3, P0.6 · Shared schemas; Groq model ID, thinking parameter and limits confirmed · https://github.com/pratox1112/finqa-verify/pull/9
 - 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.3 · Schema review decisions merged with approved-freeze-change (missed #9) · https://github.com/pratox1112/finqa-verify/pull/10
-- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.5 · Langfuse tracing with run_id and question_id tags · PR link pending
+- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.5 · Langfuse tracing with run_id and question_id tags · https://github.com/pratox1112/finqa-verify/pull/11 (manual Langfuse check passed 2026-10-30)
+- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.6 · Pilot script, FinanceBench loader, pilot question selection · PR link pending
