@@ -5,6 +5,8 @@ description = "When Does Verification Help? Agentic retrieval and grounded verif
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
 dependencies = [
+    "pydantic>=2.14.2",
+    "pydantic-settings>=2.16.2",
     "pyyaml>=6.0.3",
 ]
 

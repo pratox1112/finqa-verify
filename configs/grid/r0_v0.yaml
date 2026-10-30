@@ -1,0 +1,6 @@
+# R0-V0: single-shot RAG, no verification
+retrieval:
+  arm: "rag"
+  calculator: false
+verification:
+  arm: "none"

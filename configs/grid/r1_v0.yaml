@@ -1,0 +1,6 @@
+# R1-V0: agent, no verification
+retrieval:
+  arm: "agentic"
+  calculator: true
+verification:
+  arm: "none"

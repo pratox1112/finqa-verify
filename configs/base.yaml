@@ -1,0 +1,20 @@
+# Defaults for every experiment. Override files change only the fields that define them.
+# The model: section is frozen once on main (CI frozen-file guard; ROADMAP rule 5).
+model:
+  id: "groq:qwen/qwen3.8-27b"   # PLACEHOLDER: confirm the exact Groq model ID in the pilot (P0.6)
+  temperature: 0
+  thinking: "off"               # fixed for every run
+  max_tokens: 2048
+retrieval:
+  arm: "rag"                    # closed_book | rag | agentic
+  calculator: false             # R0 has no calculator, R1 does; see docs/DECISIONS.md
+  top_k: 5
+  max_agent_steps: 8
+verification:
+  arm: "none"                   # none | self_check | grounded
+  max_revisions: 2
+  tolerance: 0.01               # 1% relative tolerance
+embedding:
+  model: "BAAI/bge-base-en-v1.5"
+data:
+  question_split: "dev"         # dev | test; test runs only from clean main (ROADMAP T12)

@@ -1,0 +1,6 @@
+# R1-V2: agent, grounded verification
+retrieval:
+  arm: "agentic"
+  calculator: true
+verification:
+  arm: "grounded"
