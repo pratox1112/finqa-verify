@@ -60,10 +60,10 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 | P0.10 | Progress check | done | Pratosh Karthikeyan | [#5](https://github.com/pratox1112/finqa-verify/pull/5) | 2026-10-30 | scripts/check_progress.py in `checks`; new PR-only `progress-updated` job (label no-progress-update exempts). 8 tests. |
 | P0.11 | Claude Code guardrails | done | Pratosh Karthikeyan | [#6](https://github.com/pratox1112/finqa-verify/pull/6) | 2026-10-30 | .claude/settings.json: Bash + PowerShell deny rules for state-changing git and gh, read-only allow list, GitHub API WebFetch denied. Known gaps: `git branch <name>` creation, calling git by full path. Manual acceptance test after merge. |
 | P0.2 | Configuration system | done | Pratosh Karthikeyan | [#7](https://github.com/pratox1112/finqa-verify/pull/7) | 2026-10-30 | base.yaml + 6 grid configs, src/finqa/config.py (merge + validation, Secrets from .env), CI config-validation step. Model ID is a placeholder until P0.6. |
-| P0.3 | Shared schemas | todo | | | | |
-| P0.4 | LLM wrapper | review | Pratosh Karthikeyan | `llm-wrapper` | 2026-10-30 | src/finqa/llm.py: cache, 429/5xx retry, RPM/TPM limiter, thinking control, token logging, structured output. RPM/TPM and the thinking parameter to confirm in P0.6. |
+| P0.3 | Shared schemas | review | Pratosh Karthikeyan | `shared-schemas` | 2026-10-30 | schemas.py exactly as guide §0.4 + round-trip tests. [HUMAN] team review and approval needed before merge; open questions listed in the PR. |
+| P0.4 | LLM wrapper | done | Pratosh Karthikeyan | [#8](https://github.com/pratox1112/finqa-verify/pull/8) | 2026-10-30 | src/finqa/llm.py: cache, 429/5xx retry, RPM/TPM limiter, thinking control, token logging, structured output. RPM/TPM and the thinking parameter to confirm in P0.6. |
 | P0.5 | Tracing | todo | | | | |
-| P0.6 | Model pilot | todo | | | | |
+| P0.6 | Model pilot | todo | | | 2026-10-30 | Model ID, thinking parameter and free-tier limits confirmed (docs/DECISIONS.md). Pilot script not started; paid-tier decision open. |
 | G0 | **GATE 0** | todo | | | | |
 
 
@@ -242,4 +242,5 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.10 · PROGRESS.md validation and every-PR update rule in CI · https://github.com/pratox1112/finqa-verify/pull/5
 - 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.11 · Claude Code permission rules enforcing T17 · https://github.com/pratox1112/finqa-verify/pull/6 (acceptance test passed)
 - 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.2 · Configuration system and grid configs · https://github.com/pratox1112/finqa-verify/pull/7
-- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.4 · LLM wrapper · PR link pending
+- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.4 · LLM wrapper · https://github.com/pratox1112/finqa-verify/pull/8
+- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.3, P0.6 · Shared schemas drafted; Groq model ID, thinking parameter and limits confirmed · PR link pending

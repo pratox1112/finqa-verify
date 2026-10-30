@@ -39,8 +39,8 @@ logger = logging.getLogger(__name__)
 
 REPO_ROOT = CONFIGS_DIR.parent
 
-# How each `model.thinking` setting is passed to Groq. CONFIRM in the model pilot (P0.6)
-# and record in docs/DECISIONS.md.
+# How each `model.thinking` setting is passed to Groq. Confirmed for qwen/qwen3.8-27b from
+# Groq's model page on 2026-10-30: "none" = instruct (non-thinking) mode (docs/DECISIONS.md).
 THINKING_PARAMS: dict[str, dict[str, Any]] = {
     "off": {"reasoning_effort": "none"},
     "on": {"reasoning_effort": "default"},
