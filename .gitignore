@@ -1,0 +1,44 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+build/
+dist/
+
+# Tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Experiment outputs and caches (shared location: see CONTRIBUTING.md)
+runs/
+.cache/
+cache/
+
+# Data: bulky or regenerable files stay out of Git.
+# Small curated files (splits.json, SCOPE.md, QA_CHECKS.md, metric_map.yaml,
+# companies.csv, financebench_audit.csv) ARE committed. See docs/DECISIONS.md.
+data/raw/
+data/xbrl/
+data/index/
+data/chroma/
+data/cache/
+data/financebench/
+
+# Claude Code personal overrides
+.claude/settings.local.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

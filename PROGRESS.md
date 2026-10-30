@@ -53,7 +53,7 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
-| P0.1 | Repository skeleton | todo | | | | |
+| P0.1 | Repository skeleton | review | Pratosh Karthikeyan | `repo-skeleton` | 2026-10-30 | Layout, pyproject (dev deps only), .gitignore, .env.example, 2 tests. Runtime deps added per task. |
 | P0.7 | CI pipeline | todo | | | | |
 | P0.8 | Frozen-file guard | todo | | | | |
 | P0.9 | Branch protection and local hooks | todo | | | | |
@@ -235,3 +235,4 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD · name · task ID · what changed · PR link`.
 
 - *[YYYY-MM-DD] · [name] · — · PROGRESS.md created*
+- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.1 · Repository skeleton; decisions on data/ and Git naming recorded in docs/DECISIONS.md · PR link pending

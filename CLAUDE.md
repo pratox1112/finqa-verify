@@ -32,14 +32,14 @@ You never act on Git or GitHub. The humans run every such command; you give them
 At every hand-off, end with one copy-pasteable block, listing specific files (never `git add .` or `git add -A`):
 
 ```bash
-# Human steps: finish P1.6
+# Human steps: finish section chunking
 git add src/finqa/ingestion/chunk.py tests/test_chunk.py PROGRESS.md
-git commit -m "[P1.6] Section-aware chunking with unit scale detection"
-git push -u origin p1.6-chunking
-gh pr create --base main --title "[P1.6] Section-aware chunking with unit scale" --body "Implements ROADMAP P1.6. Tests: tests/test_chunk.py"
+git commit -m "Section-aware chunking with unit scale detection"
+git push -u origin section-chunking
+gh pr create --base main --title "Section-aware chunking with unit scale" --body "Tests: tests/test_chunk.py"
 ```
 
-When starting a new task, give the branch commands too (`git switch main && git pull && git switch -c p1.6-chunking`). Branches are named after the task ID; commit messages and PR titles start with `[Task ID]`.
+When starting a new task, give the branch commands too (`git switch main && git pull && git switch -c section-chunking`). **Branch names, commit messages, and PR titles/descriptions never contain phase names or task IDs** (ROADMAP T7); use short descriptive names. Task IDs appear only in `ROADMAP.md` and `PROGRESS.md`.
 
 ## Rules you must follow
 
@@ -67,7 +67,7 @@ When starting a new task, give the branch commands too (`git switch main && git 
 - Market data (yfinance / MCP) is demo-only; never add it to experiment configs.
 
 **Files and data**
-- Never create or commit anything under `data/`, `runs/`, caches, or `.env`. Never print secrets.
+- Never commit bulky or generated data (`data/raw/`, `data/xbrl/`, the index), `runs/`, caches, or `.env`. Small curated files in `data/` (`splits.json`, `SCOPE.md`, `QA_CHECKS.md`, `metric_map.yaml`, `companies.csv`, `financebench_audit.csv`) are committed, and only when their task calls for them. Never print secrets.
 - Keep changes small and focused on the task; don't reformat or refactor unrelated code.
 
 ## Useful commands

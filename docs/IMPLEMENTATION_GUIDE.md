@@ -109,7 +109,8 @@ Adjust once the midterm and final dates are confirmed.
 │   │                             #   tables, stats, annotation
 │   └── rq2/                      # restatements, perturb
 ├── scripts/                      # pilot.py, check_progress.py
-├── data/   runs/                 # gitignored
+├── data/                         # curated files committed; raw/, xbrl/, index gitignored
+├── runs/                         # gitignored
 ├── annotation/                   # guidelines, label sheets
 ├── app/                          # Streamlit demo
 ├── tests/   tests/fixtures/  tests/planted/
@@ -235,7 +236,7 @@ The same workflow runs on every push to `main`, which is every merge: that's the
 - **Branch protection on `main`** (set by a human in GitHub settings): PR required, CI required, one approving review from a teammate who didn't write the code, no force-pushes.
 - **`CODEOWNERS`** maps each area to its role; frozen files need two reviewers.
 - **Pre-commit hooks:** `ruff`, `ruff format`, a guard against committing `.env`, and a **post-merge / post-checkout hook that runs `uv sync` whenever `uv.lock` changed**.
-- **`CONTRIBUTING.md`:** branch naming (`p1.6-chunking`), PR titles (`[P1.6] ...`), local checks, the shared artifact location, and the freeze-change process.
+- **`CONTRIBUTING.md`:** branch naming (`section-chunking`), PR titles (`Section-aware chunking ...`; no task IDs in Git names), local checks, the shared artifact location, and the freeze-change process.
 - **Branch and PR practice:** one task per branch, PRs under ~400 changed lines where possible, rebase on `main`, squash-merge.
 
 ### 0.9 Claude Code guardrails
