@@ -63,7 +63,7 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 | P0.3 | Shared schemas | review | Pratosh Karthikeyan | [#9](https://github.com/pratox1112/finqa-verify/pull/9), [#10](https://github.com/pratox1112/finqa-verify/pull/10) | 2026-10-30 | Frozen on main with the 5 review decisions (#10 via approved-freeze-change). Merged by Pratosh without a second review: team review still needed before Gate 0. |
 | P0.4 | LLM wrapper | done | Pratosh Karthikeyan | [#8](https://github.com/pratox1112/finqa-verify/pull/8) | 2026-10-30 | src/finqa/llm.py: cache, 429/5xx retry, RPM/TPM limiter, thinking control, token logging, structured output. RPM/TPM and the thinking parameter to confirm in P0.6. |
 | P0.5 | Tracing | done | Pratosh Karthikeyan | [#11](https://github.com/pratox1112/finqa-verify/pull/11) | 2026-10-30 | src/finqa/tracing.py: one Langfuse trace per (run, question), tagged with both IDs; LLM calls and tool spans join it; off without keys. Manual check: tests/test_tracing_integration.py with Langfuse keys. |
-| P0.6 | Model pilot | review | Pratosh Karthikeyan | `model-pilot` | 2026-10-30 | PASS: tool calls 55/55 (100%), structured output 20/20 (100%); tokens/call mean 1,344, max 2,783 (docs/PILOT.md). 20 pilot questions reserved for dev. |
+| P0.6 | Model pilot | done | Pratosh Karthikeyan | [#12](https://github.com/pratox1112/finqa-verify/pull/12) | 2026-10-30 | PASS: tool calls 55/55 (100%), structured output 20/20 (100%); tokens/call mean 1,344, max 2,783 (docs/PILOT.md). 20 pilot questions reserved for dev. |
 | G0 | **GATE 0** | todo | | | | |
 
 
@@ -71,15 +71,15 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
-| P1.1 | FinanceBench audit | todo | | | | |
-| P1.2 | Gold value extraction | todo | | | | |
-| P1.3 | Company table | todo | | | | |
-| P1.4 | Filing download | todo | | | | |
-| P1.5 | Section parsing | todo | | | | |
-| P1.6 | Chunking and unit scale | todo | | | | |
-| P1.7 | Embedding and index | todo | | | | |
-| P1.8 | XBRL cache and lookup | todo | | | | |
-| P1.9 | Quality checks | todo | | | | |
+| P1.1 | FinanceBench audit | in-progress | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | |
+| P1.2 | Gold value extraction | in-progress | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | |
+| P1.3 | Company table | in-progress | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | |
+| P1.4 | Filing download | in-progress | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | |
+| P1.5 | Section parsing | in-progress | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | |
+| P1.6 | Chunking and unit scale | in-progress | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | |
+| P1.7 | Embedding and index | in-progress | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | |
+| P1.8 | XBRL cache and lookup | in-progress | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | |
+| P1.9 | Quality checks | in-progress | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | |
 | G1 | **GATE 1** | todo | | | | |
 
 
@@ -246,4 +246,5 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.3, P0.6 · Shared schemas; Groq model ID, thinking parameter and limits confirmed · https://github.com/pratox1112/finqa-verify/pull/9
 - 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.3 · Schema review decisions merged with approved-freeze-change (missed #9) · https://github.com/pratox1112/finqa-verify/pull/10
 - 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.5 · Langfuse tracing with run_id and question_id tags · https://github.com/pratox1112/finqa-verify/pull/11 (manual Langfuse check passed 2026-10-30)
-- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.6 · Pilot script, FinanceBench loader, pilot question selection · PR link pending
+- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.6 · Pilot script, FinanceBench loader, pilot question selection · https://github.com/pratox1112/finqa-verify/pull/12
+- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P1.1–P1.9 · Phase 1 started on one branch; data decisions recorded in docs/DECISIONS.md · PR link pending

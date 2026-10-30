@@ -72,7 +72,7 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 
 ## 2026-10-30 · Pratosh Karthikeyan · Phase 1 on one branch
 
-**Decision:** All of Phase 1 (P1.1–P1.9) is built on one branch, `phase-1-data`, with **one commit per task** (descriptive messages, no task IDs). A draft PR is opened at the first push so CI runs on every commit. Each task's `PROGRESS.md` row moves to `review` when its commit lands and to `done` (with the shared PR link) when the branch merges. The PR is merged with **Rebase and merge**, so each task stays a separate commit on `main` (still linear history). This is an exception to T7 (one task per branch), T8 (small PRs) and T10 (squash merge) for Phase 1 only.
+**Decision:** All of Phase 1 (P1.1–P1.9) is built on one branch, `data-prep`, with **one commit per task** (descriptive messages, no task IDs). A draft PR is opened at the first push so CI runs on every commit. Each task's `PROGRESS.md` row moves to `review` when its commit lands and to `done` (with the shared PR link) when the branch merges. The PR is merged with **Rebase and merge**, so each task stays a separate commit on `main` (still linear history). This is an exception to T7 (one task per branch), T8 (small PRs) and T10 (squash merge) for Phase 1 only.
 
 **Why:** One person is working, and the Phase 1 tasks depend on each other in sequence (download → parse → chunk → index). One commit per task, CI on every push, and rebase-merge keep the reviewability and history the rules protect. [HUMAN] steps (P1.1 scope decision, P1.9 quality checks) still stop for a person.
 
@@ -87,3 +87,14 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 **Result:** `docs/PILOT.md` (run `2026-10-30_pilot_6de325e`): tool-call success 55/55 (100.0%), structured-output validity 20/20 (100.0%), no requests skipped; tokens per call mean 1,344, max 2,783. Target was >= 95% on both, so the model and thinking setting stand and the project continues as planned.
 
 **Also found:** the free tier limits **output tokens to 1,000 per minute** (OTPM), in addition to 7,000 input tokens per minute and 1,000 requests / 200,000 tokens per day. The wrapper's 429 retries absorbed it during the pilot; long generations on the free tier will be slow.
+
+## 2026-10-30 · Pratosh Karthikeyan · Phase 1 data decisions
+
+1. **Scope: 10-K and 10-Q only.** 127 of the 150 FinanceBench questions are in scope (31 of 32 companies). Excluded: 9 questions on 8-Ks and 14 on earnings releases; Foot Locker has only such questions and drops out. Exact counts go in `data/SCOPE.md`. *Why:* those documents have no standard item structure or XBRL facts, so they would need separate parsing and V2 could not check them.
+2. **Filing window, per company:** from 2 fiscal years before the company's earliest FinanceBench document year through 1 year after its latest (~830 10-K/10-Q filings). *Why:* covers every question plus the earlier years restatement detection needs, without indexing years nobody asks about; the on-demand fetch tool (P3.3) can add others.
+3. **Gold values stated in the question's unit:** when a question asks for a figure "in USD millions" (or thousands, billions) and the gold answer is a bare number, the stated unit is applied, so `$1577.00` becomes 1,577,000,000 (full units, per the schema rule). *Why:* otherwise a correct model claim in full units would be scored wrong.
+4. **Fiscal labels from the filing's XBRL cover page:** `fiscal_year` and the quarter in `period` come from `DocumentFiscalYearFocus` / `DocumentFiscalPeriodFocus`, falling back to the period-of-report date when missing (each fallback logged). *Why:* follows the company's own fiscal calendar (Apple FY2022 ends September 2022) and matches the XBRL facts the verifier uses.
+5. **Sections kept:** 10-K Items 1, 1A, 7, 7A, 8; 10-Q Part I Items 1–4 and Part II Item 1A. *Why:* covers the FinanceBench evidence while keeping the index focused.
+6. **Long jobs** (filing download, embedding) are run by Claude Code in the session, with the counts reported; outputs stay in gitignored `data/`.
+7. **Restatement check (P1.8):** Claude Code proposes a candidate restated item from the XBRL data; a human confirms it against the filings.
+8. **Quality checks (P1.9):** Pratosh inspects a few companies now; the team completes the rest later. Gate 1 stays open until every company is checked.
