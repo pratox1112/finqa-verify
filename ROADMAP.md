@@ -18,7 +18,7 @@
 8. **Out of scope** (do not build, even if it seems helpful): DSPy, LlamaFirewall, Graphiti, fine-tuning, extra models, extra benchmarks beyond those listed, UI beyond the Streamlit demo.
 9. **If a task reveals a research-design question** (e.g. how to treat an edge case in scoring), stop and ask rather than deciding silently. Record the decision in `docs/DECISIONS.md`.
 10. **Independent scoring.** Correctness is always judged against FinanceBench gold answers, for every configuration. Never use a verifier's own verdicts to score results, and never use XBRL to decide correctness (XBRL may only be used to classify error *types*).
-11. **Everything reaches `main` through a pull request with CI green.** No direct pushes to `main`. One task per branch where practical (branch name: `p1.6-chunking`).
+11. **Everything reaches `main` through a pull request with CI green.** No direct pushes to `main`. One task per branch where practical (branch name: `section-chunking`; no task IDs in Git names, see T7).
 12. **Unit tests never touch the network.** Tests that call Groq, EDGAR, Hugging Face, or yfinance are marked `@pytest.mark.integration` and are skipped in the default CI run. Everything else uses mocks or small fixtures in `tests/fixtures/`.
 
 ---
@@ -44,7 +44,7 @@ Five people and Claude Code share this repo. These rules apply to everyone, incl
 
 ### Branches and pull requests
 
-- **T7. One task per branch,** named after the task ID: `p1.6-chunking`, `m1.3-baseline-table`. PR titles start with the task ID: `[P1.6] Section-aware chunking with unit scale`.
+- **T7. One task per branch,** with a short descriptive name: `section-chunking`, `baseline-table`. **Branch names, commit messages, and PR titles/descriptions never contain phase names or task IDs**; IDs are only for `ROADMAP.md` and `PROGRESS.md`, whose *Branch / PR* column links each task to its branch. PR title example: `Section-aware chunking with unit scale`.
 - **T8. Keep PRs small,** ideally under ~400 changed lines. Split larger work into sub-PRs.
 - **T9. Every PR needs one approving review from a teammate who didn't write it.** This includes PRs containing code Claude Code wrote: a human must read and approve it before it merges.
 - **T10. Rebase on `main` before merging, then squash-merge,** so `main` has one clean commit per task.
@@ -54,7 +54,7 @@ Five people and Claude Code share this repo. These rules apply to everyone, incl
 
 - **T12. Test-set runs happen only from a clean commit on `main`,** never from a feature branch or with uncommitted changes. The runner refuses to start a test-split run otherwise and records the commit hash in `run_meta.json`.
 - **T13. Run IDs follow one format:** `{date}_{config-name}_{short-commit}` (e.g. `2026-11-10_r0_v0_a1b2c3d`), so anyone can trace a result to its exact code and config.
-- **T14. Never commit data, runs, caches, or secrets.** `data/`, `runs/`, response caches, and `.env` stay out of Git. Shared artifacts (index, XBRL cache, completed runs, response cache) live in one agreed shared location, recorded in `CONTRIBUTING.md`.
+- **T14. Never commit bulky data, runs, caches, or secrets.** Downloaded and generated data (`data/raw/`, `data/xbrl/`, the index), `runs/`, response caches, and `.env` stay out of Git. Small curated files in `data/` (`splits.json`, `SCOPE.md`, `QA_CHECKS.md`, `metric_map.yaml`, `companies.csv`, `financebench_audit.csv`) are committed (see `docs/DECISIONS.md`). Shared artifacts (index, XBRL cache, completed runs, response cache) live in one agreed shared location, recorded in `CONTRIBUTING.md`.
 - **T15. Every research-design decision goes in `docs/DECISIONS.md`** with the date, who decided, and why, before the code that implements it is merged.
 
 ### Claude Code and GitHub
@@ -65,11 +65,11 @@ Five people and Claude Code share this repo. These rules apply to everyone, incl
   - **Instead, at every hand-off point** (starting a task, finishing a task, after review feedback), Claude Code ends its message with a **"Human steps"** block: the exact commands to run, in order, in one copy-pasteable code block, plus anything to do in the GitHub web UI. For example:
 
     ```bash
-    # Human steps: finish P1.6
+    # Human steps: finish section chunking
     git add src/finqa/ingestion/chunk.py tests/test_chunk.py PROGRESS.md
-    git commit -m "[P1.6] Section-aware chunking with unit scale detection"
-    git push -u origin p1.6-chunking
-    gh pr create --base main --title "[P1.6] Section-aware chunking with unit scale" --body "Implements ROADMAP P1.6. Tests: tests/test_chunk.py"
+    git commit -m "Section-aware chunking with unit scale detection"
+    git push -u origin section-chunking
+    gh pr create --base main --title "Section-aware chunking with unit scale" --body "Tests: tests/test_chunk.py"
     ```
 
   - Claude Code lists the specific files to stage (never `git add .` or `git add -A`), so nothing unintended gets committed.
@@ -151,7 +151,7 @@ Five people and Claude Code share this repo. These rules apply to everyone, incl
 
 - **P0.10 Progress check** — part of `ci.yml`
   - A script (`scripts/check_progress.py`) that fails CI if `PROGRESS.md` is malformed: every task and gate ID in `ROADMAP.md` appears exactly once; every status is one of `todo`, `in-progress`, `review`, `blocked`, `done`; every `done` row has a PR link; every `blocked` row has a matching entry under Blockers.
-  - On pull requests from a task branch (name starts with a task ID), fail if `PROGRESS.md` was not modified (T5).
+  - Fail a pull request that should have updated `PROGRESS.md` but didn't (T5). Branch names no longer carry task IDs (T7), so **decide with the team** how the check identifies such PRs (e.g. every PR, with an exempt label) and record it in `docs/DECISIONS.md`.
   - *Accept:* a PR with an invalid status, a missing task ID, or no `PROGRESS.md` change on a task branch fails; a correct PR passes.
 
 - **P0.11 Claude Code guardrails** — `.claude/settings.json` and `CLAUDE.md`

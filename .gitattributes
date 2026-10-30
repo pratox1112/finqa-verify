@@ -1,0 +1,4 @@
+# Normalize line endings so Windows, macOS, and Linux produce identical diffs
+* text=auto eol=lf
+*.pdf binary
+*.png binary
