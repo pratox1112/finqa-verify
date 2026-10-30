@@ -206,7 +206,7 @@ Five people and Claude Code share this repo. These rules apply to everyone, incl
   - *Accept:* every FinanceBench company maps to exactly one CIK.
 
 - **P1.4 Filing download**
-  - `src/finqa/ingestion/download.py`: download all 10-K and 10-Q filings per company from at least two years before the earliest FinanceBench year through the latest available. Cache-first (never re-download). Identity read from `EDGAR_IDENTITY`.
+  - `src/finqa/ingestion/download.py`: download all 10-K and 10-Q filings per company from two fiscal years before the company's earliest FinanceBench year through one year after its latest (decided 2026-10-30, `docs/DECISIONS.md`). Cache-first (never re-download). Identity read from `EDGAR_IDENTITY`.
   - *Accept:* `data/raw/` contains every expected filing; a manifest lists accession, form, fiscal year, period, filing date.
 
 - **P1.5 Section parsing**
