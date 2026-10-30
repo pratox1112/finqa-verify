@@ -1,0 +1,53 @@
+name: CI
+
+# Every push to any branch (including main after each merge) and every PR (ROADMAP T1, T3).
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+# A new push cancels the outdated run on the same branch.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install Python (from .python-version)
+        run: uv python install
+
+      - name: Lockfile matches pyproject.toml
+        run: uv lock --check
+
+      - name: Install exactly from uv.lock
+        run: uv sync --frozen
+
+      - name: Lint
+        run: uv run --no-sync ruff check .
+
+      - name: Format
+        run: uv run --no-sync ruff format --check .
+
+      - name: Type check
+        run: uv run --no-sync mypy src/
+
+      - name: Unit tests
+        run: uv run --no-sync pytest -m "not integration" --cov=finqa --cov-report=term-missing
+
+      # Added by later tasks:
+      #   - Config validation: load every YAML in configs/ (configuration system, P0.2)
+      #   - Pipeline smoke test: dummy generator + verifier through both runner stages (runner, P2.2)
+      #   - Frozen-file guard (P0.8) and progress check (P0.10)

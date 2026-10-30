@@ -1,5 +1,7 @@
 # finqa-verify
 
+[![CI](https://github.com/pratox1112/finqa-verify/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/pratox1112/finqa-verify/actions/workflows/ci.yml)
+
 **When Does Verification Help? Disentangling Agentic Retrieval and Grounded Verification in Numerical Financial QA**
 
 Research code for measuring whether agentic retrieval and grounded verification fix the same numerical errors in financial question answering over SEC filings.

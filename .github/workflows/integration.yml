@@ -1,0 +1,33 @@
+name: Integration
+
+# Manual only: calls Groq, EDGAR, Hugging Face, yfinance. Costs tokens; never run per PR.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      EDGAR_IDENTITY: ${{ secrets.EDGAR_IDENTITY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install Python (from .python-version)
+        run: uv python install
+
+      - name: Install exactly from uv.lock
+        run: uv sync --frozen
+
+      # pytest exits 5 when no tests are collected; treat that as success until integration tests exist.
+      - name: Integration tests
+        run: uv run --no-sync pytest -m integration || [ $? -eq 5 ]
