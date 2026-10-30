@@ -1,0 +1,36 @@
+# Install once per clone:  uv run pre-commit install
+# (installs the pre-commit, post-merge and post-checkout hooks listed below)
+default_install_hook_types: [pre-commit, post-merge, post-checkout]
+default_stages: [pre-commit]
+
+repos:
+  - repo: local
+    hooks:
+      # Ruff runs from the project environment so its version always matches uv.lock.
+      - id: ruff-check
+        name: ruff check
+        entry: uv run --no-sync ruff check --fix
+        language: system
+        types_or: [python, pyi]
+
+      - id: ruff-format
+        name: ruff format
+        entry: uv run --no-sync ruff format
+        language: system
+        types_or: [python, pyi]
+
+      - id: no-env-files
+        name: never commit .env
+        entry: ".env files hold secrets and must never be committed (use .env.example)"
+        language: fail
+        files: (^|/)\.env(\..+)?$
+        exclude: (^|/)\.env\.example$
+
+      # ROADMAP T1: re-sync the environment whenever a pull, merge or checkout changes uv.lock.
+      - id: uv-sync-on-lock-change
+        name: uv sync if uv.lock changed
+        entry: uv run --no-project python scripts/sync_if_lock_changed.py
+        language: system
+        stages: [post-merge, post-checkout]
+        always_run: true
+        pass_filenames: false

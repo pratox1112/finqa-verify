@@ -55,8 +55,8 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 |---|---|---|---|---|---|---|
 | P0.1 | Repository skeleton | done | Pratosh Karthikeyan | [#1](https://github.com/pratox1112/finqa-verify/pull/1) | 2026-10-30 | Layout, pyproject (dev deps only), .gitignore, .env.example, 2 tests. Runtime deps added per task. |
 | P0.7 | CI pipeline | done | Pratosh Karthikeyan | [#2](https://github.com/pratox1112/finqa-verify/pull/2) | 2026-10-30 | ci.yml (uv lock/sync, ruff, mypy, pytest+cov) + manual integration.yml. Config-validation step added in P0.2, smoke test in P2.2. "Failing PR is blocked" needs branch protection (P0.9). |
-| P0.8 | Frozen-file guard | review | Pratosh Karthikeyan | `frozen-file-guard` | 2026-10-30 | scripts/check_frozen.py + `frozen-files` CI job; prompt manifest src/finqa/prompts/FROZEN.txt. 9 unit tests. Live schemas.py check possible only after P0.3 merges. |
-| P0.9 | Branch protection and local hooks | todo | | | | |
+| P0.8 | Frozen-file guard | done | Pratosh Karthikeyan | [#3](https://github.com/pratox1112/finqa-verify/pull/3) | 2026-10-30 | scripts/check_frozen.py + `frozen-files` CI job; prompt manifest src/finqa/prompts/FROZEN.txt. 9 unit tests. Live schemas.py check possible only after P0.3 merges. |
+| P0.9 | Branch protection and local hooks | in-progress | Pratosh Karthikeyan | `branch-protection-hooks` | 2026-10-30 | pre-commit (ruff, .env guard, uv sync on lock change), CONTRIBUTING.md, CODEOWNERS draft. Pending: teammate usernames for CODEOWNERS, shared artifact location, GitHub branch protection [HUMAN]. |
 | P0.10 | Progress check | todo | | | | |
 | P0.11 | Claude Code guardrails | todo | | | | |
 | P0.2 | Configuration system | todo | | | | |
@@ -237,4 +237,5 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - *[YYYY-MM-DD] · [name] · — · PROGRESS.md created*
 - 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.1 · Repository skeleton; decisions on data/ and Git naming recorded in docs/DECISIONS.md · https://github.com/pratox1112/finqa-verify/pull/1
 - 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.7 · CI workflow on every push/PR, manual integration workflow, README badge · https://github.com/pratox1112/finqa-verify/pull/2
-- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.8 · Frozen-file guard in CI with approved-freeze-change label override · PR link pending
+- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.8 · Frozen-file guard in CI with approved-freeze-change label override · https://github.com/pratox1112/finqa-verify/pull/3
+- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.9 · Pre-commit hooks, CONTRIBUTING.md, CODEOWNERS draft · PR link pending
