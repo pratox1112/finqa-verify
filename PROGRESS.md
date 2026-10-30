@@ -74,7 +74,7 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 | P1.1 | FinanceBench audit | review | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | data/financebench_audit.csv (150 rows) + data/SCOPE.md: 127 of 150 questions in scope (10-K/10-Q), 31 companies; Foot Locker excluded. |
 | P1.2 | Gold value extraction | review | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | src/finqa/verifiers/numbers.py (shared reader) + gold_value/gold_unit/answer_numbers in the audit: 52 single-number gold answers, 49 text-with-numbers (P2.3 decides how to score), 26 text. |
 | P1.3 | Company table | review | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | data/companies.csv: 31 in-scope companies, each exactly one CIK (ticker, else SEC name search for delisted Activision). Brand aliases need a human look. |
-| P1.4 | Filing download | in-progress | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | |
+| P1.4 | Filing download | review | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | 819 filings (206 10-K, 613 10-Q), 427 MB in data/raw; all 72 FinanceBench documents found. Fiscal labels by filing order: 803 agree with XBRL, 15 corrected, 1 had none. Manifest committed: data/filings_manifest.csv. |
 | P1.5 | Section parsing | in-progress | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | |
 | P1.6 | Chunking and unit scale | in-progress | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | |
 | P1.7 | Embedding and index | in-progress | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | |

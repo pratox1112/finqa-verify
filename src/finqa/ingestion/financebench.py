@@ -20,6 +20,7 @@ from typing import Any
 import httpx
 
 from finqa.config import CONFIGS_DIR
+from finqa.ingestion.files import save_atomic
 from finqa.verifiers.numbers import extract_numbers, gold_value
 
 URL = (
@@ -56,12 +57,9 @@ def download(path: Path = DEFAULT_PATH, url: str = URL) -> Path:
     """Fetch the sample unless it is already on disk (cache-first)."""
     if path.exists():
         return path
-    path.parent.mkdir(parents=True, exist_ok=True)
     response = httpx.get(url, follow_redirects=True, timeout=60)
     response.raise_for_status()
-    tmp = path.with_suffix(".tmp")
-    tmp.write_bytes(response.content)
-    tmp.replace(path)
+    save_atomic(path, response.content)
     return path
 
 

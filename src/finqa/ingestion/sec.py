@@ -16,10 +16,13 @@ from typing import Any
 import httpx
 
 from finqa.config import CONFIGS_DIR, Secrets
+from finqa.ingestion.files import save_atomic
 
 CACHE_DIR = CONFIGS_DIR.parent / "data" / "sec"
+XBRL_DIR = CONFIGS_DIR.parent / "data" / "xbrl"
 TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik}.json"
+COMPANY_FACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
 SEARCH_URL = "https://www.sec.gov/cgi-bin/browse-edgar"
 
 
@@ -40,6 +43,7 @@ class SecClient:
         identity = identity or Secrets().edgar_identity
         if not identity:
             raise RuntimeError("EDGAR_IDENTITY is not set (see .env.example)")
+        self.identity = identity
         self.cache_dir = cache_dir
         self._http = http or httpx.Client(headers={"User-Agent": identity}, timeout=60)
         self._last = 0.0
@@ -53,15 +57,18 @@ class SecClient:
         response.raise_for_status()
         return response.text
 
-    def cached_text(self, name: str, url: str, params: dict[str, str] | None = None) -> str:
-        path = self.cache_dir / name
+    def cached_text(
+        self,
+        name: str,
+        url: str,
+        params: dict[str, str] | None = None,
+        root: Path | None = None,
+    ) -> str:
+        path = (root or self.cache_dir) / name
         if path.exists():
             return path.read_text(encoding="utf-8")
         text = self._get(url, params)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(path.suffix + ".tmp")
-        tmp.write_text(text, encoding="utf-8")
-        tmp.replace(path)
+        save_atomic(path, text)
         return text
 
     def tickers(self) -> dict[str, dict[str, Any]]:
@@ -74,6 +81,13 @@ class SecClient:
         c = cik10(cik)
         url = SUBMISSIONS_URL.format(cik=c)
         return json.loads(self.cached_text(f"submissions/CIK{c}.json", url))
+
+    def company_facts(self, cik: int | str, root: Path = XBRL_DIR) -> dict[str, Any]:
+        """Every XBRL fact the company has reported (ROADMAP P1.8 builds the lookup on it).
+        Each value carries the filing's accession and its fiscal year / period labels."""
+        c = cik10(cik)
+        url = COMPANY_FACTS_URL.format(cik=c)
+        return json.loads(self.cached_text(f"companyfacts/CIK{c}.json", url, root=root))
 
     def search_company(self, name: str) -> list[str]:
         """CIKs of companies matching `name` that have filed 10-Ks (for delisted companies)."""
