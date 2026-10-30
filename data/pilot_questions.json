@@ -1,0 +1,176 @@
+{
+  "status": "approved",
+  "seed": 2026,
+  "quotas": {
+    "metrics-generated": 7,
+    "domain-relevant": 7,
+    "novel-generated": 6
+  },
+  "doc_types": [
+    "10k",
+    "10q"
+  ],
+  "reserved_for": "dev split (P2.1)",
+  "questions": [
+    {
+      "financebench_id": "financebench_id_03838",
+      "company": "Block",
+      "question_type": "metrics-generated",
+      "doc_type": "10k",
+      "numeric_answer": true,
+      "question": "What is the FY2019 - FY2020 total revenue growth rate for Block (formerly known as Square)? Answer in units of percents and round to one decimal place. Approach the question asked by assuming the standpoint of an investment banking analyst who only has access to the statement of income."
+    },
+    {
+      "financebench_id": "financebench_id_03473",
+      "company": "Coca-Cola",
+      "question_type": "metrics-generated",
+      "doc_type": "10k",
+      "numeric_answer": true,
+      "question": "What is the FY2017 return on assets (ROA) for Coca Cola? ROA is defined as: FY2017 net income / (average total assets between FY2016 and FY2017). Round your answer to two decimal places. Give a response to the question by relying on the details shown in the balance sheet and the P&L statement."
+    },
+    {
+      "financebench_id": "financebench_id_10285",
+      "company": "Boeing",
+      "question_type": "metrics-generated",
+      "doc_type": "10k",
+      "numeric_answer": true,
+      "question": "We need to calculate a financial metric by using information only provided within the balance sheet. Please answer the following question: what is Boeing's year end FY2018 net property, plant, and equipment (in USD millions)?"
+    },
+    {
+      "financebench_id": "financebench_id_03282",
+      "company": "Netflix",
+      "question_type": "metrics-generated",
+      "doc_type": "10k",
+      "numeric_answer": true,
+      "question": "What is Netflix's year end FY2017 total current liabilities (in USD millions)? Base your judgments on the information provided primarily in the balance sheet."
+    },
+    {
+      "financebench_id": "financebench_id_04481",
+      "company": "PepsiCo",
+      "question_type": "metrics-generated",
+      "doc_type": "10k",
+      "numeric_answer": true,
+      "question": "What is the FY2022 unadjusted EBITDA % margin for PepsiCo? Calculate unadjusted EBITDA using unadjusted operating income and D&A (from cash flow statement). Give a response to the question by relying on the details shown in the statement of cash flows and the P&L statement."
+    },
+    {
+      "financebench_id": "financebench_id_08135",
+      "company": "Amazon",
+      "question_type": "metrics-generated",
+      "doc_type": "10k",
+      "numeric_answer": true,
+      "question": "What is Amazon's year-over-year change in revenue from FY2016 to FY2017 (in units of percents and round to one decimal place)? Calculate what was asked by utilizing the line items clearly shown in the statement of income."
+    },
+    {
+      "financebench_id": "financebench_id_06741",
+      "company": "Walmart",
+      "question_type": "metrics-generated",
+      "doc_type": "10k",
+      "numeric_answer": true,
+      "question": "What is the FY2018 - FY2020 3 year average unadjusted EBITDA % margin for Walmart? Define unadjusted EBITDA as unadjusted operating income + depreciation and amortization from the cash flow statement. Answer in units of percents and round to one decimal place. Calculate what was asked by utilizing the line items clearly shown in the P&L statement and the cash flow statement."
+    },
+    {
+      "financebench_id": "financebench_id_00080",
+      "company": "Paypal",
+      "question_type": "domain-relevant",
+      "doc_type": "10k",
+      "numeric_answer": true,
+      "question": "Does Paypal have positive working capital based on FY2022 data? If working capital is not a useful or relevant metric for this company, then please state that and explain why."
+    },
+    {
+      "financebench_id": "financebench_id_00216",
+      "company": "Verizon",
+      "question_type": "domain-relevant",
+      "doc_type": "10k",
+      "numeric_answer": true,
+      "question": "Does Verizon have a reasonably healthy liquidity profile based on its quick ratio for FY 2022? If the quick ratio is not relevant to measure liquidity, please state that and explain why."
+    },
+    {
+      "financebench_id": "financebench_id_00684",
+      "company": "Amcor",
+      "question_type": "domain-relevant",
+      "doc_type": "10k",
+      "numeric_answer": true,
+      "question": "Does AMCOR have an improving gross margin profile as of FY2023? If gross margin is not a useful metric for a company like this, then state that and explain why."
+    },
+    {
+      "financebench_id": "financebench_id_00807",
+      "company": "3M",
+      "question_type": "domain-relevant",
+      "doc_type": "10q",
+      "numeric_answer": true,
+      "question": "Does 3M have a reasonably healthy liquidity profile based on its quick ratio for Q2 of FY2023? If the quick ratio is not relevant to measure liquidity, please state that and explain why."
+    },
+    {
+      "financebench_id": "financebench_id_00540",
+      "company": "AES Corporation",
+      "question_type": "domain-relevant",
+      "doc_type": "10k",
+      "numeric_answer": true,
+      "question": "Roughly how many times has AES Corporation sold its inventory in FY2022? Calculate inventory turnover ratio for the FY2022; if conventional inventory management is not meaningful for the company then state that and explain why."
+    },
+    {
+      "financebench_id": "financebench_id_00723",
+      "company": "American Express",
+      "question_type": "domain-relevant",
+      "doc_type": "10k",
+      "numeric_answer": false,
+      "question": "Does AMEX have an improving operating margin profile as of 2022? If operating margin is not a useful metric for a company like this, then state that and explain why."
+    },
+    {
+      "financebench_id": "financebench_id_00995",
+      "company": "AMD",
+      "question_type": "domain-relevant",
+      "doc_type": "10k",
+      "numeric_answer": false,
+      "question": "What are the major products and services that AMD sells as of FY22?"
+    },
+    {
+      "financebench_id": "financebench_id_00288",
+      "company": "Best Buy",
+      "question_type": "novel-generated",
+      "doc_type": "10q",
+      "numeric_answer": true,
+      "question": "Was there any drop in Cash & Cash equivalents between FY 2023 and Q2 of FY2024?"
+    },
+    {
+      "financebench_id": "financebench_id_00283",
+      "company": "Pfizer",
+      "question_type": "novel-generated",
+      "doc_type": "10q",
+      "numeric_answer": true,
+      "question": "How much does Pfizer expect to pay to spin off Upjohn in the future in USD million?"
+    },
+    {
+      "financebench_id": "financebench_id_02119",
+      "company": "JPMorgan",
+      "question_type": "novel-generated",
+      "doc_type": "10q",
+      "numeric_answer": true,
+      "question": "If JPM went bankrupted by the end by 2021 Q1 and liquidated all of its assets to pay its shareholders, how much could each shareholder get?"
+    },
+    {
+      "financebench_id": "financebench_id_00591",
+      "company": "Adobe",
+      "question_type": "novel-generated",
+      "doc_type": "10k",
+      "numeric_answer": true,
+      "question": "Does Adobe have an improving Free cashflow conversion as of FY2022?"
+    },
+    {
+      "financebench_id": "financebench_id_00563",
+      "company": "AMD",
+      "question_type": "novel-generated",
+      "doc_type": "10k",
+      "numeric_answer": false,
+      "question": "From FY21 to FY22, excluding Embedded, in which AMD reporting segment did sales proportionally increase the most?"
+    },
+    {
+      "financebench_id": "financebench_id_00702",
+      "company": "Pfizer",
+      "question_type": "novel-generated",
+      "doc_type": "10k",
+      "numeric_answer": false,
+      "question": "Were there any potential events that are not in Pfizer's standard business operations that substantially increased net income in 2019?"
+    }
+  ]
+}
