@@ -72,7 +72,7 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 
 ## 2026-10-30 · Pratosh Karthikeyan · Phase 1 on one branch
 
-**Decision:** All of Phase 1 (P1.1–P1.9) is built on one branch, `data-prep`, with **one commit per task** (descriptive messages, no task IDs). A draft PR is opened at the first push so CI runs on every commit. Each task's `PROGRESS.md` row moves to `review` when its commit lands and to `done` (with the shared PR link) when the branch merges. The PR is merged with **Rebase and merge**, so each task stays a separate commit on `main` (still linear history). This is an exception to T7 (one task per branch), T8 (small PRs) and T10 (squash merge) for Phase 1 only.
+**Decision:** All of Phase 1 (P1.1–P1.9) is built on one branch, `data-prep`, with **one commit per task** (descriptive messages, no task IDs). The branch is pushed after each task, so CI runs on every commit and the work is backed up; the single PR is opened once the data work is complete. Each task's `PROGRESS.md` row moves to `review` when its commit lands and to `done` (with the shared PR link) when the branch merges. The PR is merged with **Rebase and merge**, so each task stays a separate commit on `main` (still linear history). This is an exception to T7 (one task per branch), T8 (small PRs) and T10 (squash merge) for Phase 1 only.
 
 **Why:** One person is working, and the Phase 1 tasks depend on each other in sequence (download → parse → chunk → index). One commit per task, CI on every push, and rebase-merge keep the reviewability and history the rules protect. [HUMAN] steps (P1.1 scope decision, P1.9 quality checks) still stop for a person.
 
