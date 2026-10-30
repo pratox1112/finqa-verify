@@ -1,14 +1,14 @@
 # Defaults for every experiment. Override files change only the fields that define them.
 # The model: section is frozen once on main (CI frozen-file guard; ROADMAP rule 5).
 model:
-  id: "groq:qwen/qwen3.8-27b"   # PLACEHOLDER: confirm the exact Groq model ID in the pilot (P0.6)
+  id: "groq:qwen/qwen3.8-27b"   # confirmed 2026-10-30 (docs/DECISIONS.md)
   temperature: 0
   thinking: "off"               # fixed for every run
   max_tokens: 2048
 llm:
   max_retries: 6                # retries on HTTP 429 / 5xx with exponential backoff
-  requests_per_minute: null     # PLACEHOLDER: set from Groq console limits (P0.6); null = no limit
-  tokens_per_minute: null       # PLACEHOLDER: set from Groq console limits (P0.6); null = no limit
+  requests_per_minute: 30       # Groq free tier for this model (2026-10-30); raise on paid tier
+  tokens_per_minute: 8000       # Groq free tier for this model (2026-10-30); raise on paid tier
   cache_dir: ".cache/llm"       # gitignored; share via the shared artifact location
 retrieval:
   arm: "rag"                    # closed_book | rag | agentic

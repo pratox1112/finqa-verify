@@ -15,6 +15,15 @@ How the five of us (and Claude Code) work in this repo. The full rules are in [R
    `pre-commit install` sets up three Git hooks: lint/format and a `.env` guard on every commit, and an automatic `uv sync` whenever a pull, merge or checkout changes `uv.lock`.
 3. Copy `.env.example` to `.env` and fill in your own keys and `EDGAR_IDENTITY`. Never commit `.env`.
 
+## API keys
+
+- **Everyone uses their own keys** in their own `.env` (copied from `.env.example`). Never share keys in chat or commit them; the pre-commit hook blocks `.env`.
+- **`GROQ_API_KEY`:** create one at console.groq.com → API Keys. Results don't depend on whose key made a call: the model and settings come from `configs/`, and the response cache key doesn't include the API key, so cached responses are valid for everyone.
+- **`EDGAR_IDENTITY`:** your name and email, e.g. `"Jane Doe jane@northeastern.edu"`. The SEC requires it on every download; no signup.
+- **Langfuse keys** are optional; tracing turns off cleanly without them.
+- **Check your setup:** `uv run pytest -m integration` makes one real Groq call (it is skipped if no key is found).
+- **Rate limits:** the free tier is fine for development. Groq limits apply per organization, so keys in the same Groq org share one set of limits. Official test-set runs happen from one account on a clean `main` (see `docs/DECISIONS.md` for the current plan).
+
 ## Working on a task
 
 1. **Claim it** in [PROGRESS.md](PROGRESS.md): status `in-progress`, your name, your branch.
