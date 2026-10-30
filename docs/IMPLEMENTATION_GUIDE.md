@@ -154,19 +154,22 @@ Grid and ablation files override only the fields that define them.
 
 ### 0.4 Shared schemas (`schemas.py`)
 
-Agreed by the whole team before module code is written, then frozen (guarded by CI).
+Agreed by the whole team before module code is written, then frozen (guarded by CI). The code in `src/finqa/schemas.py` is authoritative; this sketch reflects the 2026-10-30 schema review (`docs/DECISIONS.md`).
 
 ```python
+Unit = Literal["USD", "USD/share", "%", "shares", "ratio", "days"]
+Period = str  # validated: "FY2022" | "Q3 FY2022" | "6M FY2022" / "9M FY2022" (company fiscal year)
+
 class Chunk(BaseModel):
     chunk_id: str; cik: str; ticker: str; form: str
-    fiscal_year: int; period: str | None; section: str
+    fiscal_year: int; period: Period | None; section: str
     is_table: bool; unit_scale: float | None  # 1e3, 1e6, 1e9 or None
     text: str; source_accession: str
 
 class Claim(BaseModel):
     claim_id: str; metric: str          # e.g. "total revenue"
-    value: float; unit: str             # "USD", "%", "shares", "ratio"
-    period: str                         # e.g. "FY2022"
+    value: float; unit: Unit            # full units; 12.5% stored as 12.5
+    period: Period                      # e.g. "FY2022"
     chunk_ids: list[str]                # evidence cited
     derived_from: list[str] = []        # claim_ids used to compute this one
     expression: str | None = None       # e.g. "(a - b) / b" for derived values
@@ -174,8 +177,10 @@ class Claim(BaseModel):
 class Draft(BaseModel):
     question_id: str; retrieval_arm: str
     answer_text: str; claims: list[Claim]
+    answer_claim_id: str | None = None  # the claim that answers the question; None if qualitative
     evidence: dict[str, Chunk]          # every chunk the generator saw
     trace_id: str; latency_s: float; tokens_in: int; tokens_out: int
+    error: str | None = None            # generation failed: scored incorrect, never dropped
 
 class Verdict(BaseModel):
     claim_id: str; ok: bool | None      # None = check could not run
@@ -187,6 +192,7 @@ class VerifiedResult(BaseModel):
     claims_before: list[Claim]; claims_after: list[Claim]
     verdicts: list[Verdict]; revisions_used: int
     flagged_claim_ids: list[str]; latency_s: float; tokens_in: int; tokens_out: int
+    error: str | None = None            # verification failed: claims_after = claims_before
 
 class ErrorType(str, Enum):
     WRONG_PERIOD = "wrong_period"; WRONG_UNIT = "wrong_unit_or_scale"
@@ -195,7 +201,7 @@ class ErrorType(str, Enum):
     OTHER = "other"
 
 class Annotation(BaseModel):
-    claim_id: str; run_id: str; annotator: str
+    question_id: str; claim_id: str; run_id: str; annotator: str
     correct: bool; error_type: ErrorType | None; note: str = ""
 ```
 
