@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import csv
 import json
-import re
 import sys
 from collections import Counter
 from pathlib import Path
@@ -21,6 +20,7 @@ from typing import Any
 import httpx
 
 from finqa.config import CONFIGS_DIR
+from finqa.verifiers.numbers import extract_numbers, gold_value
 
 URL = (
     "https://huggingface.co/datasets/PatronusAI/financebench/resolve/main/financebench_merged.jsonl"
@@ -43,7 +43,10 @@ AUDIT_COLUMNS = [
     "question_type",
     "question_reasoning",
     "answer",
-    "answer_has_number",
+    "answer_kind",
+    "gold_value",
+    "gold_unit",
+    "answer_numbers",
     "in_scope",
     "exclusion_reason",
 ]
@@ -77,6 +80,28 @@ def in_scope(record: dict[str, Any]) -> bool:
     return record["doc_type"] in IN_SCOPE_DOC_TYPES
 
 
+def gold_columns(question: str, answer: str) -> dict[str, Any]:
+    """Gold value for single-number answers (ROADMAP P1.2); every number for the rest.
+
+    answer_kind: "number" (the answer is one number), "text_with_numbers" or "text".
+    gold_unit is empty when neither answer nor question states a unit (flagged, not dropped).
+    """
+    gold = gold_value(question, answer)
+    numbers = extract_numbers(answer)
+    if gold is not None:
+        kind = "number"
+    elif numbers:
+        kind = "text_with_numbers"
+    else:
+        kind = "text"
+    return {
+        "answer_kind": kind,
+        "gold_value": "" if gold is None else repr(gold.value),
+        "gold_unit": "" if gold is None or gold.unit is None else gold.unit,
+        "answer_numbers": "; ".join(f"{n.value!r} {n.unit or '?'}" for n in numbers),
+    }
+
+
 def audit_rows(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     rows = []
     for r in sorted(records, key=lambda r: r["financebench_id"]):
@@ -91,7 +116,7 @@ def audit_rows(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "question_type": r["question_type"],
                 "question_reasoning": r.get("question_reasoning") or "",
                 "answer": r["answer"],
-                "answer_has_number": bool(re.search(r"\d", r["answer"])),
+                **gold_columns(r["question"], r["answer"]),
                 "in_scope": keep,
                 "exclusion_reason": ""
                 if keep
@@ -155,8 +180,27 @@ def scope_report(rows: list[dict[str, Any]]) -> str:
     lines += [f"| {t} | {n} |" for t, n in sorted(by_type_kept.items())]
     lines += [
         "",
-        f"In-scope questions whose gold answer contains a number: "
-        f"{sum(r['answer_has_number'] for r in kept)} of {len(kept)}.",
+        "In-scope gold answers by kind (`answer_kind` in the audit):",
+        "",
+        "| Answer kind | Questions |",
+        "|---|---|",
+        f"| a single number (`gold_value` set) | "
+        f"{sum(r['answer_kind'] == 'number' for r in kept)} |",
+        "| text containing numbers | "
+        f"{sum(r['answer_kind'] == 'text_with_numbers' for r in kept)} |",
+        f"| text only | {sum(r['answer_kind'] == 'text' for r in kept)} |",
+        "",
+        "Single-number answers with no unit in the answer or the question (flagged, not "
+        "dropped): "
+        + (
+            ", ".join(
+                f"`{r['financebench_id']}`"
+                for r in kept
+                if r["answer_kind"] == "number" and not r["gold_unit"]
+            )
+            or "none"
+        )
+        + ".",
         "",
         "## Companies with no in-scope questions",
         "",

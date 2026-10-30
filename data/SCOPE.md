@@ -31,7 +31,15 @@ In-scope questions by question type:
 | metrics-generated | 50 |
 | novel-generated | 27 |
 
-In-scope questions whose gold answer contains a number: 107 of 127.
+In-scope gold answers by kind (`answer_kind` in the audit):
+
+| Answer kind | Questions |
+|---|---|
+| a single number (`gold_value` set) | 52 |
+| text containing numbers | 49 |
+| text only | 26 |
+
+Single-number answers with no unit in the answer or the question (flagged, not dropped): `financebench_id_01319`.
 
 ## Companies with no in-scope questions
 
