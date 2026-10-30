@@ -49,10 +49,27 @@ jobs:
       - name: Unit tests
         run: uv run --no-sync pytest -m "not integration" --cov=finqa --cov-report=term-missing
 
+      - name: PROGRESS.md is valid
+        run: uv run --no-sync python scripts/check_progress.py
+
       # Added by later tasks:
       #   - Config validation: load every YAML in configs/ (configuration system, P0.2)
       #   - Pipeline smoke test: dummy generator + verifier through both runner stages (runner, P2.2)
-      #   - Progress check (P0.10)
+
+  # Every PR updates PROGRESS.md unless it carries the no-progress-update label (T5).
+  progress-updated:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # HEAD is the PR merged into its base; HEAD^1 is that base
+
+      - name: PROGRESS.md updated in this PR
+        run: >-
+          python3 scripts/check_progress.py --base HEAD^1 --head HEAD
+          ${{ contains(github.event.pull_request.labels.*.name, 'no-progress-update') && '--exempt' || '' }}
 
   # Fails a PR that changes a frozen file unless it carries the approved-freeze-change label (rule 5).
   frozen-files:

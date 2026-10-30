@@ -151,8 +151,8 @@ Five people and Claude Code share this repo. These rules apply to everyone, incl
 
 - **P0.10 Progress check** — part of `ci.yml`
   - A script (`scripts/check_progress.py`) that fails CI if `PROGRESS.md` is malformed: every task and gate ID in `ROADMAP.md` appears exactly once; every status is one of `todo`, `in-progress`, `review`, `blocked`, `done`; every `done` row has a PR link; every `blocked` row has a matching entry under Blockers.
-  - Fail a pull request that should have updated `PROGRESS.md` but didn't (T5). Branch names no longer carry task IDs (T7), so **decide with the team** how the check identifies such PRs (e.g. every PR, with an exempt label) and record it in `docs/DECISIONS.md`.
-  - *Accept:* a PR with an invalid status, a missing task ID, or no `PROGRESS.md` change on a task branch fails; a correct PR passes.
+  - Fail any pull request that doesn't modify `PROGRESS.md`, unless it carries the label `no-progress-update` (T5; decided in `docs/DECISIONS.md`, since branch names carry no task IDs).
+  - *Accept:* a PR with an invalid status, a missing task ID, or no `PROGRESS.md` change (and no exempt label) fails; a correct PR passes.
 
 - **P0.11 Claude Code guardrails** — `.claude/settings.json` and `CLAUDE.md`
   - **[HUMAN]** creates and commits these files (they govern Claude Code, so Claude Code drafts them and a person reviews them).
