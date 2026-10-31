@@ -34,6 +34,7 @@ data/chroma/
 data/cache/
 data/sec/
 data/sections/
+data/chunks/
 data/financebench/
 
 # Claude Code personal overrides
