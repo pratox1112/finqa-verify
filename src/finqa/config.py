@@ -60,6 +60,14 @@ class EmbeddingConfig(_Section):
     model: str
 
 
+class ChunkingConfig(_Section):
+    """Index build settings (ROADMAP P1.6); sizes in tokens (finqa.ingestion.chunk)."""
+
+    text_max_tokens: int = Field(gt=0)
+    overlap_tokens: int = Field(ge=0)
+    table_max_tokens: int = Field(gt=0)  # longer tables are split, repeating the header
+
+
 class DataConfig(_Section):
     question_split: Literal["dev", "test"]
 
@@ -71,6 +79,7 @@ class Config(_Section):
     retrieval: RetrievalConfig
     verification: VerificationConfig
     embedding: EmbeddingConfig
+    chunking: ChunkingConfig
     data: DataConfig
 
 

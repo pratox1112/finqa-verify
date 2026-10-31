@@ -214,7 +214,7 @@ Five people and Claude Code share this repo. These rules apply to everyone, incl
   - *Accept:* fallback rate reported per company; tests on two sample filings.
 
 - **P1.6 Chunking and unit scale**
-  - `src/finqa/ingestion/chunk.py`: text chunks of ~500–800 tokens with ~100 overlap on paragraph boundaries; tables as single markdown chunks, split into row groups with the header repeated when over ~1,500 tokens; `unit_scale` detected from captions ("in millions", "in thousands, except per share"); deterministic chunk IDs.
+  - `src/finqa/ingestion/chunk.py`: text chunks of at most 450 tokens with ~60 overlap on paragraph boundaries; tables as single markdown chunks, split into row groups with the header repeated when over 800 tokens (sizes decided 2026-10-30, `docs/DECISIONS.md`; originally ~500–800 / ~100 / ~1,500); `unit_scale` detected from captions ("in millions", "in thousands, except per share"); deterministic chunk IDs.
   - *Accept:* tests confirm a split table repeats its header, unit scale is detected on sample tables, and chunk IDs are stable across two runs.
 
 - **P1.7 Embedding and index**
