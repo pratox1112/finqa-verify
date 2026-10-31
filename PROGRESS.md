@@ -77,7 +77,7 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 | P1.4 | Filing download | review | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | 819 filings (206 10-K, 613 10-Q), 427 MB in data/raw; all 72 FinanceBench documents found. Fiscal labels by filing order: 803 agree with XBRL, 15 corrected, 1 had none. Manifest committed: data/filings_manifest.csv. |
 | P1.5 | Section parsing | review | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | src/finqa/ingestion/parse.py: sections cut from Markdown (tables intact) using edgartools boundaries. 4,003/4,095 via edgartools, 8 heading fallback, 0 failed, 84 absent. Fallback rate per company in data/parse_stats.csv. Known gaps in DECISIONS.md. |
 | P1.6 | Chunking and unit scale | review | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | src/finqa/ingestion/chunk.py: 82,800 text chunks (≤450 tokens, 60 overlap) + 93,992 table chunks (≤800 tokens, header repeated; 4,155 tables split). Unit scale stated on 77.7% of dollar tables, else None. Sizes in configs/base.yaml (smaller than roadmap, DECISIONS.md). Counts in data/chunk_stats.csv. Open: PepsiCo-style section-wide scale. |
-| P1.7 | Embedding and index | in-progress | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | |
+| P1.7 | Embedding and index | in-progress | Pratosh Karthikeyan | `data-prep` | 2026-10-31 | src/finqa/ingestion/index.py + tests (filtered query returns only matching chunks). Full build of ~177k chunks on a free Kaggle GPU pending (docs/BUILD_INDEX.md; laptop CPU would take ~16 h). |
 | P1.8 | XBRL cache and lookup | in-progress | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | |
 | P1.9 | Quality checks | in-progress | Pratosh Karthikeyan | `data-prep` | 2026-10-30 | |
 | G1 | **GATE 1** | todo | | | | |

@@ -58,6 +58,7 @@ class VerificationConfig(_Section):
 
 class EmbeddingConfig(_Section):
     model: str
+    query_instruction: str  # prepended to queries only, as the model card prescribes
 
 
 class ChunkingConfig(_Section):
