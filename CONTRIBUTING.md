@@ -49,6 +49,8 @@ If `main` is ever red, fixing it comes before everything else (T4).
 
 Only through `uv add <pkg>` / `uv remove <pkg>` (or `uv add --dev`), committing the updated `uv.lock` in the same PR (T2). Never edit `uv.lock` by hand. CI fails if `uv.lock` is out of date.
 
+The embedding model's libraries (`torch`, CPU-only, and `sentence-transformers`) are in the `embed` group (`uv add --group embed <pkg>`). `uv sync` installs them for everyone; CI skips them (`--no-group embed`) because unit tests use a fake embedder. The search index is built once on a free GPU: [docs/BUILD_INDEX.md](docs/BUILD_INDEX.md).
+
 ## Tests
 
 - Unit tests never touch the network. Use small fixtures in `tests/fixtures/`.

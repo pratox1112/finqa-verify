@@ -132,3 +132,11 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 **Result on all 819 filings:** 82,800 text chunks and 93,992 table chunks from 89,012 tables (4,155 split); unit scale stated on 39.2% of all tables and 77.7% of tables with dollar amounts (`data/chunk_stats.csv`). Two companies state the scale once for a whole section in prose ("Unless otherwise noted, tabular dollars are in millions": PepsiCo, American Water Works); these tables are left at None for now (open question below).
 
 **Open question (for the team):** should an explicit section-wide statement like PepsiCo's set `unit_scale` for that section's tables that state nothing themselves? It is stated, not guessed, but it is not on the table.
+
+## 2026-10-31 · Pratosh Karthikeyan · Search index: build on a free GPU; embedding libraries in their own group
+
+**Decision:** (1) The Chroma index (`src/finqa/ingestion/index.py`) is built once on a free **Kaggle GPU** with the same code and model (`docs/BUILD_INDEX.md`), then downloaded into `data/chroma/` (gitignored, shared through the shared artifact location). (2) `torch` (CPU-only, from PyTorch's CPU index) and `sentence-transformers` are in an `embed` dependency group that `uv sync` installs by default; CI skips it (`--no-group embed`) since unit tests use a fake embedder. `chromadb` is a main dependency. (3) Documents are embedded as they are; queries get the model card's instruction prefix (`embedding.query_instruction` in `configs/base.yaml`); vectors are L2-normalized; the collection uses cosine distance and records the model name, refusing a different one.
+
+**Why:** On this laptop's CPU (Intel Core Ultra 7 155U) bge-base embeds about 3 chunks per second, about 16 hours for 177,000 chunks; a GPU takes about 20 minutes. GPU and CPU vectors differ only by rounding. Keeping torch out of CI keeps every push fast.
+
+**Observations from the trial:** real bge token counts are lower than the chunker's estimate (sample of 128 chunks from a 3M 10-K: mean 262, 3 over 512), so the 450-token limit leaves headroom. A filtered search (3M, FY2018, 10-K, Item 8) returns only matching chunks, but for "capital expenditure" it does not rank the cash-flow statement ("Purchases of property, plant and equipment") in the top 3. That vocabulary gap is part of what the retrieval arms are measured on; not tuned here.

@@ -35,7 +35,7 @@ jobs:
         run: uv lock --check
 
       - name: Install exactly from uv.lock
-        run: uv sync --frozen
+        run: uv sync --frozen --no-group embed  # torch etc. not needed by unit tests
 
       - name: Lint
         run: uv run --no-sync ruff check .
@@ -92,7 +92,7 @@ jobs:
         run: uv python install
 
       - name: Install exactly from uv.lock
-        run: uv sync --frozen
+        run: uv sync --frozen --no-group embed  # torch etc. not needed by unit tests
 
       - name: Frozen-file guard
         run: >-
