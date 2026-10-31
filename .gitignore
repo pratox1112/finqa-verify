@@ -33,6 +33,7 @@ data/index/
 data/chroma/
 data/cache/
 data/sec/
+data/sections/
 data/financebench/
 
 # Claude Code personal overrides
