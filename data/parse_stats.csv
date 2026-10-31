@@ -1,0 +1,32 @@
+company,filings,sections_expected,edgartools,heading_fallback,absent,failed,fallback_rate
+3M,36,180,180,0,0,0,0.0
+AES Corporation,16,80,80,0,0,0,0.0
+AMD,44,220,220,0,0,0,0.0
+Activision Blizzard,16,80,80,0,0,0,0.0
+Adobe,44,220,220,0,0,0,0.0
+Amazon,24,120,120,0,0,0,0.0
+Amcor,22,110,110,0,0,0,0.0
+American Express,16,80,80,0,0,0,0.0
+American Water Works,24,120,120,0,0,0,0.0
+Best Buy,44,220,190,0,30,0,0.0
+Block,25,125,125,0,0,0,0.0
+Boeing,32,160,160,0,0,0,0.0
+CVS Health,32,160,151,0,9,0,0.0
+Coca-Cola,36,180,177,3,0,0,0.017
+Corning,24,120,120,0,0,0,0.0
+Costco,16,80,80,0,0,0,0.0
+General Mills,28,140,117,2,21,0,0.014
+JPMorgan,24,120,120,0,0,0,0.0
+Johnson & Johnson,16,80,68,0,12,0,0.0
+Kraft Heinz,16,80,80,0,0,0,0.0
+Lockheed Martin,24,120,120,0,0,0,0.0
+MGM Resorts,36,180,180,0,0,0,0.0
+Microsoft,44,220,220,0,0,0,0.0
+Netflix,24,120,108,0,12,0,0.0
+Nike,36,180,180,0,0,0,0.0
+Paypal,16,80,80,0,0,0,0.0
+PepsiCo,20,100,100,0,0,0,0.0
+Pfizer,24,120,117,3,0,0,0.025
+Ulta Beauty,16,80,80,0,0,0,0.0
+Verizon,20,100,100,0,0,0,0.0
+Walmart,24,120,120,0,0,0,0.0
