@@ -112,6 +112,16 @@ def test_build_is_resumable(tmp_path: Path, chunks_root: Path) -> None:
     assert again == 0 and collection.count() == len(CHUNKS)
 
 
+def test_load_chunks_keeps_unicode_line_separators_in_text(tmp_path: Path) -> None:
+    from finqa.ingestion.index import load_chunks
+
+    chunk = CHUNKS[0].model_copy(update={"text": "Revenue grew\x85 strongly"})
+    path = tmp_path / chunk.cik / f"{chunk.source_accession}.jsonl"
+    path.parent.mkdir(parents=True)
+    path.write_text(chunk.model_dump_json() + "\n", encoding="utf-8")
+    assert load_chunks(chunk.cik, chunk.source_accession, tmp_path) == [chunk]
+
+
 def test_index_refuses_a_different_embedding_model(tmp_path: Path) -> None:
     open_collection("fake-model", tmp_path / "chroma")
     with pytest.raises(RuntimeError, match="fake-model"):
