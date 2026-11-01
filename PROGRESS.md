@@ -249,3 +249,4 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.6 · Pilot script, FinanceBench loader, pilot question selection · https://github.com/pratox1112/finqa-verify/pull/12
 - 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P1.1–P1.9 · Phase 1 started on one branch; data decisions recorded in docs/DECISIONS.md · https://github.com/pratox1112/finqa-verify/pull/13
 - 2026-11-01 · Pratosh Karthikeyan (with Claude Code) · P1.1–P1.9, G1 · Filing pipeline merged; automated QA on all 206 10-Ks (151 pass, 29 warn, 26 flag); Gate 1 waits on teammates' confirmation and Gate 0 · https://github.com/pratox1112/finqa-verify/pull/13
+- 2026-11-01 · Pratosh Karthikeyan · P0.9 · Shared data folder (OneDrive) and teammate setup steps in CONTRIBUTING.md; shareable link
