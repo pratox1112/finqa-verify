@@ -6,6 +6,9 @@ from pathlib import Path
 import pytest
 
 SETTINGS = Path(__file__).resolve().parents[1] / ".claude" / "settings.json"
+# The settings are kept locally, not in the repo (DECISIONS.md, 2026-11-01): checked where
+# they exist, skipped elsewhere (CI).
+pytestmark = pytest.mark.skipif(not SETTINGS.exists(), reason="no local .claude/settings.json")
 TOOLS = ["Bash", "PowerShell"]
 # The state-changing commands T17 names explicitly.
 T17_DENIED = [
