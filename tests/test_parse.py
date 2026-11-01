@@ -239,6 +239,23 @@ def test_heading_replaces_a_section_edgartools_took_from_elsewhere() -> None:
     assert item7.text.startswith("# Item 7. Management's Discussion")
 
 
+def test_heading_after_a_footer_link_or_with_a_title_split_over_lines_still_counts() -> None:
+    from finqa.ingestion.parse import parse_filing
+
+    note7 = "7. Leases " + "Corning has operating and finance leases. " * 20
+    tail = "\n\n# Item 7A. Market Risk\n\nRates.\n\n### 7. Leases\n\n" + note7[10:]
+    # Corning FY2019-20: the heading follows the page footer's "Index" link on one line
+    md = "Repurchases were suspended. <u>Index</u> # Item 7. Management's Discussion\n\n"
+    item7 = {s.section: s for s in parse_filing(md + FILLER + tail, {"Item 7": note7}, "10-K")}
+    assert item7["Item 7"].text.startswith("# Item 7. Management's Discussion")
+    # Corning FY2021: "Management’s" split at the apostrophe across three lines
+    md = "# Item 7. Management\n\n’\n\n**s Discussion and Analysis**\n\n"
+    item7 = {s.section: s for s in parse_filing(md + FILLER + tail, {"Item 7": note7}, "10-K")}
+    assert item7["Item 7"].method == "heading"
+    # an "Item" mid-line without the footer link is still not a heading
+    assert headings("see Item 7. Management's Discussion", "10-K") == []
+
+
 def test_heading_does_not_replace_with_a_cross_reference_or_subsection() -> None:
     from finqa.ingestion.parse import _better_heading
 

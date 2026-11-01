@@ -200,8 +200,11 @@ def fit_to_headings(markdown: str, start: int, end: int, key: str) -> tuple[int,
 
 # --- Method 2: headings -----------------------------------------------------------------------
 
+# At a line start, or right after a page footer's "Index" link on the same line (Corning
+# FY2019-20: "...All Rights Reserved. <u>Index</u> # Item 7. Management's Discussion").
 _HEADING = re.compile(
-    r"^[#*| \t]*(?:part[ \t]+(?P<part>i{1,2})\W*)?item[ \t ]*(?P<item>\d{1,2}[a-c]?)"
+    r"(?:^|(?<=<u>Index</u> ))"
+    r"[#*| \t]*(?:part[ \t]+(?P<part>i{1,2})\W*)?item[ \t ]*(?P<item>\d{1,2}[a-c]?)"
     r"[ \t]*\\?[.:\-—*]",  # "Item 7." or, escaped as edgartools writes it, "Item 7\."
     re.IGNORECASE | re.MULTILINE,
 )
@@ -407,6 +410,7 @@ def titled(text: str, key: str) -> bool:
 
 
 MIN_HEADING_SECTION = 2000  # shorter heading spans are cross-references ("see pages 50-80")
+TITLE_OPENING = 120  # characters of a heading span read for its title
 
 
 def _better_heading(markdown: str, key: str, edgar: tuple[int, int], alt: tuple[int, int]) -> bool:
@@ -416,8 +420,11 @@ def _better_heading(markdown: str, key: str, edgar: tuple[int, int], alt: tuple[
     if alt[1] - alt[0] < MIN_HEADING_SECTION:
         return False
     first_line = markdown[alt[0] : alt[1]].split("\n", 1)[0]
+    # The title may run over a few lines: Corning FY2021 splits "Management’s" at the
+    # apostrophe ("# Item 7. Management\n\n’\n\n**s Discussion...").
+    opening = markdown[alt[0] : min(alt[1], alt[0] + TITLE_OPENING)]
     # "Item 1. Business–Government Regulation" (Pfizer) names a subsection, not the item
-    if not titled(first_line, key) or re.search("[–—]", first_line):
+    if not titled(opening, key) or re.search("[–—]", first_line):
         return False
     overlap = max(0, min(edgar[1], alt[1]) - max(edgar[0], alt[0]))
     return overlap < 0.5 * (edgar[1] - edgar[0])
