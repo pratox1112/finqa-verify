@@ -37,8 +37,10 @@ data/sections/
 data/chunks/
 data/financebench/
 
-# Claude Code personal overrides
-.claude/settings.local.json
+# Claude Code files are kept locally, not in the repo (docs/DECISIONS.md, 2026-11-01)
+.claude/
+CLAUDE.md
+CLAUDE.local.md
 
 # OS / editor
 .DS_Store
