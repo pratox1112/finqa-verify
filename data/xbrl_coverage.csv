@@ -1,0 +1,32 @@
+company,cik,metrics_reported,metrics_missing,restatement_candidates
+3M,0000066740,24,gross_profit,102
+AES Corporation,0000874761,22,operating_income;total_liabilities;long_term_debt,98
+AMD,0000002488,22,dividends_paid;total_liabilities;total_equity,64
+Activision Blizzard,0000718877,23,gross_profit;total_equity,31
+Adobe,0000796343,21,effective_tax_rate;dividends_paid;total_equity;inventory,18
+Amazon,0001018724,20,gross_profit;restructuring_costs;dividends_paid;total_liabilities;total_equity,47
+Amcor,0001748790,25,,42
+American Express,0000004962,16,cost_of_revenue;gross_profit;operating_income;current_assets;current_liabilities;total_equity;accounts_receivable;inventory;accounts_payable,59
+American Water Works,0001410636,20,cost_of_revenue;gross_profit;restructuring_costs;total_liabilities;inventory,55
+Best Buy,0000764478,24,total_liabilities,48
+Block,0001512673,24,dividends_paid,40
+Boeing,0000012927,24,restructuring_costs,102
+CVS Health,0000064803,25,,86
+Coca-Cola,0000021344,24,total_liabilities,69
+Corning,0000024741,24,long_term_debt,39
+Costco,0000909832,24,restructuring_costs,11
+General Mills,0000040704,25,,25
+JPMorgan,0000019617,14,cost_of_revenue;gross_profit;operating_income;restructuring_costs;capital_expenditure;current_assets;current_liabilities;accounts_receivable;inventory;accounts_payable;long_term_debt,63
+Johnson & Johnson,0000200406,25,,77
+Kraft Heinz,0001637459,24,restructuring_costs,161
+Lockheed Martin,0000936468,25,,147
+MGM Resorts,0000789570,23,cost_of_revenue;gross_profit,58
+Microsoft,0000789019,24,total_equity,99
+Netflix,0001065280,20,restructuring_costs;dividends_paid;total_equity;accounts_receivable;inventory,36
+Nike,0000320187,23,operating_income;total_liabilities,25
+Paypal,0001633917,22,cost_of_revenue;gross_profit;inventory,31
+PepsiCo,0000077476,25,,45
+Pfizer,0000078003,23,gross_profit;operating_income,151
+Ulta Beauty,0001403568,23,dividends_paid;total_equity,0
+Verizon,0000732712,20,gross_profit;restructuring_costs;total_liabilities;shareholders_equity;long_term_debt,21
+Walmart,0000104169,23,gross_profit;total_liabilities,20

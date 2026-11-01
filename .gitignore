@@ -45,3 +45,6 @@ data/financebench/
 Thumbs.db
 .vscode/
 .idea/
+
+# Index build transfer files (docs/BUILD_INDEX.md)
+*.zip
