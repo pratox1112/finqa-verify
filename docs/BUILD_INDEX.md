@@ -7,7 +7,7 @@ The code is the same as the local build (`src/finqa/ingestion/index.py`), and so
 ## Before you start (on your machine)
 
 1. Build the chunks if you haven't: `uv run python -m finqa.ingestion.chunk` (about 30 seconds).
-2. Zip them (PowerShell, from the repo root): `Compress-Archive -Path data/chunks -DestinationPath chunks.zip`
+2. Zip them (from the repo root): `uv run python -c "import shutil; shutil.make_archive('chunks', 'zip', 'data', 'chunks')"`. Don't use PowerShell's `Compress-Archive`: it writes `\` in the paths inside the zip, and Kaggle rejects every file ("contains a forbidden character in name").
 3. Make sure the branch with `index.py` is pushed; the notebook clones it from GitHub.
 
 ## On Kaggle

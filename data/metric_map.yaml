@@ -1,0 +1,175 @@
+# Metric names -> US-GAAP XBRL concepts (ROADMAP P1.8), for the grounded verifier's XBRL
+# check and error typing. XBRL never decides correctness (docs/LABELING_PROTOCOL.md).
+#
+# Each metric lists every concept the 31 in-scope companies use for it in their filings;
+# a lookup returns the values of all of them, each tagged with its concept. Started from
+# the base line items FinanceBench questions use; ratios (DPO, ROA, margins, ...) are
+# computed from these and are not mapped. A company with no value for a metric (banks have
+# no current assets; Amazon pays no dividends) gets "no mapping", which the verifier treats
+# as unverifiable, not as an error.
+#
+#   unit:   the shared schema's Unit; "%" values are stored by XBRL as fractions (0.21)
+#           and converted to percent numbers (21.0)
+#   period: duration (income and cash-flow items) or instant (balance-sheet items)
+
+revenue:
+  unit: USD
+  period: duration
+  concepts:
+    - Revenues
+    - RevenueFromContractWithCustomerExcludingAssessedTax
+    - RevenueFromContractWithCustomerIncludingAssessedTax
+    - RevenuesNetOfInterestExpense  # banks and card issuers: JPMorgan, American Express
+    - SalesRevenueNet               # pre-2018 filings
+    - SalesRevenueGoodsNet
+
+cost_of_revenue:
+  unit: USD
+  period: duration
+  concepts:
+    - CostOfRevenue
+    - CostOfGoodsAndServicesSold
+    - CostOfGoodsSold
+    - CostOfGoodsAndServiceExcludingDepreciationDepletionAndAmortization
+
+gross_profit:
+  unit: USD
+  period: duration
+  concepts: [GrossProfit]
+
+operating_income:
+  unit: USD
+  period: duration
+  concepts: [OperatingIncomeLoss]
+
+net_income:  # attributable to the company's shareholders
+  unit: USD
+  period: duration
+  concepts: [NetIncomeLoss]
+
+income_tax_expense:
+  unit: USD
+  period: duration
+  concepts: [IncomeTaxExpenseBenefit]
+
+effective_tax_rate:
+  unit: "%"
+  period: duration
+  concepts: [EffectiveIncomeTaxRateContinuingOperations]
+
+restructuring_costs:
+  unit: USD
+  period: duration
+  concepts:
+    - RestructuringCharges
+    - RestructuringSettlementAndImpairmentProvisions
+
+eps_diluted:
+  unit: USD/share
+  period: duration
+  concepts: [EarningsPerShareDiluted]
+
+depreciation_and_amortization:
+  unit: USD
+  period: duration
+  concepts:
+    - DepreciationDepletionAndAmortization
+    - DepreciationAndAmortization
+    - DepreciationAmortizationAndAccretionNet
+    - Depreciation
+
+operating_cash_flow:
+  unit: USD
+  period: duration
+  concepts:
+    - NetCashProvidedByUsedInOperatingActivities
+    - NetCashProvidedByUsedInOperatingActivitiesContinuingOperations
+
+capital_expenditure:
+  unit: USD
+  period: duration
+  concepts:
+    - PaymentsToAcquirePropertyPlantAndEquipment
+    - PaymentsToAcquireProductiveAssets
+    - PaymentsForCapitalImprovements
+
+dividends_paid:
+  unit: USD
+  period: duration
+  concepts:
+    - PaymentsOfDividendsCommonStock
+    - PaymentsOfDividends
+    - PaymentsOfOrdinaryDividends
+
+total_assets:
+  unit: USD
+  period: instant
+  concepts: [Assets]
+
+current_assets:
+  unit: USD
+  period: instant
+  concepts: [AssetsCurrent]
+
+current_liabilities:
+  unit: USD
+  period: instant
+  concepts: [LiabilitiesCurrent]
+
+total_liabilities:
+  unit: USD
+  period: instant
+  concepts: [Liabilities]
+
+shareholders_equity:  # attributable to the company's shareholders
+  unit: USD
+  period: instant
+  concepts: [StockholdersEquity]
+
+total_equity:  # including noncontrolling interests
+  unit: USD
+  period: instant
+  concepts: [StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest]
+
+cash_and_equivalents:
+  unit: USD
+  period: instant
+  concepts: [CashAndCashEquivalentsAtCarryingValue]
+
+accounts_receivable:
+  unit: USD
+  period: instant
+  concepts:
+    - AccountsReceivableNetCurrent
+    - ReceivablesNetCurrent
+    - AccountsNotesAndLoansReceivableNetCurrent  # PepsiCo
+
+inventory:
+  unit: USD
+  period: instant
+  concepts:
+    - InventoryNet
+    - InventoryFinishedGoodsNetOfReserves  # Nike
+    - InventoryFinishedGoods               # Ulta Beauty
+    - InventoryNetOfAllowancesCustomerAdvancesAndProgressBillings  # Boeing
+
+accounts_payable:
+  unit: USD
+  period: instant
+  concepts:
+    - AccountsPayableCurrent
+    - AccountsPayableTradeCurrent
+
+ppe_net:
+  unit: USD
+  period: instant
+  concepts:
+    - PropertyPlantAndEquipmentNet
+    - PropertyPlantAndEquipmentAndFinanceLeaseRightOfUseAssetAfterAccumulatedDepreciationAndAmortization
+
+long_term_debt:
+  unit: USD
+  period: instant
+  concepts:
+    - LongTermDebtNoncurrent
+    - LongTermDebt
