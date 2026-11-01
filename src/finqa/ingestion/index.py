@@ -13,6 +13,7 @@ and chunks are upserted by chunk ID, so an interrupted filing is simply redone.
     uv run python -m finqa.ingestion.index --limit 5      # trial on 5 filings
     uv run python -m finqa.ingestion.index                # everything (~16 hours on a laptop CPU)
     uv run python -m finqa.ingestion.index --check        # count + a sample filtered search
+    uv run python -m finqa.ingestion.index --sync         # re-index filings whose chunks changed
 
 The full build was run on a free Kaggle GPU (~20 minutes; docs/BUILD_INDEX.md):
     python -m finqa.ingestion.index --device cuda --batch-size 128 \\
@@ -186,6 +187,36 @@ def build(
     return added
 
 
+def sync(
+    manifest: Iterable[dict[str, str]],
+    embedder: Embedder,
+    collection: chromadb.Collection,
+    chunks_root: Path = CHUNKS_DIR,
+) -> list[str]:
+    """Re-index every filing whose chunk file no longer matches the index (IDs, text or
+    metadata), e.g. after a parsing fix; returns their accessions. Unchanged filings are
+    only compared, not re-embedded."""
+    changed = []
+    for row in manifest:
+        chunks = load_chunks(row["cik"], row["accession"], chunks_root)
+        where_filing = {"source_accession": row["accession"]}
+        stored = collection.get(where=where_filing, include=["documents", "metadatas"])  # type: ignore[arg-type,list-item]
+        have = {
+            i: (d, m)
+            for i, d, m in zip(
+                stored["ids"], stored["documents"] or [], stored["metadatas"] or [], strict=True
+            )
+        }
+        want = {c.chunk_id: (c.text, metadata(c)) for c in chunks}
+        if have == want:
+            continue
+        collection.delete(where=where_filing)  # type: ignore[arg-type]
+        add_chunks(collection, chunks, embedder)
+        changed.append(row["accession"])
+        print(f"re-indexed {row['company']} {row['form']} {row['period']}: {len(chunks)} chunks")
+    return changed
+
+
 def check(collection: chromadb.Collection, embedder: Embedder) -> None:
     """The index size, and a filtered search on a FinanceBench question (3M FY2018 capex)."""
     print(f"the index holds {collection.count()} chunks")
@@ -213,6 +244,9 @@ def main() -> int:
     parser.add_argument("--chunks-dir", type=Path, default=CHUNKS_DIR)
     parser.add_argument("--index-dir", type=Path, default=INDEX_DIR)
     parser.add_argument("--check", action="store_true", help="only check the built index")
+    parser.add_argument(
+        "--sync", action="store_true", help="re-index filings whose chunks changed since"
+    )
     args = parser.parse_args()
 
     cfg = load_config(BASE_CONFIG).embedding
@@ -224,6 +258,10 @@ def main() -> int:
     manifest = load_manifest(MANIFEST_PATH)
     if args.company:
         manifest = [r for r in manifest if r["company"] == args.company]
+    if args.sync:
+        changed = sync(manifest, embedder, collection, args.chunks_dir)
+        print(f"{len(changed)} filings re-indexed; the index holds {collection.count()}")
+        return 0
     done_path = args.index_dir / DONE_FILE
     if args.limit:
         done = set(done_path.read_text().split()) if done_path.exists() else set()

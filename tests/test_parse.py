@@ -134,6 +134,138 @@ def test_fit_to_headings_moves_split_headings_to_the_right_section() -> None:
     assert md[s:e] == "**Item 7. **\n\n**Management's Discussion**\n\nRevenue grew."
 
 
+STATEMENTS = """**Report of Independent Registered Public Accounting Firm**
+
+We have audited the consolidated balance sheets.
+
+**CONSOLIDATED BALANCE SHEETS**
+
+| (in thousands) | 2017 | 2016 |
+| --- | --- | --- |
+| Total assets | 19,012,742 | 13,586,610 |
+
+**CONSOLIDATED STATEMENTS OF CASH FLOWS**
+
+| | 2017 | 2016 |
+| --- | --- | --- |
+| Net cash used in investing activities | (34,026) | (49,765) |
+"""
+
+
+def _sections(md: str, keys: list[str]) -> list:
+    from finqa.ingestion.parse import Section
+
+    out = []
+    for key in keys:
+        span = heading_span(md, "10-K", key)
+        assert span is not None
+        out.append(Section(key, "edgartools", *span, md[span[0] : span[1]].strip()))
+    return out
+
+
+def test_item8_gets_statements_printed_after_item_15() -> None:
+    from finqa.ingestion.parse import complete_item8
+
+    md = (
+        "# Item 7. MD&A\n\nRevenue grew.\n\n"
+        "# Item 8. Financial Statements\n\nSee Item 15.\n\n"
+        "# Item 9. Changes in Accountants\n\nNone.\n\n"
+        "# Item 15. Exhibits\n\n" + STATEMENTS + "\n**SIGNATURES**\n\nSigned.\n"
+    )
+    sections = complete_item8(md, _sections(md, ["Item 7", "Item 8"]))
+    item8 = sections[-1]
+    assert item8.section == "Item 8" and item8.method == "statements"
+    assert item8.text.startswith("# Item 8. Financial Statements\n\nSee Item 15.")
+    assert "| Total assets | 19,012,742" in item8.text and "Signed" not in item8.text
+
+
+def test_item8_takes_statements_out_of_the_item_7_span() -> None:
+    from finqa.ingestion.parse import complete_item8
+
+    # PepsiCo-style: MD&A, then the statements, all before a one-line Item 8
+    md = (
+        "# Item 7. MD&A\n\nRevenue grew.\n\n" + STATEMENTS + "\n"
+        "# Item 8. Financial Statements\n\nSee Item 15.\n\n# Item 9. Other\n\nNone.\n"
+    )
+    sections = {s.section: s for s in complete_item8(md, _sections(md, ["Item 7", "Item 8"]))}
+    assert sections["Item 7"].text == "# Item 7. MD&A\n\nRevenue grew."
+    assert sections["Item 8"].method == "statements"
+    assert "| Total assets |" in sections["Item 8"].text
+
+
+def test_item8_uses_exhibit_13_when_the_filing_has_no_statements() -> None:
+    from finqa.ingestion.parse import complete_item8
+
+    md = "# Item 7. MD&A\n\nSee Exhibit 13.\n\n# Item 8. Statements\n\nSee Exhibit 13.\n"
+    ex13 = "Annual report.\n\n**Consolidated Statements of Operations Data**\n\n" + STATEMENTS
+    sections = complete_item8(md, _sections(md, ["Item 7", "Item 8"]), ex13)
+    assert sections[-1].method == "exhibit13"
+    assert "Report of Independent" in sections[-1].text  # not the "...Data" summary
+    assert "Annual report." not in sections[-1].text
+
+
+def test_item8_with_statements_is_left_alone() -> None:
+    from finqa.ingestion.parse import complete_item8, has_statements
+
+    md = "# Item 8. Financial Statements\n\n" + STATEMENTS + "\n# Item 9. Other\n"
+    sections = _sections(md, ["Item 8"])
+    assert has_statements(sections[0].text)
+    assert complete_item8(md, sections) == sections
+
+
+def test_titled_ignores_formatting_that_splits_words() -> None:
+    from finqa.ingestion.parse import titled
+
+    assert titled("**Item 1. ** **Busines s.** 3M Company was incorporated", "Item 1")
+    assert titled("# ITEM 1A. RIS **K FACTORS** Our operations", "Item 1A")
+    assert not titled("### 7. Income Taxes  The components of income", "Item 7")
+
+
+FILLER = "Text of the section. " * 150  # over the 2,000-character minimum
+
+
+def test_heading_replaces_a_section_edgartools_took_from_elsewhere() -> None:
+    from finqa.ingestion.parse import parse_filing
+
+    # Corning-style: edgartools' "Item 7" is note 7 of the financial statements
+    md = (
+        "# Item 7. Management's Discussion and Analysis\n\n" + FILLER + "\n\n"
+        "# Item 7A. Market Risk\n\nRates.\n\n# Item 8. Financial Statements\n\nSee Item 15.\n\n"
+        "### 7. Income Taxes\n\n" + "The components of income before income taxes. " * 20
+    )
+    note7 = "7. Income Taxes " + "The components of income before income taxes. " * 20
+    item7 = {s.section: s for s in parse_filing(md, {"Item 7": note7}, "10-K")}["Item 7"]
+    assert item7.method == "heading"
+    assert item7.text.startswith("# Item 7. Management's Discussion")
+
+
+def test_heading_does_not_replace_with_a_cross_reference_or_subsection() -> None:
+    from finqa.ingestion.parse import _better_heading
+
+    md = (
+        "Financial review. " * 300 + "\n\n"
+        "# Item 7. Management's Discussion and Analysis\n\nSee pages 50-80.\n\n"
+        "# Item 1. Business–Government Regulation and Price Constraints\n\n" + FILLER
+    )
+    edgar = (0, 5000)
+    short = (md.index("# Item 7."), md.index("# Item 1."))
+    assert not _better_heading(md, "Item 7", edgar, short)  # JPMorgan: a cross-reference
+    sub = (md.index("# Item 1."), len(md))
+    assert not _better_heading(md, "Item 1", edgar, sub)  # Pfizer: a subsection title
+
+
+def test_find_statements_accepts_table_row_and_mid_line_titles() -> None:
+    from finqa.ingestion.parse import find_statements
+
+    toc = "| Consolidated Balance Sheets |  | 60 |\n\n"  # table of contents row: page number
+    verizon = "| Consolidated Balance Sheets Verizon Communications Inc. |\n| --- |\n\n"
+    md = "Intro.\n\n" + toc + verizon + STATEMENTS
+    assert find_statements(md) == md.index(verizon)
+    cvs = "## February 14, 2018 **Report of Independent Registered Public Accounting Firm**\n\n"
+    md = "Intro.\n\n" + cvs + STATEMENTS.split("\n", 2)[2]
+    assert find_statements(md) == md.index(cvs)
+
+
 def test_headings_accept_escaped_dots() -> None:
-    md = "**Item 7\. ** **MD&A**\n\nText.\n\n**Item 7A\. ** **Market Risk**\n"
+    md = "**Item 7\\. ** **MD&A**\n\nText.\n\n**Item 7A\\. ** **Market Risk**\n"
     assert [k for _, k in headings(md, "10-K")] == ["Item 7", "Item 7A"]
