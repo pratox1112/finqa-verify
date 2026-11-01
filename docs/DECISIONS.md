@@ -168,3 +168,23 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 **Decision:** amends the 2026-10-30 unit-scale rule. After the header row, caption and first row, `table_scale` also reads the **label cell** (first column) of the **second and third body rows** (`SCALE_LABEL_ROWS` in `chunk.py`). Only the label cell, and only at the top of the table, so a row-specific unit further down ("Shares (in millions)") does not set the table's scale. Still never guessed: no stated scale stays None.
 
 **Result:** chunks unchanged in number and text; tables with a stated scale rose from 36,281 to 39,237 of 92,182 (39.4% → 42.6% of all tables). A sample of the new detections were all table-wide statements ("(MILLIONS)", "(in millions, except ratios)", "December 31, (in millions)"). The index takes the change through `index --sync`, which updates metadata in place without re-embedding when only the metadata changed. About 500 table chunks still state a scale lower down or in a multi-cell row (MGM most); left as None.
+
+## 2026-11-01 · Pratosh Karthikeyan (drafted by Claude Code) · Automated quality checks replace the manual review
+
+**Decision (Pratosh, for time; teammates to confirm):** P1.9's manual review of one 10-K per company is replaced by automated checks on **all 206 parsed 10-Ks** (`src/finqa/ingestion/qa_check.py`, results in `data/QA_CHECKS.md`). No person reviewed the sheets; `data/QA_CHECKS.md` says so. The 31 review sheets in `data/qa_sheets/` stay for spot checks by hand.
+
+**Method:** (1) **Line items:** total assets, revenue, net income and operating cash flow must appear in an Item 8 table row, at the table's detected unit scale, equal (up to the rounding shown) to the company's own XBRL value for that fiscal year; otherwise the check reports where the value did turn up (a row with no label, another section, another scale, nowhere). (2) **Sections:** each kept section opens with its item's title. (3) **Text:** no U+FFFD, mojibake, or Windows-1252 control characters. XBRL is used here only to check our own parsing, never to score answers (LABELING_PROTOCOL). Not covered: tables other than these four line items, and where sections end.
+
+**Result (2026-11-01, first run):** 148 pass, 32 warn, 26 flag. Line items: 790 pass, 14 no label, 9 missing, 6 scale, 5 outside Item 8; no other scale errors after the multi-row-header fix. What the flags are (FinanceBench 10-K questions affected in brackets):
+- **General Mills FY2022–23:** all four missing. Known: statements rendered as text, not tables (2026-11-01 Item 8 entry) [1].
+- **JPMorgan FY2020–24:** operating cash flow found only in Item 7. New: the consolidated statements sit inside what edgartools calls Item 7; Item 8 holds the parent-company statements, so the Item 8 completion never triggered [1].
+- **American Water Works FY2018–23:** revenue matched only in an Item 8 table with no detected scale. Known open question: AWW states "in millions" once in prose for the whole section (2026-10-30 unit-scale entry) [3].
+- **Block FY2015:** not a parsing error. XBRL holds only the later recast value (21,123 thousand); the FY2015 10-K prints 27,584.
+- **Garbled text, 12 10-Ks** (AMD, Activision, General Mills, JPMorgan, Microsoft): Windows-1252 punctuation left as control characters ("Company\x92s"); across all filings 4,618 chunks (2.5%), mostly Microsoft, AMD, Activision and General Mills. Numbers are unaffected [2].
+- **Warnings:** MGM FY2016–24 print "Total assets" (and from FY2020 net revenues) on a row with an empty label; the value is there [3]. Sections without their title at the start, mostly harmless (Adobe's forward-looking statement preamble, Pfizer's logo, a paragraph of the previous item), except **Corning FY2019–21 Item 7**: it holds 3,000–14,000 characters of a note and the real MD&A is missing, because its heading is not at a line start ("`<u>Index</u> # Item 7. Management…`") [2].
+
+**Fixed (Pratosh's choice):** Corning's MD&A. A heading right after a page footer's link on the same line (`<u>Index</u> # Item 7.`) now counts, and the heading switch reads the first 120 characters for the title instead of the first line. Only Corning FY2019–21 changed (Item 7: 3,000–14,000 → about 100,000 characters); all six Corning 10-Ks now pass. Chunks: 84,753 text + 97,445 tables = 182,198.
+
+**Final result:** 151 pass, 29 warn, 26 flag (`data/QA_CHECKS.md`).
+
+**Known limitations, not fixed (for time):** the Windows-1252 characters (4,618 chunks); JPMorgan FY2020–24 statements in Item 7, so Phase 2 retrieval should not rely on the section label alone for JPMorgan; AWW's section-wide scale (the 2026-10-30 open question); General Mills FY2022–23 statements as text; MGM's unlabelled total rows.

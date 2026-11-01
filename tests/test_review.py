@@ -5,8 +5,6 @@ from pathlib import Path
 from finqa.ingestion.review import (
     filing_url,
     find_statements,
-    read_results,
-    render_checks,
     render_sheet,
     review_filings,
     sample_tables,
@@ -94,23 +92,6 @@ def test_sheet_shows_sections_statements_and_scales() -> None:
     assert sheet.count("detected unit scale: **millions**") == 3
     assert "\n### Consolidated" not in sheet  # captions are not sheet headings
     assert scale_name(None) == "none" and scale_name(1e3) == "thousands"
-
-
-def test_results_table_keeps_filled_in_rows(tmp_path: Path) -> None:
-    filings = {"3M": {"period": "FY2022"}, "Adobe": {"period": "FY2022"}}
-    first = render_checks(filings, {})
-    path = tmp_path / "QA_CHECKS.md"
-    path.write_text(
-        first.replace(
-            "| 3M | FY2022 | [sheet](qa_sheets/3m.md) |  |  |  |  |  |  |  |",
-            "| 3M | FY2022 | [sheet](qa_sheets/3m.md) | Pratosh | 2026-11-01 | ok | ok | ok | ok |"
-            " fine |",
-        ),
-        encoding="utf-8",
-    )
-    again = render_checks(filings, read_results(path))
-    assert "| Pratosh | 2026-11-01 | ok | ok | ok | ok | fine |" in again
-    assert "| Adobe | FY2022 | [sheet](qa_sheets/adobe.md) |  |" in again
 
 
 def test_review_filing_is_the_most_asked_about_10k(tmp_path: Path) -> None:
