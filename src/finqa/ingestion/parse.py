@@ -6,8 +6,13 @@ flattens tables. So each section is cut from the filing's Markdown (tables intac
   1. "edgartools": the edgartools section's opening and closing words are located in the
      Markdown (comparing letters and digits only, so formatting doesn't matter);
   2. "heading" (fallback, logged): where edgartools has no section or its words can't be
-     found, the section runs from its own heading ("Item 7." at the start of a line, not in
-     a table) to the next item heading.
+     found, or its section doesn't open with the item's title while the filing's own
+     heading does (edgartools took note "7. Income Taxes" for Corning's Item 7), the
+     section runs from its own heading ("Item 7." at the start of a line, not in a table)
+     to the next item heading.
+  3. 10-K Item 8 with no financial statements ("See Item 15"): the statements are added
+     from wherever the filer printed them, "statements" (later in the filing, or inside
+     another kept section) or "exhibit13" (Exhibit 13, downloaded with the filing).
 
 Markdown escapes are removed ("capital\\." -> "capital."), except escaped pipes, which
 keep tables intact. Output per filing: data/sections/<cik>/<accession>.json (gitignored);
@@ -23,11 +28,12 @@ import json
 import re
 import sys
 from collections import Counter, defaultdict
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from finqa.ingestion.download import MANIFEST_PATH, SECTIONS, load_manifest
+from finqa.ingestion.download import MANIFEST_PATH, SECTIONS, exhibit13_path, load_manifest
 from finqa.ingestion.files import save_atomic
 from finqa.ingestion.financebench import DATA_DIR
 
@@ -253,7 +259,168 @@ def heading_span(markdown: str, form: str, key: str, after: int = 0) -> tuple[in
     return best
 
 
+# --- Financial statements outside Item 8 (10-K) -----------------------------------------------
+# About one 10-K in six says only "see Item 15" (or "see page F-1") in Item 8 and prints the
+# statements elsewhere: after Item 15 or the signatures (Activision, Netflix, PayPal, Ulta,
+# Corning), inside the span edgartools calls Item 7 (PepsiCo), or in Exhibit 13 (CVS, Pfizer,
+# Verizon, Walmart in some years). Those statements are added to Item 8.
+
+# An auditor's report title anywhere on a line (CVS writes "February 14, 2018 **Report of
+# Independent...**"), or a statement title alone on a line or in a table row's first cell
+# (Verizon, Corning: "| Consolidated Balance Sheets | Corning Incorporated... |"). "...Data"
+# summaries and table-of-contents rows (with page numbers) are skipped in find_statements.
+_STATEMENT_TITLE = re.compile(
+    r"^[^\n]*\breport of independent registered public accounting firm\b[^\n]*$"
+    r"|^[#*_| \t]*consolidated (?:statements?|balance sheets?)\b[^:\n]{0,200}$",
+    re.IGNORECASE | re.MULTILINE,
+)
+# Table rows anywhere in the row; \s also matches the non-breaking spaces some filers use.
+# Microsoft writes "Net cash used in investing", without "activities".
+_BALANCE_SHEET = re.compile(r"^\|[^\n]*\btotal\s+assets\b", re.IGNORECASE | re.MULTILINE)
+_CASH_FLOW = re.compile(r"^\|[^\n]*\binvesting\b", re.IGNORECASE | re.MULTILINE)
+_SIGNATURES = re.compile(r"^[#*_ \t]*signatures?[*_ \t]*$", re.IGNORECASE | re.MULTILINE)
+STATEMENT_WINDOW = 80_000  # the balance sheet and cash flows follow the first title within this
+
+
+def has_statements(text: str) -> bool:
+    """A balance sheet and a cash-flow statement: Markdown table rows mentioning "total
+    assets" and "investing"."""
+    return bool(_BALANCE_SHEET.search(text) and _CASH_FLOW.search(text))
+
+
+def find_statements(markdown: str, start: int = 0, stop: int | None = None) -> int | None:
+    """Offset of the first auditor's report or statement title (a line of its own, not
+    "...Data" summaries) in [start, stop) followed by the statements."""
+    for m in _STATEMENT_TITLE.finditer(markdown, start, len(markdown) if stop is None else stop):
+        line = m.group(0)
+        is_title = "registered public accounting firm" not in line.lower()
+        if is_title and (
+            "data" in line.lower() or (line.lstrip().startswith("|") and re.search(r"\d", line))
+        ):
+            continue
+        if has_statements(markdown[m.start() : m.start() + STATEMENT_WINDOW]):
+            return m.start()
+    return None
+
+
+def _first_outside(markdown: str, outside: Callable[[int], bool]) -> int | None:
+    """The first statements start for which `outside(offset)` holds."""
+    pos = 0
+    while (s := find_statements(markdown, pos)) is not None:
+        if outside(s):
+            return s
+        pos = s + 1
+    return None
+
+
+def _statements_end(markdown: str, form: str, start: int) -> int:
+    """The next item heading or "Signatures" line after the statements begin."""
+    ends = [o for o, _ in headings(markdown, form) if o > start]
+    sig = _SIGNATURES.search(markdown, start + 1)
+    if sig:
+        ends.append(sig.start())
+    return min(ends, default=len(markdown))
+
+
+def complete_item8(
+    markdown: str, sections: list[Section], exhibit13: str | None = None
+) -> list[Section]:
+    """A 10-K's sections with the financial statements in Item 8, wherever the filer put
+    them. Tried in order: Item 8 cut at its own headings; statements after Item 8; statements
+    anywhere outside the kept sections; Exhibit 13; statements inside another kept section
+    (which then ends where they begin). Only when Item 8 has neither a balance-sheet nor a
+    cash-flow row, so an Item 8 that has its statements is never changed."""
+    by_key = {s.section: s for s in sections}
+    item8 = by_key.get("Item 8")
+    if item8 and (_BALANCE_SHEET.search(item8.text) or _CASH_FLOW.search(item8.text)):
+        return sections
+    new: Section | None = None
+    host: Section | None = None
+
+    def outside(s: int) -> bool:
+        return not any(x.start <= s < x.end for x in sections)
+
+    def statements_at(s: int) -> Section:
+        end = _statements_end(markdown, "10-K", s)
+        # keep the existing Item 8 text (e.g. "See Item 15") unless the span already holds it
+        keep = item8 and not (s <= item8.start < end)
+        lead = item8.text + "\n\n" if keep and item8 else ""
+        return Section("Item 8", "statements", s, end, lead + unescape(markdown[s:end]).strip())
+
+    alt = heading_span(markdown, "10-K", "Item 8")
+    after = item8.end if item8 else 0
+    s: int | None
+    if alt and has_statements(markdown[alt[0] : alt[1]]):
+        new = Section("Item 8", "heading", *alt, unescape(markdown[alt[0] : alt[1]]).strip())
+    elif (s := find_statements(markdown, after)) is not None:
+        new = statements_at(s)
+    elif (s := _first_outside(markdown, outside)) is not None:
+        new = statements_at(s)
+    elif exhibit13 and (s := find_statements(exhibit13)) is not None:
+        lead = item8.text + "\n\n" if item8 else ""
+        new = Section("Item 8", "exhibit13", -1, -1, lead + unescape(exhibit13[s:]).strip())
+    else:
+        for other in sections:
+            if other.section == "Item 8":
+                continue
+            s = find_statements(markdown, other.start, other.end)
+            if s is not None:
+                host = Section(
+                    other.section,
+                    other.method,
+                    other.start,
+                    s,
+                    unescape(markdown[other.start : s]).strip(),
+                )
+                lead = item8.text + "\n\n" if item8 else ""
+                text = lead + unescape(markdown[s : other.end]).strip()
+                new = Section("Item 8", "statements", s, other.end, text)
+                break
+    if new is None:
+        return sections
+    out = [host if host and x.section == host.section else x for x in sections]
+    return [x for x in out if x.section != "Item 8"] + [new]
+
+
 # --- Per filing -----------------------------------------------------------------------------
+
+# Each kept item's title, in letters and digits only, so formatting that splits words
+# ("Busines s", "RIS **K FACTORS**") still matches.
+_TITLES = {
+    "Item 1": "business",
+    "Item 1A": "riskfactors",
+    "Item 7": "managementsdiscussion|mda",
+    "Item 7A": "quantitative|marketrisk",
+    "Item 8": "financialstatements|statementsof|balancesheet",
+    "Part I, Item 1": "financialstatements|statementsof|balancesheet",
+    "Part I, Item 2": "managementsdiscussion|mda",
+    "Part I, Item 3": "quantitative|marketrisk",
+    "Part I, Item 4": "controls",
+    "Part II, Item 1A": "riskfactors",
+}
+TITLE_CHARS = 400  # the title must appear this close to the section's start
+
+
+def titled(text: str, key: str) -> bool:
+    """Does the section open with its item's title?"""
+    return re.search(_TITLES[key], normalize(text[:TITLE_CHARS])[0]) is not None
+
+
+MIN_HEADING_SECTION = 2000  # shorter heading spans are cross-references ("see pages 50-80")
+
+
+def _better_heading(markdown: str, key: str, edgar: tuple[int, int], alt: tuple[int, int]) -> bool:
+    """Replace an untitled edgartools section by the heading span only if that span is a
+    real section (long enough, its first line carries the title) and edgartools' span lies
+    mostly elsewhere in the filing."""
+    if alt[1] - alt[0] < MIN_HEADING_SECTION:
+        return False
+    first_line = markdown[alt[0] : alt[1]].split("\n", 1)[0]
+    # "Item 1. Business–Government Regulation" (Pfizer) names a subsection, not the item
+    if not titled(first_line, key) or re.search("[–—]", first_line):
+        return False
+    overlap = max(0, min(edgar[1], alt[1]) - max(edgar[0], alt[0]))
+    return overlap < 0.5 * (edgar[1] - edgar[0])
 
 
 def parse_filing(markdown: str, edgar_sections: dict[str, str], form: str) -> list[Section]:
@@ -275,6 +442,13 @@ def parse_filing(markdown: str, edgar_sections: dict[str, str], form: str) -> li
             continue
         if method == "edgartools":
             start, end = fit_to_headings(markdown, *whole_lines(markdown, *span), key)
+            # edgartools can mistake note numbers for items (Corning: "7. Income Taxes" as
+            # Item 7). If its section doesn't open with the item's title but the filing's own
+            # heading for the item does, the heading wins.
+            if not titled(markdown[start:end], key):
+                alt = heading_span(markdown, form, key)
+                if alt and _better_heading(markdown, key, (start, end), alt):
+                    (start, end), method = alt, "heading"
         else:
             start, end = span
         out.append(Section(key, method, start, end, unescape(markdown[start:end]).strip()))
@@ -287,6 +461,14 @@ def run(manifest: list[dict[str, str]]) -> list[dict[str, Any]]:
         markdown = (DATA_DIR.parent / row["markdown_path"]).read_text(encoding="utf-8")
         edgar = json.loads((DATA_DIR.parent / row["sections_path"]).read_text(encoding="utf-8"))
         sections = parse_filing(markdown, edgar, row["form"])
+        if row["form"] == "10-K":
+            ex13 = exhibit13_path(row["cik"], row["accession"])
+            ex13_text = ex13.read_text(encoding="utf-8") if ex13.exists() else None
+            sections = complete_item8(markdown, sections, ex13_text or None)
+            item8 = next((x for x in sections if x.section == "Item 8"), None)
+            if item8 is None or not has_statements(item8.text):
+                stats[row["company"]]["no_statements"] += 1
+                print(f"  no financial statements found: {row['company']} {row['period']}")
         out = SECTIONS_DIR / row["cik"] / f"{row['accession']}.json"
         save_atomic(out, json.dumps([asdict(s) for s in sections], ensure_ascii=False))
         s = stats[row["company"]]
@@ -311,6 +493,9 @@ def run(manifest: list[dict[str, str]]) -> list[dict[str, Any]]:
                 "absent": s["absent"],  # in neither edgartools nor a heading: not in filing
                 "failed": s["failed"],  # edgartools had it but it could not be located
                 "fallback_rate": round(s["heading"] / s["expected"], 3),
+                # 10-K Item 8s completed with statements printed elsewhere / in Exhibit 13
+                "item8_statements_added": s["statements"] + s["exhibit13"],
+                "item8_no_statements": s["no_statements"],
             }
         )
     return rows

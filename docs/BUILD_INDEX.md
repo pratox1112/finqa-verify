@@ -58,4 +58,8 @@ Expand-Archive chroma.zip -DestinationPath data
 uv run python -m finqa.ingestion.index --check
 ```
 
-`--check` prints the number of chunks (about 177,000) and the top three hits for 3M's FY2018 capital expenditure, filtered to 3M's FY2018 10-K, Item 8.
+`--check` prints the number of chunks (about 182,000) and the top three hits for 3M's FY2018 capital expenditure, filtered to 3M's FY2018 10-K, Item 8.
+
+## After the chunks change
+
+When parsing or chunking changes later (e.g. the 2026-11-01 Item 8 fix, which changed 36 filings), there is no need to rebuild everything: `uv run python -m finqa.ingestion.index --sync` compares each filing's indexed chunks with its chunk file and re-embeds only the filings that differ (on a laptop CPU about 3 chunks per second, so about an hour for 36 filings).

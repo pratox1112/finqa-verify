@@ -112,6 +112,31 @@ def test_build_is_resumable(tmp_path: Path, chunks_root: Path) -> None:
     assert again == 0 and collection.count() == len(CHUNKS)
 
 
+def test_sync_reindexes_only_changed_filings(tmp_path: Path, chunks_root: Path) -> None:
+    from finqa.ingestion.index import sync
+
+    collection, _ = built(tmp_path, chunks_root)
+    assert sync(manifest(), FakeEmbedder(), collection, chunks_root) == []  # nothing changed
+
+    # one filing gains a chunk (as when Item 8 gets its statements) and changes another
+    target = CHUNKS[0]
+    path = chunks_root / target.cik / f"{target.source_accession}.jsonl"
+    old = [c for c in CHUNKS if c.source_accession == target.source_accession]
+    extra = old[0].model_copy(update={"chunk_id": old[0].chunk_id + "-new", "text": "Total assets"})
+    edited = old[1].model_copy(update={"unit_scale": 1e3})
+    path.write_text(
+        "".join(c.model_dump_json() + "\n" for c in [old[0], edited, *old[2:], extra]),
+        encoding="utf-8",
+    )
+    assert sync(manifest(), FakeEmbedder(), collection, chunks_root) == [target.source_accession]
+    assert collection.count() == len(CHUNKS) + 1
+    hits = search(
+        collection, FakeEmbedder(), "total assets", k=1, source_accession=target.source_accession
+    )
+    assert hits[0].chunk_id == extra.chunk_id
+    assert sync(manifest(), FakeEmbedder(), collection, chunks_root) == []
+
+
 def test_load_chunks_keeps_unicode_line_separators_in_text(tmp_path: Path) -> None:
     from finqa.ingestion.index import load_chunks
 

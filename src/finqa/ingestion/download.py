@@ -6,6 +6,8 @@ year after its latest (docs/DECISIONS.md). Original filings only, no amendments.
 For each filing, saved under data/raw/<cik>/ (gitignored):
   <accession>.md             the whole filing as Markdown (tables kept as Markdown tables)
   <accession>.sections.json  the kept sections (decision D5) as split by edgartools
+  <accession>.ex13.md        10-Ks only: Exhibit 13 as Markdown (empty if none), where some
+                             filers put their financial statements
 The manifest data/filings_manifest.csv (committed) lists every filing with its fiscal year
 and period, labelled from the order of the filings (docs/DECISIONS.md): each 10-K closes a
 fiscal year and the 10-Qs before it are that year's Q1-Q3; the company's naming convention
@@ -220,6 +222,24 @@ def fetch_filing(filing: Any, markdown_path: Path, sections_path: Path, form: st
     save_atomic(sections_path, json.dumps(sections, ensure_ascii=False))
 
 
+def exhibit13_path(cik: str, accession: str) -> Path:
+    return RAW_DIR / cik / f"{accession}.ex13.md"
+
+
+def fetch_exhibit13(filing: Any, path: Path) -> None:
+    """Save a 10-K's Exhibit 13 (annual report to shareholders) as Markdown: some filers
+    (CVS, Pfizer, Verizon, Walmart in some years) put their financial statements there.
+    An empty file records that the filing has none, so it is not asked again."""
+    if path.exists():
+        return
+    parts = [
+        a.markdown() or ""
+        for a in filing.attachments
+        if (a.document_type or "").upper().startswith("EX-13")
+    ]
+    save_atomic(path, "\n\n".join(parts))
+
+
 def download_company(company: dict[str, str], doc_names: set[str], sec: SecClient) -> list:
     from edgar import Company
 
@@ -243,6 +263,8 @@ def download_company(company: dict[str, str], doc_names: set[str], sec: SecClien
         base = RAW_DIR / cik / filing.accession_no
         md_path, sec_path = base.with_suffix(".md"), base.with_suffix(".sections.json")
         fetch_filing(filing, md_path, sec_path, form)
+        if form == "10-K":
+            fetch_exhibit13(filing, exhibit13_path(cik, filing.accession_no))
         found = [k for k in json.loads(sec_path.read_text(encoding="utf-8")) if k != "_error"]
         rows.append(
             ManifestRow(
@@ -295,12 +317,23 @@ def load_manifest(path: Path = MANIFEST_PATH) -> list[dict[str, str]]:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Download in-scope 10-K and 10-Q filings.")
     parser.add_argument("--company", help="only this FinanceBench company (for testing)")
+    parser.add_argument(
+        "--exhibit13", action="store_true", help="only add Exhibit 13 to the manifest's 10-Ks"
+    )
     args = parser.parse_args()
 
-    from edgar import set_identity
+    from edgar import find, set_identity
 
     sec = SecClient()
     set_identity(sec.identity)
+    if args.exhibit13:
+        ten_ks = [r for r in load_manifest() if r["form"] == "10-K"]
+        for i, r in enumerate(ten_ks, 1):
+            path = exhibit13_path(r["cik"], r["accession"])
+            fetch_exhibit13(find(r["accession"]), path)
+            size = path.stat().st_size
+            print(f"[{i}/{len(ten_ks)}] {r['company']} {r['period']}: {size:,} bytes", flush=True)
+        return 0
     docs = in_scope_documents()
     table = [c for c in co.load() if not args.company or c["company"] == args.company]
     rows: list[ManifestRow] = []
