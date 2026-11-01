@@ -137,32 +137,41 @@ The breakdown of EBIT is as follows:
 
 - [ ] table intact   - [ ] unit scale correct
 
-`0000320187-0000320187-23-000039-item-8-57` · Item 8 · detected unit scale: **none**
+`0000320187-0000320187-23-000039-item-8-59` · Item 8 · detected unit scale: **millions**
 
-CONSOLIDATED STATEMENTS OF SHAREHOLDERS' EQUITY
-|  | COMMON STOCK |  |  |  |  |  | CAPITAL IN EXCESS OF STATED VALUE |  | ACCUMULATED OTHER COMPREHENSIVE INCOME (LOSS) |  | RETAINED EARNINGS (DEFICIT) |  | TOTAL |  |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Repurchase of Class B Common Stock |  |  |  | (51) |  |  | (378) |  |  |  | (5,131) |  | (5,509) |  |
-| Dividends on common stock ($1.325 per share) and preferred stock ($0.10 per share) |  |  |  |  |  |  |  |  |  |  | (2,059) |  | (2,059) |  |
-| Issuance of shares to employees, net of shares withheld for employee taxes |  |  |  | 4 |  |  | 130 |  |  |  | 2 |  | 132 |  |
-| Stock-based compensation |  |  |  |  |  |  | 755 |  |  |  |  |  | 755 |  |
-| Net income |  |  |  |  |  |  |  |  |  |  | 5,070 |  | 5,070 |  |
-| Other comprehensive income (loss) |  |  |  |  |  |  |  |  | (87) |  |  |  | (87) |  |
-| Balance at May 31, 2023 | 305 | $ | — | 1,227 | $ | 3 | $ | 12,412 | $ | 231 | $ | 1,358 | $ | 14,004 |
+Property, plant and equipment, net included the following:
+| (Dollars in millions) | MAY 31, 2023 | MAY 31, 2023 | MAY 31, 2022 | MAY 31, 2022 |
+| --- | --- | --- | --- | --- |
+| Land and improvements | $ | 326 | $ | 330 |
+| Buildings | 3,293 |  | 3,170 |  |
+| Machinery and equipment | 3,083 |  | 2,870 |  |
+| Internal-use software | 1,612 |  | 1,616 |  |
+| Leasehold improvements | 1,876 |  | 1,712 |  |
+| Construction in process | 525 |  | 399 |  |
+| Total property, plant and equipment, gross | 10,715 |  | 10,097 |  |
+| Less accumulated depreciation | 5,634 |  | 5,306 |  |
+| TOTAL PROPERTY, PLANT AND EQUIPMENT, NET | $ | 5,081 | $ | 4,791 |
 
 - [ ] table intact   - [ ] unit scale correct
 
-`0000320187-0000320187-23-000039-item-8-61` · Item 8 · detected unit scale: **millions**
+`0000320187-0000320187-23-000039-item-8-90` · Item 8 · detected unit scale: **millions**
 
-| (Dollars in millions) | MAY 31, 2023 | MAY 31, 2023 | MAY 31, 2022 | MAY 31, 2022 |
+<u>Table of Contents</u>
+| (Dollars in millions) | AS OF MAY 31, 2023 | AS OF MAY 31, 2023 | AS OF MAY 31, 2022 | AS OF MAY 31, 2022 |
 | --- | --- | --- | --- | --- |
-| Compensation and benefits, excluding taxes | $ | 1,737 | $ | 1,297 |
-| Sales-related reserves | 994 |  | 1,015 |  |
-| Endorsement compensation | 552 |  | 496 |  |
-| Dividends payable | 529 |  | 485 |  |
-| Allowance for expected loss on sale(1) | — |  | 397 |  |
-| Other | 1,911 |  | 2,530 |  |
-| Total Accrued Liabilities | $ | 5,723 | $ | 6,220 |
+| ACCOUNTS RECEIVABLE, NET |  |  |  |  |
+| North America | $ | 1,653 | $ | 1,850 |
+| Europe, Middle East & Africa | 1,197 |  | 1,351 |  |
+| Greater China | 162 |  | 406 |  |
+| Asia Pacific & Latin America(1) | 700 |  | 664 |  |
+| Global Brand Divisions | 96 |  | 113 |  |
+| Total NIKE Brand | 3,808 |  | 4,384 |  |
+| Converse | 235 |  | 230 |  |
+| Corporate | 88 |  | 53 |  |
+| TOTAL ACCOUNTS RECEIVABLE, NET | $ | 4,131 | $ | 4,667 |
+| INVENTORIES |  |  |  |  |
+
+*… 19 more lines*
 
 - [ ] table intact   - [ ] unit scale correct
 

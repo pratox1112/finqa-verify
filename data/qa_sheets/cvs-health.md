@@ -110,24 +110,16 @@ Compare each table with the same table in the filing: same rows, numbers in the 
 
 - [ ] table intact   - [ ] unit scale correct
 
-`0000064803-0000064803-23-000009-item-8-127` · Item 8 · detected unit scale: **none**
+`0000064803-0000064803-23-000009-item-7-81` · Item 7 · detected unit scale: **none**
 
-Consolidated Statements of Shareholders’ Equity
-|  |  |  | Attributable to CVS Health |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-|  | Number of shares outstanding |  | Common Stock and Capital Surplus (2) |  |  |  |  |  | Accumulated Other Comprehensive Income (Loss) |  | Total CVS Health Shareholders’ Equity |  |  |  | Total Shareholders’ Equity |  |
-| In millions | Common Shares | Treasury Shares (1) | Treasury Stock (1) |  | Retained Earnings |  | Noncontrolling Interests |  |  |  |  |  |  |  |  |  |
-| Balance at December 31, 2019 | 1,727 | (425) | $ | 45,972 | $ | (28,235) | $ | 45,108 | $ | 1,019 | $ | 63,864 | $ | 306 | $ | 64,170 |
-| Adoption of new accounting standard (3) | — | — | — |  | — |  | (3) |  | — |  | (3) |  | — |  | (3) |  |
-| Net income | — | — | — |  | — |  | 7,179 |  | — |  | 7,179 |  | 13 |  | 7,192 |  |
-| Other comprehensive income (Note 13) | — | — | — |  | — |  | — |  | 395 |  | 395 |  | — |  | 395 |  |
-| Stock option activity, stock awards and other | 6 | — | 541 |  | — |  | — |  | — |  | 541 |  | — |  | 541 |  |
-| ESPP issuances, net of purchase of treasury shares | — | 2 | — |  | 57 |  | — |  | — |  | 57 |  | — |  | 57 |  |
-| Common stock dividends | — | — | — |  | — |  | (2,644) |  | — |  | (2,644) |  | — |  | (2,644) |  |
-| Other decreases in noncontrolling interests | — | — | — |  | — |  | — |  | — |  | — |  | (7) |  | (7) |  |
-| Balance at December 31, 2020 | 1,733 | (423) | 46,513 |  | (28,178) |  | 49,640 |  | 1,414 |  | 69,389 |  | 312 |  | 69,701 |  |
-
-*… 6 more lines*
+Included in net cash used in investing activities for the years ended December 31, 2022, 2021 and 2020 was the following store development activity:  (1)
+|  | 2022 | 2021 | 2020 |
+| --- | --- | --- | --- |
+| Total stores (beginning of year) | 9,939 | 9,962 | 9,896 |
+| New and acquired stores (2) | 41 | 58 | 156 |
+| Closed stores (2) | (306) | (81) | (90) |
+| Total stores (end of year) | 9,674 | 9,939 | 9,962 |
+| Relocated stores (2) | 4 | 17 | 18 |
 
 - [ ] table intact   - [ ] unit scale correct
 

@@ -116,20 +116,28 @@ Presented in the table below are operating revenues disaggregated for the year e
 
 - [ ] table intact   - [ ] unit scale correct
 
-`0001410636-0001410636-23-000020-item-8-116` · Item 8 · detected unit scale: **none**
+`0001410636-0001410636-23-000020-item-8-101` · Item 8 · detected unit scale: **none**
 
-Presented in the tables below is the aggregate credit facility commitments, commercial paper limit and letter of credit availability under the revolving credit facility, as well as the available capacity for each, as of December 31:
-|  | 2022 |  |  |  |  |  |
+Presented in the table below are operating revenues disaggregated for the year ended December 31, 2020:
+|  | Revenues from Contracts with Customers |  | Other Revenues Not from Contracts with Customers (a) |  | Total Operating Revenues |  |
 | --- | --- | --- | --- | --- | --- | --- |
-|  | Commercial Paper Limit |  | Letters of Credit |  | Total (a) |  |
-| (In millions) |  |  |  |  |  |  |
-| Total availability | $ | 2,600 | $ | 150 | $ | 2,750 |
-| Outstanding debt | (1,177) |  | (78) |  | (1,255) |  |
-| Remaining availability as of December 31, 2022 | $ | 1,423 | $ | 72 | $ | 1,495 |
+| Regulated Businesses: |  |  |  |  |  |  |
+| Water services: |  |  |  |  |  |  |
+| Residential | $ | 1,895 | $ | — | $ | 1,895 |
+| Commercial | 627 |  | — |  | 627 |  |
+| Fire service | 147 |  | — |  | 147 |  |
+| Industrial | 133 |  | — |  | 133 |  |
+| Public and other | 201 |  | — |  | 201 |  |
+| Total water services | 3,003 |  | — |  | 3,003 |  |
+| Wastewater services: |  |  |  |  |  |  |
+| Residential | 134 |  | — |  | 134 |  |
+| Commercial | 34 |  | — |  | 34 |  |
+
+*… 9 more lines*
 
 - [ ] table intact   - [ ] unit scale correct
 
-`0001410636-0001410636-23-000020-item-8-117` · Item 8 · detected unit scale: **none**
+`0001410636-0001410636-23-000020-item-8-117` · Item 8 · detected unit scale: **millions**
 
 (a) Total remaining availability of $ 1.50  billion as of December 31, 2022, may be accessed through revolver draws.
 |  | 2021 |  |  |  |  |  |
@@ -142,24 +150,13 @@ Presented in the tables below is the aggregate credit facility commitments, comm
 
 - [ ] table intact   - [ ] unit scale correct
 
-`0001410636-0001410636-23-000020-item-8-147` · Item 8 · detected unit scale: **none**
+`0001410636-0001410636-23-000020-item-8-118` · Item 8 · detected unit scale: **millions**
 
-<u>Table of Contents</u>
-|  | Regulated   Businesses |  | Other |  | Consolidated |  |
+Presented in the table below is the Company’s total available liquidity as of December 31, 2022 and 2021, respectively:
+| (In millions) | Cash and Cash Equivalents | Cash and Cash Equivalents | Availability on Revolving Credit Facility | Availability on Revolving Credit Facility | Total Available Liquidity | Total Available Liquidity |
 | --- | --- | --- | --- | --- | --- | --- |
-|  | 2021 |  |  |  |  |  |
-| Operating revenues | $ | 3,384 | $ | 546 | $ | 3,930 |
-| Depreciation and amortization | 601 |  | 35 |  | 636 |  |
-| Total operating expenses, net | 2,227 |  | 507 |  | 2,734 |  |
-| Interest expense | (290) |  | (113) |  | (403) |  |
-| Interest income | 1 |  | 3 |  | 4 |  |
-| Gain or (loss) on sale of businesses | (1) |  | 748 |  | 747 |  |
-| Income before income taxes | 962 |  | 678 |  | 1,640 |  |
-| Provision for income taxes | 172 |  | 205 |  | 377 |  |
-| Net income attributable to common shareholders | 789 |  | 474 |  | 1,263 |  |
-| Total assets | 23,365 |  | 2,710 |  | 26,075 |  |
-
-*… 13 more lines*
+| Available liquidity as of December 31, 2022 | $ | 85 | $ | 1,495 | $ | 1,580 |
+| Available liquidity as of December 31, 2021 | $ | 116 | $ | 1,590 | $ | 1,706 |
 
 - [ ] table intact   - [ ] unit scale correct
 

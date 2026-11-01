@@ -26,7 +26,7 @@ Compare each table with the same table in the filing: same rows, numbers in the 
 
 ### Income statement
 
-`0000040704-0001193125-20-186469-item-8-62` · Item 8 · detected unit scale: **none**
+`0000040704-0001193125-20-186469-item-8-62` · Item 8 · detected unit scale: **millions**
 
 July 2, 2020
 | Consolidated Statements of Earnings |  |  |  |  |  |  |
@@ -49,7 +49,7 @@ July 2, 2020
 
 ### Balance sheet
 
-`0000040704-0001193125-20-186469-item-8-64` · Item 8 · detected unit scale: **none**
+`0000040704-0001193125-20-186469-item-8-64` · Item 8 · detected unit scale: **millions**
 
 | Consolidated Balance Sheets |  |  |  |  |
 | --- | --- | --- | --- | --- |
@@ -72,7 +72,7 @@ July 2, 2020
 
 ### Cash flow statement
 
-`0000040704-0001193125-20-186469-item-8-67` · Item 8 · detected unit scale: **none**
+`0000040704-0001193125-20-186469-item-8-67` · Item 8 · detected unit scale: **millions**
 
 | Consolidated Statements of Cash Flows |  |  |  |  |  |  |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -105,24 +105,12 @@ Pet net sales were as follows:
 
 - [ ] table intact   - [ ] unit scale correct
 
-`0000040704-0001193125-20-186469-item-8-66` · Item 8 · detected unit scale: **none**
+`0000040704-0001193125-20-186469-item-7-79` · Item 7 · detected unit scale: **none**
 
-| Consolidated Statements of Total Equity and Redeemable Interest |  |  |  |  |  |  |  |  |  |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Ending balance | (144.8) |  | (6,433.3) | (152.7) |  | (6,779.0) | (161.5) |  | (7,167.5) |
-| Accumulated other comprehensive loss: |  |  |  |  |  |  |  |  |  |
-| Beginning balance |  |  | (2,625.4) |  |  | (2,429.0) |  |  | (2,244.5) |
-| Comprehensive (loss) income |  |  | (289.0) |  |  | (196.4) |  |  | 144.9 |
-| Reclassification of certain income tax effects |  |  | - |  |  | - |  |  | (329.4) |
-| Ending balance |  |  | (2,914.4) |  |  | (2,625.4) |  |  | (2,429.0) |
-| Noncontrolling interests: |  |  |  |  |  |  |  |  |  |
-| Beginning balance |  |  | 313.2 |  |  | 351.3 |  |  | 357.6 |
-| Comprehensive income |  |  | 10.3 |  |  | 0.4 |  |  | 26.9 |
-| Distributions to redeemable and noncontrolling interest holders |  |  | (32.5) |  |  | (38.5) |  |  | (33.2) |
-| Ending balance |  |  | 291.0 |  |  | 313.2 |  |  | 351.3 |
-| Total equity, ending balance |  | $ | 8,349.5 |  | $ | 7,367.7 |  | $ | 6,492.4 |
-
-*… 8 more lines*
+Our adjusted operating profit margins are calculated as follows:
+|  | Fiscal Year |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Adjusted operating profit | $ | 3,058.0 | 17.3 | % | $ | 2,858.0 | 16.9 | % | $ | 2,612.7 | 16.6 | % | $ | 2,750.5 | 17.6 | % | $ | 2,774.9 | 16.8 | % |
 
 - [ ] table intact   - [ ] unit scale correct
 
