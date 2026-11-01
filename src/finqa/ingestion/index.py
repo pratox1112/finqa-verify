@@ -152,7 +152,10 @@ def search(
 
 def load_chunks(cik: str, accession: str, root: Path = CHUNKS_DIR) -> list[Chunk]:
     path = root / cik / f"{accession}.jsonl"
-    return [Chunk(**json.loads(line)) for line in path.read_text(encoding="utf-8").splitlines()]
+    # split on "\n" only: splitlines() also splits on characters such as U+2028 that can
+    # appear inside a chunk's text (two Block filings have them)
+    lines = path.read_text(encoding="utf-8").split("\n")
+    return [Chunk(**json.loads(line)) for line in lines if line]
 
 
 def build(
