@@ -109,17 +109,24 @@ The following is a reconciliation of basic net earnings per share to diluted net
 
 - [ ] table intact   - [ ] unit scale correct
 
-`0000200406-0000200406-23-000016-item-8-176` · Item 8 · detected unit scale: **none**
+`0000200406-0000200406-23-000016-item-8-177` · Item 8 · detected unit scale: **none**
 
-| PHARMACEUTICAL(1) |  |  |  |  |  |
+| Neuroscience |  |  |  |  |  |
 | --- | --- | --- | --- | --- | --- |
-| U.S. | 1,494 | 1,508 | 1,587 | (1.0) | (4.9) |
-| International | 449 | 575 | 597 | (21.9) | (3.6) |
-| Worldwide | 1,943 | 2,083 | 2,184 | (6.7) | (4.6) |
-| OTHER INFECTIOUS DISEASES |  |  |  |  |  |
-| U.S. | 30 | 66 | 104 | (55.5) | (36.0) |
-| International | 289 | 297 | 292 | (2.6) | 1.7 |
-| Worldwide | 318 | 363 | 396 | (12.3) | (8.3) |
+| U.S. | 3,570 | 3,347 | 3,091 | 6.7 | 8.3 |
+| International | 3,323 | 3,641 | 3,435 | (8.7) | 6.0 |
+| Worldwide | 6,893 | 6,988 | 6,526 | (1.4) | 7.1 |
+| CONCERTA / methylphenidate |  |  |  |  |  |
+| U.S. | 151 | 172 | 183 | (12.5) | (5.8) |
+| International | 493 | 495 | 439 | (0.4) | 12.8 |
+| Worldwide | 644 | 667 | 622 | (3.5) | 7.3 |
+| INVEGA SUSTENNA / XEPLION / INVEGA TRINZA / TREVICTA |  |  |  |  |  |
+| U.S. | 2,714 | 2,550 | 2,314 | 6.5 | 10.2 |
+| International | 1,426 | 1,472 | 1,339 | (3.1) | 10.0 |
+| Worldwide | 4,140 | 4,022 | 3,653 | 3.0 | 10.1 |
+| RISPERDAL CONSTA |  |  |  |  |  |
+
+*… 26 more lines*
 
 - [ ] table intact   - [ ] unit scale correct
 

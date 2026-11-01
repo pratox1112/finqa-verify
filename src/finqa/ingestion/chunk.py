@@ -45,6 +45,7 @@ CHUNKS_DIR = DATA_DIR / "chunks"
 STATS_PATH = DATA_DIR / "chunk_stats.csv"
 CAPTION_LINES = 2
 CAPTION_MAX_CHARS = 400  # of a longer line above a table, only its last sentence is caption
+SCALE_LABEL_ROWS = 3  # body rows whose label cell can state the table's scale
 
 _TOKEN = re.compile(r"\w+|[^\w\s]")
 _SENTENCE = re.compile(r"(?<=[.!?])\s+(?=[A-Z(\"$])")
@@ -80,10 +81,14 @@ def _cells(row: str) -> list[str]:
 
 
 def table_scale(caption: list[str], rows: list[str]) -> float | None:
-    """The scale a table states: in its header row, else its caption, else its first row."""
+    """The scale a table states: in its header row, else its caption, else its first row,
+    else the label cell of the next rows (multi-row headers: "(In Millions)" under the
+    title rows)."""
     header, body = _split_header(rows)
     candidates = [c for row in header if not _SEPARATOR.match(row) for c in _cells(row)]
-    for text in [*candidates, " ".join(caption), *(_cells(body[0]) if body else [])]:
+    first = _cells(body[0]) if body else []
+    labels = [_cells(row)[0] for row in body[1:SCALE_LABEL_ROWS]]
+    for text in [*candidates, " ".join(caption), *first, *labels]:
         scale = detect_scale(text)
         if scale is not None:
             return scale

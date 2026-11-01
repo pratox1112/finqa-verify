@@ -112,7 +112,7 @@ Consolidated Statements of Cash Flows
 
 - [ ] table intact   - [ ] unit scale correct
 
-`0001403568-0001558370-24-003941-item-8-34` · Item 8 · detected unit scale: **none**
+`0001403568-0001558370-24-003941-item-8-34` · Item 8 · detected unit scale: **thousands**
 
 Consolidated Statements of Stockholders’ Equity
 |  |  |  |  | Treasury - |  |  |  |  |  |  | Accumulated |  |  |  |
@@ -133,15 +133,9 @@ Consolidated Statements of Stockholders’ Equity
 
 - [ ] table intact   - [ ] unit scale correct
 
-`0001403568-0001558370-24-003941-item-8-35` · Item 8 · detected unit scale: **none**
+`0001403568-0001558370-24-003941-item-8-60` · Item 8 · detected unit scale: **none**
 
-Consolidated Statements of Stockholders’ Equity
-|  |  |  |  | Treasury - |  |  |  |  |  |  | Accumulated |  |  |  |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Stock options exercised and other awards | 176 |  | 2 | — |  | — |  | 12,174 |  | — |  | — |  | 12,176 |
-| Purchase of treasury shares | — |  | — | (43) |  | (22,562) |  | — |  | — |  | — |  | (22,562) |
-| Repurchase of common shares, including excise tax | (2,173) |  | (22) | — |  | — |  | (9,313) |  | (1,000,013) |  | — |  | (1,009,348) |
-| Balance – February 3, 2024 | 49,123 | $ | 491 | (799) | $ | (83,032) | $ | 1,075,104 | $ | 1,286,765 | $ | — | $ | 2,279,328 |
+| (1) | Excludes $39,654, $30,927, and $28,591 related to cash received for tenant incentives as of February 3, 2024, January 28, 2023, and January 29, 2022, respectively. |
 
 - [ ] table intact   - [ ] unit scale correct
 

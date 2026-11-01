@@ -72,6 +72,23 @@ def test_unit_scale_detected_on_sample_tables() -> None:
     assert table_scale(["(in millions, except per share amounts)"], rows) == 1e6
     # nothing stated: left empty, never guessed
     assert table_scale(["Maturities of lease liabilities were as follows:"], rows) is None
+    # multi-row header (General Mills): the scale sits in the third row's label cell
+    rows = [
+        "| Consolidated Statements of Earnings |  |  |",
+        "| --- | --- | --- |",
+        "| GENERAL MILLS, INC. AND SUBSIDIARIES |  |  |",
+        "| (In Millions, Except per Share Data) |  |  |",
+        "| Net sales | 17,626.6 | 16,865.2 |",
+    ]
+    assert table_scale([], rows) == 1e6
+    # but not a row-specific unit further down the table
+    rows = [
+        "|  | 2023 |",
+        "| --- | --- |",
+        *["| Revenue | 5,120 |"] * 3,
+        "| Shares (in millions) | 9 |",
+    ]
+    assert table_scale([], rows) is None
 
 
 def test_split_table_repeats_its_header() -> None:

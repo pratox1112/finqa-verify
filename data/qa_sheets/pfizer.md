@@ -119,7 +119,7 @@ Provision/(Benefit) for Taxes on Income
 
 - [ ] table intact   - [ ] unit scale correct
 
-`0000078003-0000078003-22-000027-item-8-143` · Item 8 · detected unit scale: **none**
+`0000078003-0000078003-22-000027-item-8-143` · Item 8 · detected unit scale: **millions**
 
 Pfizer Inc. and Subsidiary Companies
 | Our accruals for Medicare, Medicaid and related state program and performance-based contract rebates, chargebacks, sales allowances and sales returns and cash discounts are as follows: |  |  |  |  |
@@ -135,18 +135,24 @@ Pfizer Inc. and Subsidiary Companies
 
 - [ ] table intact   - [ ] unit scale correct
 
-`0000078003-0000078003-22-000027-item-8-195` · Item 8 · detected unit scale: **none**
+`0000078003-0000078003-22-000027-item-8-208` · Item 8 · detected unit scale: **none**
 
-*A.* * Inventories*
-| The following summarizes the components of Inventories: |  |  |  |  |
-| --- | --- | --- | --- | --- |
-|  | As of December 31, |  |  |  |
-| (MILLIONS) | 2021 |  | 2020 |  |
-| Finished goods | $ | 3,641 | $ | 2,867 |
-| Work in process | 4,424 |  | 4,436 |  |
-| Raw materials and supplies | 994 |  | 716 |  |
-| Inventories(a) | $ | 9,059 | $ | 8,020 |
-| Noncurrent inventories not included above(b) | $ | 939 | $ | 890 |
+C. Obligations and Funded Status
+| The following provides: (i) an analysis of the changes in our benefit obligations, plan assets and funded status of our benefit plans, including those reported as part of discontinued operations for 2020, (ii) the funded status recognized in our consolidated balance sheets and (iii) the pre-tax components of cumulative amounts recognized in Accumulated other comprehensive loss: |  |  |  |  |  |  |  |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+|  | Pension Plans |  |  |  |  |  |  |  | Postretirement Plans |  |  |  |
+|  | U.S. |  |  |  | International |  |  |  |  |  |  |  |
+|  | Year Ended December 31, |  |  |  |  |  |  |  |  |  |  |  |
+| (MILLIONS) | 2021 |  | 2020 |  | 2021 |  | 2020 |  | 2021 |  | 2020 |  |
+| Change in benefit obligation(a) |  |  |  |  |  |  |  |  |  |  |  |  |
+| Benefit obligation, beginning | $ | 18,306 | $ | 17,886 | $ | 12,001 | $ | 11,059 | $ | 1,238 | $ | 1,667 |
+| Service cost | — |  | — |  | 130 |  | 146 |  | 36 |  | 38 |  |
+| Interest cost | 455 |  | 533 |  | 146 |  | 164 |  | 29 |  | 49 |  |
+| Employee contributions | — |  | — |  | 10 |  | 8 |  | 78 |  | 88 |  |
+| Plan amendments | — |  | 2 |  | — |  | 2 |  | (116) |  | (56) |  |
+| Changes in actuarial assumptions and other(b) | (331) |  | 2,112 |  | 89 |  | 702 |  | (117) |  | (132) |  |
+
+*… 13 more lines*
 
 - [ ] table intact   - [ ] unit scale correct
 

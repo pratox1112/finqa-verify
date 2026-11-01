@@ -210,10 +210,23 @@ def sync(
         want = {c.chunk_id: (c.text, metadata(c)) for c in chunks}
         if have == want:
             continue
+        changed.append(row["accession"])
+        name = f"{row['company']} {row['form']} {row['period']}"
+        # Same IDs and text, only metadata added or changed (e.g. a unit scale found):
+        # update in place, no re-embedding. Chroma can't drop a key this way, so a removed
+        # key falls through to the full re-index.
+        if have.keys() == want.keys() and all(
+            have[i][0] == want[i][0] and have[i][1].keys() <= want[i][1].keys() for i in want
+        ):
+            ids = [i for i in want if have[i][1] != want[i][1]]
+            for start in range(0, len(ids), BATCH):
+                batch = ids[start : start + BATCH]
+                collection.update(ids=batch, metadatas=[want[i][1] for i in batch])
+            print(f"updated metadata of {name}: {len(ids)} chunks")
+            continue
         collection.delete(where=where_filing)  # type: ignore[arg-type]
         add_chunks(collection, chunks, embedder)
-        changed.append(row["accession"])
-        print(f"re-indexed {row['company']} {row['form']} {row['period']}: {len(chunks)} chunks")
+        print(f"re-indexed {name}: {len(chunks)} chunks")
     return changed
 
 

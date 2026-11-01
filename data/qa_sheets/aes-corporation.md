@@ -153,18 +153,24 @@ The following table shows the future lease receipts as of December 31, 2022 for 
 
 - [ ] table intact   - [ ] unit scale correct
 
-`0000874761-0000874761-23-000010-item-8-247` · Item 8 · detected unit scale: **none**
+`0000874761-0000874761-23-000010-item-8-251` · Item 8 · detected unit scale: **none**
 
-|  | Total Adjusted PTC |  |  |  |  |  |
-| --- | --- | --- | --- | --- | --- | --- |
-| Year Ended December 31, | 2022 |  | 2021 |  | 2020 |  |
-| US and Utilities SBU | $ | 570 | $ | 660 | $ | 505 |
-| South America SBU | 573 |  | 423 |  | 534 |  |
-| MCAC SBU | 559 |  | 314 |  | 287 |  |
-| Eurasia SBU | 192 |  | 196 |  | 177 |  |
-| Corporate and Other | (326) |  | (182) |  | (256) |  |
-| Eliminations | (1) |  | 7 |  | — |  |
-| Total Adjusted PTC | $ | 1,567 | $ | 1,418 | $ | 1,247 |
+|  | Total Revenue |  |  |  |  |  | Long-Lived Assets (1) |  |  |  |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Year Ended December 31, | 2022 |  | 2021 |  | 2020 |  | 2022 |  | 2021 |  |
+| United States (2) | $ | 4,093 | $ | 3,531 | $ | 3,243 | $ | 13,833 | $ | 11,034 |
+| Non-U.S.: |  |  |  |  |  |  |  |  |  |  |
+| Chile | 2,064 |  | 2,297 |  | 2,092 |  | 2,730 |  | 2,241 |  |
+| Dominican Republic | 1,591 |  | 1,087 |  | 896 |  | 1,013 |  | 892 |  |
+| El Salvador | 902 |  | 792 |  | 666 |  | 395 |  | 371 |  |
+| Bulgaria | 790 |  | 700 |  | 444 |  | 487 |  | 1,020 |  |
+| Panama | 678 |  | 595 |  | 519 |  | 1,880 |  | 1,907 |  |
+| Mexico | 595 |  | 471 |  | 349 |  | 409 |  | 614 |  |
+| Brazil | 560 |  | 471 |  | 401 |  | 1,811 |  | 1,215 |  |
+| Argentina | 501 |  | 390 |  | 308 |  | 461 |  | 470 |  |
+| Colombia | 417 |  | 383 |  | 358 |  | 308 |  | 349 |  |
+
+*… 5 more lines*
 
 - [ ] table intact   - [ ] unit scale correct
 

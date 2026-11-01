@@ -95,7 +95,7 @@ The following table presents information on assets and liabilities related to VI
 
 ### Other tables (sampled)
 
-`0000019617-0000019617-23-000231-item-7-349` · Item 7 · detected unit scale: **none**
+`0000019617-0000019617-23-000231-item-7-349` · Item 7 · detected unit scale: **millions**
 
 | Ratings profile of derivative receivables |  |  |  |  |  |  |  |  |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -140,22 +140,24 @@ The following table presents information on assets and liabilities related to VI
 
 - [ ] table intact   - [ ] unit scale correct
 
-`0000019617-0000019617-23-000231-item-8-529` · Item 8 · detected unit scale: **none**
+`0000019617-0000019617-23-000231-item-8-526` · Item 8 · detected unit scale: **none**
 
-Presented below is a summary of interest and rates segregated between U.S. and non-U.S. operations for the years 2020 through 2022. The segregation of U.S. and non-U.S. components is based on the location of the office recording the transaction.
-| (Table continued on next page) |  |  |  |  |  |  |
-| --- | --- | --- | --- | --- | --- | --- |
-| U.S. | 246,670 |  | 8,026 |  | 3.25 |  |
-| Non-U.S. | 3,410 |  | 49 |  | 1.44 |  |
-| Total interest-bearing liabilities | 2,566,798 |  | 26,097 |  | 1.02 |  |
-| Noninterest-bearing liabilities(c) | 782,281 |  |  |  |  |  |
-| Total investable funds | $ | 3,349,079 | $ | 26,097 | 0.78 | % |
-| Net interest income and net yield: |  |  | $ | 67,144 | 2.00 | % |
-| U.S. |  |  | 58,950 |  | 2.27 |  |
-| Non-U.S. |  |  | 8,194 |  | 1.09 |  |
-| Percentage of total assets and liabilities attributable to non-U.S. operations: |  |  |  |  |  |  |
-| Assets |  |  |  |  | 24.9 |  |
-| Liabilities |  |  |  |  | 20.6 |  |
+| (Table continued from previous page) |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 259,302 |  |  | 274 |  |  | 0.11 |  |  | 255,421 |  |  | 1,058 |  |  | 0.41 |  |  |
+| 44,618 |  |  | 126 |  |  | 0.28 |  |  | 38,853 |  |  | 372 |  |  | 0.96 |  |  |
+| 241,431 |  |  | 257 |  |  | 0.11 |  |  | 205,255 |  |  | 195 |  |  | 0.10 |  |  |
+| 14,595 |  |  | 83 |  |  | 0.57 |  |  | 19,216 |  |  | 214 |  |  | 1.12 |  |  |
+| 250,378 |  |  | 4,282 |  |  | 1.71 |  |  | 254,400 |  |  | 5,764 |  |  | 2.27 |  |  |
+| 2,482,993 |  |  | 5,553 |  |  | 0.22 |  |  | 2,162,369 |  |  | 9,960 |  |  | 0.46 |  |  |
+| 674,485 |  | (k) |  |  |  |  |  |  | 517,527 |  |  |  |  |  |  |  |  |
+| 36,656 |  |  |  |  |  |  |  |  | 32,628 |  |  |  |  |  |  |  |  |
+| 60,318 |  |  |  |  |  |  |  |  | 61,593 |  |  |  |  |  |  |  |  |
+| 186,755 |  |  |  |  |  |  |  |  | 161,269 |  |  |  |  |  |  |  |  |
+| 3,441,207 |  |  |  |  |  |  |  |  | 2,935,386 |  |  |  |  |  |  |  |  |
+| 33,027 |  |  |  |  |  |  |  |  | 29,899 |  |  |  |  |  |  |  |  |
+
+*… 5 more lines*
 
 - [ ] table intact   - [ ] unit scale correct
 

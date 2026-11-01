@@ -137,6 +137,30 @@ def test_sync_reindexes_only_changed_filings(tmp_path: Path, chunks_root: Path) 
     assert sync(manifest(), FakeEmbedder(), collection, chunks_root) == []
 
 
+class NoEmbedder(FakeEmbedder):
+    def embed_documents(self, texts: Sequence[str]) -> list[list[float]]:
+        raise AssertionError("re-embedded a filing whose text did not change")
+
+
+def test_sync_updates_metadata_only_changes_without_re_embedding(
+    tmp_path: Path, chunks_root: Path
+) -> None:
+    from finqa.ingestion.index import sync
+
+    collection, _ = built(tmp_path, chunks_root)
+    target = CHUNKS[0]
+    path = chunks_root / target.cik / f"{target.source_accession}.jsonl"
+    old = [c for c in CHUNKS if c.source_accession == target.source_accession]
+    edited = old[1].model_copy(update={"unit_scale": 1e9})  # a newly detected scale
+    path.write_text(
+        "".join(c.model_dump_json() + "\n" for c in [old[0], edited, *old[2:]]), encoding="utf-8"
+    )
+    assert sync(manifest(), NoEmbedder(), collection, chunks_root) == [target.source_accession]
+    stored = collection.get(ids=[edited.chunk_id], include=["metadatas"])
+    assert stored["metadatas"][0]["unit_scale"] == 1e9  # type: ignore[index]
+    assert sync(manifest(), NoEmbedder(), collection, chunks_root) == []
+
+
 def test_load_chunks_keeps_unicode_line_separators_in_text(tmp_path: Path) -> None:
     from finqa.ingestion.index import load_chunks
 
