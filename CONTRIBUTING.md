@@ -82,4 +82,4 @@ Any research-design decision (scoring edge cases, thresholds, inclusion rules) g
 
 ## Claude Code
 
-Claude Code reads [CLAUDE.md](CLAUDE.md) every session. It never runs Git or GitHub commands that change anything. It ends each hand-off with a "Human steps" block of commands for you to run (T17).
+Claude Code reads `CLAUDE.md` every session. `CLAUDE.md` and `.claude/` are kept locally and gitignored, not in the repo; ask Pratosh for a copy before using Claude Code here. It never runs Git or GitHub commands that change anything. It ends each hand-off with a "Human steps" block of commands for you to run (T17).

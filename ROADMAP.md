@@ -159,6 +159,7 @@ Five people and Claude Code share this repo. These rules apply to everyone, incl
   - `.claude/settings.json`: a permissions **deny** list that blocks state-changing Git and all GitHub commands (T17), for example `Bash(git add:*)`, `Bash(git commit:*)`, `Bash(git push:*)`, `Bash(git pull:*)`, `Bash(git merge:*)`, `Bash(git rebase:*)`, `Bash(git checkout:*)`, `Bash(git switch:*)`, `Bash(git reset:*)`, `Bash(gh:*)`, plus an **allow** list for the read-only commands (`Bash(git status)`, `Bash(git diff:*)`, `Bash(git log:*)`). Check the current Claude Code documentation for the exact rule syntax.
   - `CLAUDE.md` at the repo root: read `PROGRESS.md` and `ROADMAP.md` at session start; work only on the current phase; follow all rules in this file; never run Git or GitHub commands; end every hand-off with a "Human steps" block.
   - Commit `.claude/settings.json` so the rules apply to every teammate's Claude Code. Personal overrides go in `.claude/settings.local.json`, which is gitignored and must not loosen the deny list.
+  - *Changed 2026-11-01 (DECISIONS.md):* both files are now kept locally and gitignored, not committed; a teammate who uses Claude Code gets a copy from Pratosh.
   - *Accept:* in a test session, asking Claude Code to commit or push is refused by the permission system, and it responds with a "Human steps" block instead.
 
 - **P0.2 Configuration system**

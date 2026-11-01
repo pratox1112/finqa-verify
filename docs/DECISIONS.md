@@ -188,3 +188,9 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 **Final result:** 151 pass, 29 warn, 26 flag (`data/QA_CHECKS.md`).
 
 **Known limitations, not fixed (for time):** the Windows-1252 characters (4,618 chunks); JPMorgan FY2020–24 statements in Item 7, so Phase 2 retrieval should not rely on the section label alone for JPMorgan; AWW's section-wide scale (the 2026-10-30 open question); General Mills FY2022–23 statements as text; MGM's unlabelled total rows.
+
+## 2026-11-01 · Pratosh Karthikeyan · Claude Code files kept out of the repository
+
+**Decision:** `CLAUDE.md` and `.claude/` (including `.claude/settings.json`) are removed from the repository and gitignored; they stay on Pratosh's machine. This changes P0.11, which had both committed so the rules applied to every teammate.
+
+**Consequence:** a teammate who clones the repo gets neither the Claude Code instructions nor the permission deny list that blocks Git and GitHub commands (T17). Anyone who uses Claude Code on this repo gets a copy of both files from Pratosh first. The rules themselves (frozen files, scoring only against gold answers, no test-split runs from branches) still hold for everyone through ROADMAP, CONTRIBUTING, CI and the frozen-file guard.

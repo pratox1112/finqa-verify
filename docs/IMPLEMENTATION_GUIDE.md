@@ -249,7 +249,7 @@ The same workflow runs on every push to `main`, which is every merge: that's the
 
 Claude Code never runs Git or GitHub commands that change state; it writes code and gives humans the commands. Enforced by:
 
-- **`.claude/settings.json`** (committed, so it applies to everyone): a permissions deny list blocking state-changing Git commands and the `gh` CLI, and an allow list for read-only Git commands (`status`, `diff`, `log`). Check the current Claude Code docs for the exact rule syntax. Personal overrides go in the gitignored `.claude/settings.local.json` and must not loosen the deny list.
+- **`.claude/settings.json`** (kept locally and gitignored since 2026-11-01; each Claude Code user needs a copy): a permissions deny list blocking state-changing Git commands and the `gh` CLI, and an allow list for read-only Git commands (`status`, `diff`, `log`). Check the current Claude Code docs for the exact rule syntax. Personal overrides go in the gitignored `.claude/settings.local.json` and must not loosen the deny list.
 - **`CLAUDE.md`** at the repo root, which Claude Code reads at the start of every session.
 
 A human creates and reviews both files, since they govern Claude Code itself.
