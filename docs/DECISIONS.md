@@ -269,3 +269,12 @@ Most adjacent-year matches are text that is identical across years (geographies,
 **Finding: 12 of 127 questions have gold evidence that is not in the index** at this threshold: `financebench_id_00476`, `_00735`, `_00746`, `_00941`, `_01254`, `_02608`, `_03838`, `_04417`, `_04660`, `_05915`, `_07661`, `_10130`. They include the debt-securities questions, which are answered from the 10-K cover page, and a legal-proceedings question (Item 3); neither part is indexed. Retrieval-based arms can't succeed on these, so the retrieval ceiling is 115/127. This is reported with the retrieval results.
 
 **Calibration uses the search index (`data/chroma`), not `data/chunks`:** the shared `chunks.zip` predates the 2026-11-01 Item 8 fixes for 34 filings (176,792 chunks vs. 182,198 in the index; e.g. PayPal FY2022 has 1 Item 8 chunk in the file, 173 in the index).
+
+## 2026-11-03 · Dheepak Karan Elumalai Santhakumari · Numeric citation check (diagnostic)
+
+**Decision:** in addition to the ROADMAP tasks, the mid-term reports how often a claim's cited chunk actually contains the claimed value (`src/finqa/eval/citation_check.py`).
+- Numbers are read with the shared reader. A bare table number is also tried at the table's stated `unit_scale`. Values match within the relative tolerance, **ignoring sign**, because filings print outflows in parentheses.
+- Claims with an `expression` (derived values), claims with no citation, and citations to chunks the draft never saw are **not checkable** and are left out of the rate.
+- It is a diagnostic only, never used for correctness (rule 10). It is the same logic the grounded verifier's check 1 (P4.3) will reuse.
+
+**Why:** a confident, cited but wrong number is the failure this project targets. The share of cited claims whose citation doesn't hold the number motivates claim-level verification directly. **Check on real data:** for 14 of the 15 single-number, single-fact questions, the gold value is found in the question's gold-evidence chunk. The miss is a value written in prose without a scale word.

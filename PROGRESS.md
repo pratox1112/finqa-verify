@@ -256,3 +256,4 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-11-03 · Dheepak Karan Elumalai Santhakumari · P2.4 · Results tables with counts, bootstrap CIs, refusals, selective accuracy, cost and a paired McNemar test · branch dheepak/results-tables
 - 2026-11-03 · Dheepak Karan Elumalai Santhakumari · P2.5 · Rule-based error classifier and the labeling protocol · branch dheepak/error-classifier
 - 2026-11-03 · Dheepak Karan Elumalai Santhakumari · P2.6 · Retrieval diagnostic with a calibrated overlap threshold and hit@k · branch dheepak/retrieval-diagnostic
+- 2026-11-03 · Dheepak Karan Elumalai Santhakumari · — · Numeric citation check (diagnostic for the mid-term, reused by the grounded verifier later; DECISIONS.md) · branch dheepak/citation-check
