@@ -236,3 +236,14 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 - **Cost:** tokens × the Groq list price recorded 2026-10-30 ($0.80 / $4.00 per million input / output tokens), labelled an estimate.
 
 **Why:** with ~107 test questions an accuracy CI is about ±9 points, so two systems' intervals overlap even when one is clearly better on the same questions. A paired test uses that pairing. A fixed seed makes every table reproducible.
+
+## 2026-11-03 · Dheepak Karan Elumalai Santhakumari · Error classifier details
+
+**Decision (P2.5, rules in `docs/LABELING_PROTOCOL.md` §4):**
+- `wrong_unit_or_scale` also fires for a factor of 10^±2, not only 10^±3/6/9, because a fraction given for a percent (0.125 for 12.5%) is a scale error under the schema's percent convention.
+- `wrong_period` tries the same metric in fiscal years ±1, ±2 and −3, nearest first.
+- The XBRL rules (period, line item, company) run only when the answer claim's `metric` is a name in `data/metric_map.yaml` and the question is annual (10-K). Quarterly periods aren't derivable from the question alone.
+- `arithmetic` recomputes the claim's `expression` with a small evaluator that accepts only numbers, named inputs, + − × ÷, powers and parentheses.
+- Human labels keep the frozen `ErrorType` values. The extra categories "gold-ambiguous" and "technical failure" go in `Annotation.note`, so no schema change is needed.
+
+**Why:** each rule stays deterministic and reproducible, XBRL still never decides correctness, and the frozen schema is untouched.
