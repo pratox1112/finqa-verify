@@ -226,3 +226,13 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 4. **Text gold, with or without numbers** (49 + 26 questions): an LLM judge (the configured model through `llm.py`, temperature 0, prompt `src/finqa/prompts/judge_v1.txt`) decides whether the answer reaches the gold's conclusion and every key figure matches up to rounding. Its verdicts are checked against human labels on a random sample, and the agreement is reported.
 
 **Why:** requiring every number in a text gold answer to match fails on about 15 of the 49. The number reader picks up non-figures such as "3M" (3,000,000), aircraft models "737, 777, 787", and list markers "(1)", "(2)". The real answer in those is the conclusion. The judge uses the project's one model, because ROADMAP rule 8 allows no extra models, and the human-label check is what makes its verdicts trustworthy. A refusal is a different failure from a confident wrong number, which is what this project studies, so the two are kept apart. The judge prompt is frozen before any test-set scoring.
+
+## 2026-11-03 · Dheepak Karan Elumalai Santhakumari · Statistics in the results tables
+
+**Decision (P2.4):**
+- **Confidence intervals:** question-level percentile bootstrap, 10,000 resamples, fixed seed 0, 95%. Every percentage is printed as count, percent and CI ("8/10, 80.0% [55.0–100.0]").
+- **Paired comparison** of two systems on the same questions: McNemar's exact two-sided binomial test on the discordant pairs, with the four cells (both correct, only A, only B, both wrong). This is pulled forward from P9.3 so that the mid-term S0-vs-R0 comparison has a significance test. Holm correction across planned pairs stays in P9.3.
+- **Refusals** get their own column, and selective accuracy (correct among non-refused) is shown next to accuracy (scoring decision, 2026-11-02).
+- **Cost:** tokens × the Groq list price recorded 2026-10-30 ($0.80 / $4.00 per million input / output tokens), labelled an estimate.
+
+**Why:** with ~107 test questions an accuracy CI is about ±9 points, so two systems' intervals overlap even when one is clearly better on the same questions. A paired test uses that pairing. A fixed seed makes every table reproducible.
