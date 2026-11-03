@@ -26,5 +26,8 @@ chunking:                       # smaller than the roadmap's sizes; see docs/DEC
   text_max_tokens: 450          # fits the embedding model's 512-token window
   overlap_tokens: 60
   table_max_tokens: 800         # top-5 chunks stay well under Groq's 7,000 input tokens
+diagnostics:                    # retrieval diagnostic; calibration in docs/DECISIONS.md
+  evidence_shingle_size: 4      # word 4-grams
+  evidence_overlap_threshold: 0.6
 data:
   question_split: "dev"         # dev | test; test runs only from clean main (ROADMAP T12)

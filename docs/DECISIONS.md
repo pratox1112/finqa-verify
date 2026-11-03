@@ -247,3 +247,25 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 - Human labels keep the frozen `ErrorType` values. The extra categories "gold-ambiguous" and "technical failure" go in `Annotation.note`, so no schema change is needed.
 
 **Why:** each rule stays deterministic and reproducible, XBRL still never decides correctness, and the frozen schema is untouched.
+
+## 2026-11-03 · Dheepak Karan Elumalai Santhakumari · Retrieval diagnostic threshold
+
+**Decision (P2.6):**
+- **Overlap measure:** text is normalized (lowercase, letters and digits only) into word 4-grams. A chunk's overlap with one gold evidence item = shared 4-grams / the smaller side's 4-grams.
+- **Items compared one at a time:** a question can cite several pages (e.g. a balance sheet and an income statement), and joining them hides a chunk that holds one page completely.
+- **Threshold:** gold evidence counts as retrieved at overlap ≥ **0.6** (`diagnostics` in `configs/base.yaml`).
+- **hit@k** uses the same test on the top k of one ranked retrieval, with no LLM call.
+
+**Calibration** (all 127 in-scope questions; every chunk of the search index for the question's own filing vs. the same company's adjacent-year filing):
+
+| Threshold | Found in own filing | Found in adjacent-year filing |
+|---|---|---|
+| 0.5 | 116/127 | 29/127 |
+| **0.6** | **115/127** | **22/127** |
+| 0.7 | 110/127 | 14/127 |
+
+Most adjacent-year matches are text that is identical across years (geographies, acquisitions, descriptions), so they are legitimate. 0.6 keeps nearly every own-filing match while cutting the partial boilerplate matches. **Spot check** of 10 dev questions (11 evidence pages): every best chunk holds the gold page's content.
+
+**Finding: 12 of 127 questions have gold evidence that is not in the index** at this threshold: `financebench_id_00476`, `_00735`, `_00746`, `_00941`, `_01254`, `_02608`, `_03838`, `_04417`, `_04660`, `_05915`, `_07661`, `_10130`. They include the debt-securities questions, which are answered from the 10-K cover page, and a legal-proceedings question (Item 3); neither part is indexed. Retrieval-based arms can't succeed on these, so the retrieval ceiling is 115/127. This is reported with the retrieval results.
+
+**Calibration uses the search index (`data/chroma`), not `data/chunks`:** the shared `chunks.zip` predates the 2026-11-01 Item 8 fixes for 34 filings (176,792 chunks vs. 182,198 in the index; e.g. PayPal FY2022 has 1 Item 8 chunk in the file, 173 in the index).

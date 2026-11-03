@@ -69,6 +69,13 @@ class ChunkingConfig(_Section):
     table_max_tokens: int = Field(gt=0)  # longer tables are split, repeating the header
 
 
+class DiagnosticsConfig(_Section):
+    """Retrieval diagnostic (ROADMAP P2.6): when a chunk counts as containing gold evidence."""
+
+    evidence_shingle_size: int = Field(gt=0)  # word n-grams compared
+    evidence_overlap_threshold: float = Field(gt=0, le=1)  # shared n-grams / smaller side
+
+
 class DataConfig(_Section):
     question_split: Literal["dev", "test"]
 
@@ -81,6 +88,7 @@ class Config(_Section):
     verification: VerificationConfig
     embedding: EmbeddingConfig
     chunking: ChunkingConfig
+    diagnostics: DiagnosticsConfig
     data: DataConfig
 
 
