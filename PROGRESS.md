@@ -32,7 +32,7 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 
 | Name | Role (see docs/IMPLEMENTATION_GUIDE.md §1) |
 |---|---|
-| Dheepak Karan Elumalai Santhakumari | *TBD* |
+| Dheepak Karan Elumalai Santhakumari | B. Evaluation + C. Generators (S0, R0) for M1 |
 | Mohammed Ibrahim | *TBD* |
 | Pratosh Karthikeyan | *TBD* |
 | Rahul Vishnuvardhana | *TBD* |
@@ -87,7 +87,7 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
-| P2.1 | Question types and split | todo | | | | |
+| P2.1 | Question types and split | in-progress | Dheepak Karan Elumalai Santhakumari | dheepak/question-split | 2026-11-02 | Keyword-rule proposals confirmed (6 changed) → data/splits.json: dev 20 (pilot) / test 107. Decisions in DECISIONS.md 2026-11-02. |
 | P2.2 | Runner | todo | | | | |
 | P2.3 | Scoring | todo | | | | |
 | P2.4 | Results tables | todo | | | | |
@@ -250,3 +250,4 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P1.1–P1.9 · Phase 1 started on one branch; data decisions recorded in docs/DECISIONS.md · https://github.com/pratox1112/finqa-verify/pull/13
 - 2026-11-01 · Pratosh Karthikeyan (with Claude Code) · P1.1–P1.9, G1 · Filing pipeline merged; automated QA on all 206 10-Ks (151 pass, 29 warn, 26 flag); Gate 1 waits on teammates' confirmation and Gate 0 · https://github.com/pratox1112/finqa-verify/pull/13
 - 2026-11-01 · Pratosh Karthikeyan · P0.9 · Shared data folder (OneDrive) and teammate setup steps in CONTRIBUTING.md; shareable link
+- 2026-11-02 · Dheepak Karan Elumalai Santhakumari · P2.1 · Question types (keyword rules, confirmed) and dev/test split (dev = 20 pilot questions); Phase 2 started before Gate 0/1 sign-off (DECISIONS.md) · branch dheepak/question-split
