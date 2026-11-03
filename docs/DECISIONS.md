@@ -194,3 +194,25 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 **Decision:** `CLAUDE.md` and `.claude/` (including `.claude/settings.json`) are removed from the repository and gitignored; they stay on Pratosh's machine. This changes P0.11, which had both committed so the rules applied to every teammate.
 
 **Consequence:** a teammate who clones the repo gets neither the Claude Code instructions nor the permission deny list that blocks Git and GitHub commands (T17). Anyone who uses Claude Code on this repo gets a copy of both files from Pratosh first. The rules themselves (frozen files, scoring only against gold answers, no test-split runs from branches) still hold for everyone through ROADMAP, CONTRIBUTING, CI and the frozen-file guard.
+
+## 2026-11-02 · Dheepak Karan Elumalai Santhakumari · Start Phase 2 before Gate 0/1 sign-off
+
+**Decision:** Phase 2 (evaluation harness) starts now, while Gate 0 (schema review, CODEOWNERS, everyone running the checks) and Gate 1 (confirming the automated quality checks) still wait on teammates. Both gates stay `todo` / `review` in `PROGRESS.md` until those sign-offs are done.
+
+**Why:** the mid-term report and presentation are due Mon 2026-11-09, earlier than the guide's timeline (week 3, Nov 12–18). Phase 2 builds only on frozen contracts (`schemas.py`) and merged Phase 1 outputs, so the open sign-offs don't block it. Same reasoning as the 2026-10-30 "Start Phase 1 before Gate 0 sign-off" entry.
+
+## 2026-11-02 · Dheepak Karan Elumalai Santhakumari · Question types and the dev/test split
+
+**Decision (P2.1):**
+1. **Types describe what the question asks**, not the form of the gold answer:
+   - `single_fact`: one figure read from a filing.
+   - `calculation`: arithmetic within one period (ratios, margins, turnover, working capital; an average balance inside a ratio's definition still counts as one period).
+   - `multi_period`: compares or combines periods (growth, change, CAGR, multi-year average, trend, "improving").
+   - `qualitative`: a name, list, description or explanation.
+
+   Whether the gold answer is text is handled by scoring (`answer_kind` in the audit), not by the type.
+2. **Proposed by keyword rules** (`scripts/propose_question_types.py`), not by the model. The model is the system under test, and rules are reproducible and readable. ROADMAP P2.1 says "model-proposed", but every tag is confirmed by a person, so the proposal method doesn't change the final tags.
+3. **Confirmation:** borderline proposals were reviewed and every tag was approved by Dheepak. Six were changed from `qualitative` to `multi_period` so that the same question shape gets the same type, whatever the gold answer form (e.g. "Does AMEX have an improving operating margin…" matches Adobe's identical question): `financebench_id_00206`, `_00302`, `_00563`, `_00723`, `_00724`, `_02049`. Every tag is in `data/question_types.csv` (`proposed_type`, `rule`, `confirmed_type`).
+4. **Split:** dev = the 20 model-pilot questions (reserved for dev on 2026-10-30), test = the other 107. Dev by type: calculation 8, multi_period 8, single_fact 2, qualitative 2. Test: qualitative 35, calculation 31, multi_period 24, single_fact 17. Dev is not re-stratified, so that no question the pilot looked at reaches test.
+
+**Why:** the per-type breakdown is reported for every configuration, so the same question shape must always get the same type. `data/splits.json` is frozen once on `main`.
