@@ -89,7 +89,7 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 |---|---|---|---|---|---|---|
 | P2.1 | Question types and split | in-progress | Dheepak Karan Elumalai Santhakumari | dheepak/question-split | 2026-11-02 | Keyword-rule proposals confirmed (6 changed) → data/splits.json: dev 20 (pilot) / test 107. Decisions in DECISIONS.md 2026-11-02. |
 | P2.2 | Runner | in-progress | Dheepak Karan Elumalai Santhakumari | dheepak/runner | 2026-11-02 | src/finqa/eval/runner.py + `finqa draft/verify` CLI: drafts.jsonl / verified_{arm}.jsonl, resume (half-written line cut), run_meta.json, T13 run IDs, T12 test-split guard, failures kept with `error`. Dummy generator/verifier in eval/dummies.py; pipeline smoke test in tests/test_runner.py (results-table part comes with P2.4). 16 tests. |
-| P2.3 | Scoring | todo | | | | |
+| P2.3 | Scoring | in-progress | Dheepak Karan Elumalai Santhakumari | dheepak/scoring | 2026-11-02 | src/finqa/eval/scoring.py: failed → incorrect; refused (no claims + declining text); single-number gold → answer claim within 1% of gold; text gold → LLM judge (prompts/judge_v1.txt) to be checked against human labels; selective accuracy. Decision in DECISIONS.md 2026-11-02. 18 tests. |
 | P2.4 | Results tables | todo | | | | |
 | P2.5 | Rule-based error classifier | todo | | | | |
 | P2.6 | Retrieval diagnostic | todo | | | | |
@@ -252,3 +252,4 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-11-01 · Pratosh Karthikeyan · P0.9 · Shared data folder (OneDrive) and teammate setup steps in CONTRIBUTING.md; shareable link
 - 2026-11-02 · Dheepak Karan Elumalai Santhakumari · P2.1 · Question types (keyword rules, confirmed) and dev/test split (dev = 20 pilot questions); Phase 2 started before Gate 0/1 sign-off (DECISIONS.md) · branch dheepak/question-split
 - 2026-11-02 · Dheepak Karan Elumalai Santhakumari · P2.2 · Runner with draft and verify stages, resume, run metadata, test-split guard and the finqa command · branch dheepak/runner
+- 2026-11-02 · Dheepak Karan Elumalai Santhakumari · P2.3 · Scoring against gold only: numeric tolerance, refusals, failures, LLM judge for text answers · branch dheepak/scoring

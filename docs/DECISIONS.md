@@ -216,3 +216,13 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 4. **Split:** dev = the 20 model-pilot questions (reserved for dev on 2026-10-30), test = the other 107. Dev by type: calculation 8, multi_period 8, single_fact 2, qualitative 2. Test: qualitative 35, calculation 31, multi_period 24, single_fact 17. Dev is not re-stratified, so that no question the pilot looked at reaches test.
 
 **Why:** the per-type breakdown is reported for every configuration, so the same question shape must always get the same type. `data/splits.json` is frozen once on `main`.
+
+## 2026-11-02 · Dheepak Karan Elumalai Santhakumari · How answers are scored
+
+**Decision (P2.3; settles the open item "scoring of the 49 text answers that contain numbers" from the Phase 1 report):** each answer gets one outcome, decided in this order:
+1. **Failed** generation (`Draft.error` set) → incorrect, never dropped.
+2. **Refused:** no claims and the answer text declines ("cannot be determined", "not available", "insufficient information", …) → `refused`. This is counted separately from incorrect, and selective accuracy = correct / (correct + incorrect) is reported next to accuracy.
+3. **Single-number gold** (`answer_kind = number`, 52 questions in scope): the answer claim (`Draft.answer_claim_id`) must satisfy |value − gold| ≤ tolerance × |gold| (`verification.tolerance`, 1%). A gold of 0 needs exactly 0. Other claims don't decide the answer.
+4. **Text gold, with or without numbers** (49 + 26 questions): an LLM judge (the configured model through `llm.py`, temperature 0, prompt `src/finqa/prompts/judge_v1.txt`) decides whether the answer reaches the gold's conclusion and every key figure matches up to rounding. Its verdicts are checked against human labels on a random sample, and the agreement is reported.
+
+**Why:** requiring every number in a text gold answer to match fails on about 15 of the 49. The number reader picks up non-figures such as "3M" (3,000,000), aircraft models "737, 777, 787", and list markers "(1)", "(2)". The real answer in those is the conclusion. The judge uses the project's one model, because ROADMAP rule 8 allows no extra models, and the human-label check is what makes its verdicts trustworthy. A refusal is a different failure from a confident wrong number, which is what this project studies, so the two are kept apart. The judge prompt is frozen before any test-set scoring.
