@@ -194,3 +194,17 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 **Decision:** `CLAUDE.md` and `.claude/` (including `.claude/settings.json`) are removed from the repository and gitignored; they stay on Pratosh's machine. This changes P0.11, which had both committed so the rules applied to every teammate.
 
 **Consequence:** a teammate who clones the repo gets neither the Claude Code instructions nor the permission deny list that blocks Git and GitHub commands (T17). Anyone who uses Claude Code on this repo gets a copy of both files from Pratosh first. The rules themselves (frozen files, scoring only against gold answers, no test-split runs from branches) still hold for everyone through ROADMAP, CONTRIBUTING, CI and the frozen-file guard.
+
+## 2026-11-04 · Rahul Vishnuvardhana (drafted by Claude Code) · Start the S0 and R0 parts of Phase 3 before Gate 2 (PROPOSED, needs team agreement)
+
+**Proposal:** build the company resolver (P3.1), the filing search tool (P3.2), the closed-book generator (P3.0) and single-shot RAG (P3.5) now, in parallel with Phase 2, and develop them only on the 20 pilot questions reserved for the dev split (`data/pilot_questions.json`). No test-split run until Gate 2 is passed and the S0/R0 prompts are frozen. Gate 2 and Gate 3 stay `todo`.
+
+**Why:** M1 (due 2026-11-09) needs S0 and R0 numbers, and Phase 2 is unclaimed; none of this code depends on Phase 2 (same reasoning as "Start Phase 1 before Gate 0 sign-off", 2026-10-30). Risk: if the Phase 2 runner needs a different generator interface (`generate(question_id, company, question, *, run_id) -> Draft`), the generators follow it.
+
+## 2026-11-04 · Rahul Vishnuvardhana (drafted by Claude Code) · Company resolver and R0 search filters (PROPOSED, needs team agreement)
+
+**Resolver (P3.1):** names are normalized (case, punctuation, "&" = "and", legal suffixes such as Inc/Corp/Co, share-class words such as "Class A") and scored with rapidfuzz `WRatio` against the FinanceBench name, SEC name, former names and aliases in `data/companies.csv`; a ticker (any share class or historical ticker) scores 100. One company is returned only if it scores at least **90** and leads the next company by at least **5** (`retrieval.resolver_threshold` / `resolver_margin` in `configs/base.yaml`); otherwise only ranked candidates come back, never a guess. Checked on all 31 FinanceBench names (each resolves to itself) and on brands, former names, typos and an ambiguous name (`tests/test_resolver.py`).
+
+**R0 filters (P3.5):** the generators get the question text and the FinanceBench `company` field (as in the model pilot, `scripts/pilot.py`), never the gold document name or period. R0 derives its search filters from that: the company through the resolver; the fiscal year as the latest year the question mentions ("FY2019 - FY2020" -> 2020); a quarter (Q1-Q3) means that quarter's 10-Q, otherwise the 10-K. If the filtered search finds nothing, filters are dropped one at a time (period, form, year), keeping the company. The query is the question itself; no section filter.
+
+**Why:** using FinanceBench's gold `doc_name` would make R0's retrieval an oracle and unfair to R1, which must choose its own filters. Rules, not an extra LLM call, keep R0 at one model call. **To confirm:** that passing the FinanceBench `company` field (rather than resolving it from the question text) is acceptable for every arm.

@@ -1,0 +1,6 @@
+Company: $company
+Question: $question
+
+Excerpts:
+
+$excerpts

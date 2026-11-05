@@ -1,0 +1,6 @@
+# S0: closed-book baseline, no retrieval and no tools (also the contamination check, P7.5)
+retrieval:
+  arm: "closed_book"
+  calculator: false
+verification:
+  arm: "none"
