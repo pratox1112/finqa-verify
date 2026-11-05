@@ -100,12 +100,12 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
-| P3.0 | Closed-book generator (S0) | review | Rahul Vishnuvardhana | `rag-baselines` | 2026-11-04 | `generators/closed_book.py`, config `baselines/s0_closed_book.yaml`; dev check on the 20 pilot questions (`scripts/draft_pilot.py`). Started before Gate 2: see DECISIONS.md 2026-11-04 (proposed). |
-| P3.1 | Company resolver | review | Rahul Vishnuvardhana | `rag-baselines` | 2026-11-04 | `tools/resolver.py` (rapidfuzz; threshold 90, margin 5 in base.yaml); tests for Alphabet share classes, Meta/Facebook, brands, ambiguous "American". |
-| P3.2 | Filing search tool | review | Rahul Vishnuvardhana | `rag-baselines` | 2026-11-04 | `tools/search.py`: `search_filings(cik, fiscal_year, section, query)` plus optional form/period for 10-Qs. |
+| P3.0 | Closed-book generator (S0) | review | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-04 | `generators/closed_book.py`, config `baselines/s0_closed_book.yaml`; dev check on the 20 pilot questions (`scripts/draft_pilot.py`). Started before Gate 2: see DECISIONS.md 2026-11-04 (proposed). |
+| P3.1 | Company resolver | review | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-04 | `tools/resolver.py` (rapidfuzz; threshold 90, margin 5 in base.yaml); tests for Alphabet share classes, Meta/Facebook, brands, ambiguous "American". |
+| P3.2 | Filing search tool | review | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-04 | `tools/search.py`: `search_filings(cik, fiscal_year, section, query)` plus optional form/period for 10-Qs. |
 | P3.3 | On-demand fetch tool | todo | | | | |
 | P3.4 | Calculator tool | todo | | | | |
-| P3.5 | Single-shot RAG generator | review | Rahul Vishnuvardhana | `rag-baselines` | 2026-11-04 | `generators/rag.py`; filters from the question text (DECISIONS.md 2026-11-04, proposed). **[HUMAN] early freeze of the S0/R0 prompts still to do** (team approval, then FROZEN.txt + commit hash). |
+| P3.5 | Single-shot RAG generator | review | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-04 | `generators/rag.py`; filters from the question text (DECISIONS.md 2026-11-04, proposed). **[HUMAN] early freeze of the S0/R0 prompts still to do** (team approval, then FROZEN.txt + commit hash). |
 | P3.6 | Agent generator | todo | | | | |
 | P3.7 | Freeze prompts | todo | | | | |
 | P3.8 | Test-set drafts | todo | | | | |
@@ -250,4 +250,4 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P1.1–P1.9 · Phase 1 started on one branch; data decisions recorded in docs/DECISIONS.md · https://github.com/pratox1112/finqa-verify/pull/13
 - 2026-11-01 · Pratosh Karthikeyan (with Claude Code) · P1.1–P1.9, G1 · Filing pipeline merged; automated QA on all 206 10-Ks (151 pass, 29 warn, 26 flag); Gate 1 waits on teammates' confirmation and Gate 0 · https://github.com/pratox1112/finqa-verify/pull/13
 - 2026-11-01 · Pratosh Karthikeyan · P0.9 · Shared data folder (OneDrive) and teammate setup steps in CONTRIBUTING.md; shareable link
-- 2026-11-04 · Rahul Vishnuvardhana (with Claude Code) · P3.0, P3.1, P3.2, P3.5 · Company resolver, filing search, closed-book (S0) and single-shot RAG (R0) generators; dev check on the pilot questions; S0/R0 prompt freeze pending
+- 2026-11-04 · Rahul Vishnuvardhana (with Claude Code) · P3.0, P3.1, P3.2, P3.5 · Company resolver, filing search, closed-book (S0) and single-shot RAG (R0) generators; dev check on the pilot questions; S0/R0 prompt freeze pending · https://github.com/pratox1112/finqa-verify/pull/17
