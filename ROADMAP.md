@@ -6,12 +6,12 @@
 
 ---
 
-## How to use this roadmap (for Claude Code and humans)
+## How to use this roadmap (for the AI assistant and humans)
 
 1. **Work on one task at a time**, in order, within the current phase. Each task has an ID (e.g. `P1.3`), the files it touches, and acceptance criteria.
 2. **A task is done only when its acceptance criteria pass and its pull request is merged with CI green.** Run `uv run pytest` locally first. Status is recorded in `PROGRESS.md`, never in this file.
 3. **Do not start a phase until the previous phase's gate is checked.** Gates exist because later phases depend on frozen outputs of earlier ones.
-4. **Tasks marked `[HUMAN]`** need a person (decisions, manual checks, annotation). Claude Code should prepare everything around them, then stop and ask. **All Git and GitHub actions are always human actions** (rule T17), even when a task isn't marked `[HUMAN]`.
+4. **Tasks marked `[HUMAN]`** need a person (decisions, manual checks, annotation). The AI assistant should prepare everything around them, then stop and ask. **All Git and GitHub actions are always human actions** (rule T17), even when a task isn't marked `[HUMAN]`.
 5. **Never change `src/finqa/schemas.py`, frozen prompts, or `data/splits.json` without explicit human approval.** Every module depends on them.
 6. **Never hardcode experiment settings.** Everything that differs between runs lives in `configs/`.
 7. **Never call the LLM directly.** Always go through `src/finqa/llm.py` so caching, retries, rate limiting, and logging apply.
@@ -25,7 +25,7 @@
 
 ## Team rules
 
-Five people and Claude Code share this repo. These rules apply to everyone, including Claude Code.
+Five people and an AI coding assistant share this repo. These rules apply to everyone, including the AI assistant.
 
 ### Environment
 
@@ -40,13 +40,13 @@ Five people and Claude Code share this repo. These rules apply to everyone, incl
 ### Progress tracking
 
 - **T5. `PROGRESS.md` is the single source of truth for status.** Claim a task there before starting it, and update it in the same PR that does the work. CI validates it (P0.10).
-- **T6. Claude Code sessions** start by reading `PROGRESS.md` and `ROADMAP.md`, and end by editing the relevant `PROGRESS.md` rows and adding a Log line in the working tree. The human then commits and pushes those edits (T17).
+- **T6. AI assistant sessions** start by reading `PROGRESS.md` and `ROADMAP.md`, and end by editing the relevant `PROGRESS.md` rows and adding a Log line in the working tree. The human then commits and pushes those edits (T17).
 
 ### Branches and pull requests
 
 - **T7. One task per branch,** with a short descriptive name: `section-chunking`, `baseline-table`. **Branch names, commit messages, and PR titles/descriptions never contain phase names or task IDs**; IDs are only for `ROADMAP.md` and `PROGRESS.md`, whose *Branch / PR* column links each task to its branch. PR title example: `Section-aware chunking with unit scale`.
 - **T8. Keep PRs small,** ideally under ~400 changed lines. Split larger work into sub-PRs.
-- **T9. Every PR needs one approving review from a teammate who didn't write it.** This includes PRs containing code Claude Code wrote: a human must read and approve it before it merges.
+- **T9. Every PR needs one approving review from a teammate who didn't write it.** This includes PRs containing code an AI assistant wrote: a human must read and approve it before it merges.
 - **T10. Rebase on `main` before merging, then squash-merge,** so `main` has one clean commit per task.
 - **T11. Code owners.** A `CODEOWNERS` file requires review from the owning role for its area (e.g. Role E for `src/finqa/verifiers/`, Role B for `src/finqa/eval/`), and from two people for frozen files.
 
@@ -57,12 +57,12 @@ Five people and Claude Code share this repo. These rules apply to everyone, incl
 - **T14. Never commit bulky data, runs, caches, or secrets.** Downloaded and generated data (`data/raw/`, `data/xbrl/`, the index), `runs/`, response caches, and `.env` stay out of Git. Small curated files in `data/` (`splits.json`, `SCOPE.md`, `QA_CHECKS.md`, `metric_map.yaml`, `companies.csv`, `financebench_audit.csv`) are committed (see `docs/DECISIONS.md`). Shared artifacts (index, XBRL cache, completed runs, response cache) live in one agreed shared location, recorded in `CONTRIBUTING.md`.
 - **T15. Every research-design decision goes in `docs/DECISIONS.md`** with the date, who decided, and why, before the code that implements it is merged.
 
-### Claude Code and GitHub
+### AI assistant and GitHub
 
-- **T17. Claude Code never acts on Git or GitHub. Humans run every Git and GitHub command; Claude Code gives them the commands.**
-  - **Claude Code may** run read-only Git commands to understand the repository state: `git status`, `git diff`, `git log`, `git show`, `git branch --show-current`.
-  - **Claude Code must not** run anything that changes Git state or talks to GitHub: no `git add`, `commit`, `checkout`/`switch`, `branch` (create/delete), `merge`, `rebase`, `reset`, `stash`, `tag`, `pull`, `fetch`, or `push`; no `gh` CLI; no GitHub API calls; no opening, commenting on, labeling, approving, or merging pull requests; no triggering workflows; no changes to repository settings.
-  - **Instead, at every hand-off point** (starting a task, finishing a task, after review feedback), Claude Code ends its message with a **"Human steps"** block: the exact commands to run, in order, in one copy-pasteable code block, plus anything to do in the GitHub web UI. For example:
+- **T17. The AI assistant never acts on Git or GitHub. Humans run every Git and GitHub command; the AI assistant gives them the commands.**
+  - **The AI assistant may** run read-only Git commands to understand the repository state: `git status`, `git diff`, `git log`, `git show`, `git branch --show-current`.
+  - **The AI assistant must not** run anything that changes Git state or talks to GitHub: no `git add`, `commit`, `checkout`/`switch`, `branch` (create/delete), `merge`, `rebase`, `reset`, `stash`, `tag`, `pull`, `fetch`, or `push`; no `gh` CLI; no GitHub API calls; no opening, commenting on, labeling, approving, or merging pull requests; no triggering workflows; no changes to repository settings.
+  - **Instead, at every hand-off point** (starting a task, finishing a task, after review feedback), the AI assistant ends its message with a **"Human steps"** block: the exact commands to run, in order, in one copy-pasteable code block, plus anything to do in the GitHub web UI. For example:
 
     ```bash
     # Human steps: finish section chunking
@@ -72,9 +72,9 @@ Five people and Claude Code share this repo. These rules apply to everyone, incl
     gh pr create --base main --title "Section-aware chunking with unit scale" --body "Tests: tests/test_chunk.py"
     ```
 
-  - Claude Code lists the specific files to stage (never `git add .` or `git add -A`), so nothing unintended gets committed.
-  - Before suggesting a commit, Claude Code tells the human to run the local checks first (`uv run pre-commit run --all-files` and `uv run pytest -m "not integration"`) if it hasn't just run them itself.
-  - This is enforced in Claude Code's permission settings (P0.11), not just by instruction.
+  - The AI assistant lists the specific files to stage (never `git add .` or `git add -A`), so nothing unintended gets committed.
+  - Before suggesting a commit, the AI assistant tells the human to run the local checks first (`uv run pre-commit run --all-files` and `uv run pytest -m "not integration"`) if it hasn't just run them itself.
+  - This is enforced in the AI assistant's permission settings (P0.11), not just by instruction.
 
 ### Communication
 
@@ -154,13 +154,13 @@ Five people and Claude Code share this repo. These rules apply to everyone, incl
   - Fail any pull request that doesn't modify `PROGRESS.md`, unless it carries the label `no-progress-update` (T5; decided in `docs/DECISIONS.md`, since branch names carry no task IDs).
   - *Accept:* a PR with an invalid status, a missing task ID, or no `PROGRESS.md` change (and no exempt label) fails; a correct PR passes.
 
-- **P0.11 Claude Code guardrails** — `.claude/settings.json` and `CLAUDE.md`
-  - **[HUMAN]** creates and commits these files (they govern Claude Code, so Claude Code drafts them and a person reviews them).
-  - `.claude/settings.json`: a permissions **deny** list that blocks state-changing Git and all GitHub commands (T17), for example `Bash(git add:*)`, `Bash(git commit:*)`, `Bash(git push:*)`, `Bash(git pull:*)`, `Bash(git merge:*)`, `Bash(git rebase:*)`, `Bash(git checkout:*)`, `Bash(git switch:*)`, `Bash(git reset:*)`, `Bash(gh:*)`, plus an **allow** list for the read-only commands (`Bash(git status)`, `Bash(git diff:*)`, `Bash(git log:*)`). Check the current Claude Code documentation for the exact rule syntax.
+- **P0.11 AI assistant guardrails** — `.claude/settings.json` and `CLAUDE.md`
+  - **[HUMAN]** creates and commits these files (they govern the AI assistant, so the assistant drafts them and a person reviews them).
+  - `.claude/settings.json`: a permissions **deny** list that blocks state-changing Git and all GitHub commands (T17), for example `Bash(git add:*)`, `Bash(git commit:*)`, `Bash(git push:*)`, `Bash(git pull:*)`, `Bash(git merge:*)`, `Bash(git rebase:*)`, `Bash(git checkout:*)`, `Bash(git switch:*)`, `Bash(git reset:*)`, `Bash(gh:*)`, plus an **allow** list for the read-only commands (`Bash(git status)`, `Bash(git diff:*)`, `Bash(git log:*)`). Check the assistant's current documentation for the exact rule syntax.
   - `CLAUDE.md` at the repo root: read `PROGRESS.md` and `ROADMAP.md` at session start; work only on the current phase; follow all rules in this file; never run Git or GitHub commands; end every hand-off with a "Human steps" block.
-  - Commit `.claude/settings.json` so the rules apply to every teammate's Claude Code. Personal overrides go in `.claude/settings.local.json`, which is gitignored and must not loosen the deny list.
-  - *Changed 2026-11-01 (DECISIONS.md):* both files are now kept locally and gitignored, not committed; a teammate who uses Claude Code gets a copy from Pratosh.
-  - *Accept:* in a test session, asking Claude Code to commit or push is refused by the permission system, and it responds with a "Human steps" block instead.
+  - Commit `.claude/settings.json` so the rules apply to every teammate's AI assistant. Personal overrides go in `.claude/settings.local.json`, which is gitignored and must not loosen the deny list.
+  - *Changed 2026-11-01 (DECISIONS.md):* both files are now kept locally and gitignored, not committed; a teammate who uses an AI coding assistant gets a copy from Pratosh.
+  - *Accept:* in a test session, asking the AI assistant to commit or push is refused by the permission system, and it responds with a "Human steps" block instead.
 
 - **P0.2 Configuration system**
   - `configs/base.yaml`, six grid configs in `configs/grid/` (`r0_v0.yaml` … `r1_v2.yaml`), and a loader in `src/finqa/config.py` using Pydantic Settings that merges base + override.
@@ -185,7 +185,7 @@ Five people and Claude Code share this repo. These rules apply to everyone, incl
   - *Accept:* tool-call success ≥ 95% and structured-output validity ≥ 95%. Results written to `docs/PILOT.md` with mean and max tokens per call.
   - If below target: stop and report to the team before continuing.
 
-- **GATE 0:** CI runs on every branch and blocks failing merges; post-merge `uv` check runs on `main`; branch protection and CODEOWNERS on; PROGRESS.md validated by CI; Claude Code guardrails in place; schemas approved and frozen (and guarded by P0.8); pilot passes; every teammate can run the checks locally.
+- **GATE 0:** CI runs on every branch and blocks failing merges; post-merge `uv` check runs on `main`; branch protection and CODEOWNERS on; PROGRESS.md validated by CI; AI assistant guardrails in place; schemas approved and frozen (and guarded by P0.8); pilot passes; every teammate can run the checks locally.
 
 ---
 
@@ -229,7 +229,7 @@ Five people and Claude Code share this repo. These rules apply to everyone, incl
 
 - **P1.9 Quality checks**
   - **[HUMAN]** For every company, inspect at least one parsed 10-K (sections, tables intact, unit scale correct). Record results in `data/QA_CHECKS.md`.
-  - Claude Code: generate a review sheet per company showing sample chunks and detected unit scales to make this fast.
+  - AI assistant: generate a review sheet per company showing sample chunks and detected unit scales to make this fast.
 
 - **GATE 1:** every in-scope filing indexed; XBRL cache and metric map exist; QA checks recorded.
 
@@ -495,5 +495,5 @@ Report sections and points: Intro & Motivation (3), Related Work (2), Methods (4
 | `docs/RESULTS.md` | All results tables as they are produced |
 | `data/SCOPE.md` | What is in and out of scope, with counts |
 | `CONTRIBUTING.md` | Branching, local checks, PR and freeze-change process |
-| `CLAUDE.md` | Instructions Claude Code reads every session (including T17) |
-| `.claude/settings.json` | Claude Code permissions enforcing T17 |
+| `CLAUDE.md` | Instructions the AI assistant reads every session (including T17) |
+| `.claude/settings.json` | AI assistant permissions enforcing T17 |

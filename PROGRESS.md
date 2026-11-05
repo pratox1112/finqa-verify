@@ -24,7 +24,7 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 4. **Blocked?** Set `blocked`, then add a row to *Blockers* saying what you're waiting on and who can unblock it.
 5. **Edit only your own rows**, plus one line in the *Log*, to keep merge conflicts rare. If you do hit a conflict here, keep both sides' changes.
 6. **Whoever merges a gate** updates the *Snapshot* (current phase, gates passed) in the same PR.
-7. **Claude Code:** read this file and ROADMAP.md at the start of every session; edit your task rows and add a Log line before ending a session. Claude Code never commits or pushes; it gives the human the commands (ROADMAP T17).
+7. **AI assistant:** read this file and ROADMAP.md at the start of every session; edit your task rows and add a Log line before ending a session. The AI assistant never commits or pushes; it gives the human the commands (ROADMAP T17).
 
 ---
 
@@ -58,7 +58,7 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 | P0.8 | Frozen-file guard | done | Pratosh Karthikeyan | [#3](https://github.com/pratox1112/finqa-verify/pull/3) | 2026-10-30 | scripts/check_frozen.py + `frozen-files` CI job; prompt manifest src/finqa/prompts/FROZEN.txt. 9 unit tests. Live schemas.py check possible only after P0.3 merges. |
 | P0.9 | Branch protection and local hooks | in-progress | Pratosh Karthikeyan | [#4](https://github.com/pratox1112/finqa-verify/pull/4) | 2026-11-01 | Hooks, CONTRIBUTING.md, CODEOWNERS draft merged; ruleset on main active. Shared artifact location set 2026-11-01 (OneDrive, link in CONTRIBUTING.md). Pending: teammate usernames for CODEOWNERS, then approvals=1 + code-owner review. |
 | P0.10 | Progress check | done | Pratosh Karthikeyan | [#5](https://github.com/pratox1112/finqa-verify/pull/5) | 2026-10-30 | scripts/check_progress.py in `checks`; new PR-only `progress-updated` job (label no-progress-update exempts). 8 tests. |
-| P0.11 | Claude Code guardrails | done | Pratosh Karthikeyan | [#6](https://github.com/pratox1112/finqa-verify/pull/6) | 2026-10-30 | .claude/settings.json: Bash + PowerShell deny rules for state-changing git and gh, read-only allow list, GitHub API WebFetch denied. Known gaps: `git branch <name>` creation, calling git by full path. Manual acceptance test after merge. Since 2026-11-01 kept locally and gitignored, not in the repo (DECISIONS.md). |
+| P0.11 | AI assistant guardrails | done | Pratosh Karthikeyan | [#6](https://github.com/pratox1112/finqa-verify/pull/6) | 2026-10-30 | .claude/settings.json: Bash + PowerShell deny rules for state-changing git and gh, read-only allow list, GitHub API WebFetch denied. Known gaps: `git branch <name>` creation, calling git by full path. Manual acceptance test after merge. Since 2026-11-01 kept locally and gitignored, not in the repo (DECISIONS.md). |
 | P0.2 | Configuration system | done | Pratosh Karthikeyan | [#7](https://github.com/pratox1112/finqa-verify/pull/7) | 2026-10-30 | base.yaml + 6 grid configs, src/finqa/config.py (merge + validation, Secrets from .env), CI config-validation step. Model ID is a placeholder until P0.6. |
 | P0.3 | Shared schemas | review | Pratosh Karthikeyan | [#9](https://github.com/pratox1112/finqa-verify/pull/9), [#10](https://github.com/pratox1112/finqa-verify/pull/10) | 2026-10-30 | Frozen on main with the 5 review decisions (#10 via approved-freeze-change). Merged by Pratosh without a second review: team review still needed before Gate 0. |
 | P0.4 | LLM wrapper | done | Pratosh Karthikeyan | [#8](https://github.com/pratox1112/finqa-verify/pull/8) | 2026-10-30 | src/finqa/llm.py: cache, 429/5xx retry, RPM/TPM limiter, thinking control, token logging, structured output. RPM/TPM and the thinking parameter to confirm in P0.6. |
@@ -235,19 +235,19 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD · name · task ID · what changed · PR link`.
 
 - *[YYYY-MM-DD] · [name] · — · PROGRESS.md created*
-- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.1 · Repository skeleton; decisions on data/ and Git naming recorded in docs/DECISIONS.md · https://github.com/pratox1112/finqa-verify/pull/1
-- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.7 · CI workflow on every push/PR, manual integration workflow, README badge · https://github.com/pratox1112/finqa-verify/pull/2
-- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.8 · Frozen-file guard in CI with approved-freeze-change label override · https://github.com/pratox1112/finqa-verify/pull/3
-- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.9 · Pre-commit hooks, CONTRIBUTING.md, CODEOWNERS draft · https://github.com/pratox1112/finqa-verify/pull/4
-- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.10 · PROGRESS.md validation and every-PR update rule in CI · https://github.com/pratox1112/finqa-verify/pull/5
-- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.11 · Claude Code permission rules enforcing T17 · https://github.com/pratox1112/finqa-verify/pull/6 (acceptance test passed)
-- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.2 · Configuration system and grid configs · https://github.com/pratox1112/finqa-verify/pull/7
-- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.4 · LLM wrapper · https://github.com/pratox1112/finqa-verify/pull/8
-- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.3, P0.6 · Shared schemas; Groq model ID, thinking parameter and limits confirmed · https://github.com/pratox1112/finqa-verify/pull/9
-- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.3 · Schema review decisions merged with approved-freeze-change (missed #9) · https://github.com/pratox1112/finqa-verify/pull/10
-- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.5 · Langfuse tracing with run_id and question_id tags · https://github.com/pratox1112/finqa-verify/pull/11 (manual Langfuse check passed 2026-10-30)
-- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P0.6 · Pilot script, FinanceBench loader, pilot question selection · https://github.com/pratox1112/finqa-verify/pull/12
-- 2026-10-30 · Pratosh Karthikeyan (with Claude Code) · P1.1–P1.9 · Phase 1 started on one branch; data decisions recorded in docs/DECISIONS.md · https://github.com/pratox1112/finqa-verify/pull/13
-- 2026-11-01 · Pratosh Karthikeyan (with Claude Code) · P1.1–P1.9, G1 · Filing pipeline merged; automated QA on all 206 10-Ks (151 pass, 29 warn, 26 flag); Gate 1 waits on teammates' confirmation and Gate 0 · https://github.com/pratox1112/finqa-verify/pull/13
+- 2026-10-30 · Pratosh Karthikeyan · P0.1 · Repository skeleton; decisions on data/ and Git naming recorded in docs/DECISIONS.md · https://github.com/pratox1112/finqa-verify/pull/1
+- 2026-10-30 · Pratosh Karthikeyan · P0.7 · CI workflow on every push/PR, manual integration workflow, README badge · https://github.com/pratox1112/finqa-verify/pull/2
+- 2026-10-30 · Pratosh Karthikeyan · P0.8 · Frozen-file guard in CI with approved-freeze-change label override · https://github.com/pratox1112/finqa-verify/pull/3
+- 2026-10-30 · Pratosh Karthikeyan · P0.9 · Pre-commit hooks, CONTRIBUTING.md, CODEOWNERS draft · https://github.com/pratox1112/finqa-verify/pull/4
+- 2026-10-30 · Pratosh Karthikeyan · P0.10 · PROGRESS.md validation and every-PR update rule in CI · https://github.com/pratox1112/finqa-verify/pull/5
+- 2026-10-30 · Pratosh Karthikeyan · P0.11 · AI assistant permission rules enforcing T17 · https://github.com/pratox1112/finqa-verify/pull/6 (acceptance test passed)
+- 2026-10-30 · Pratosh Karthikeyan · P0.2 · Configuration system and grid configs · https://github.com/pratox1112/finqa-verify/pull/7
+- 2026-10-30 · Pratosh Karthikeyan · P0.4 · LLM wrapper · https://github.com/pratox1112/finqa-verify/pull/8
+- 2026-10-30 · Pratosh Karthikeyan · P0.3, P0.6 · Shared schemas; Groq model ID, thinking parameter and limits confirmed · https://github.com/pratox1112/finqa-verify/pull/9
+- 2026-10-30 · Pratosh Karthikeyan · P0.3 · Schema review decisions merged with approved-freeze-change (missed #9) · https://github.com/pratox1112/finqa-verify/pull/10
+- 2026-10-30 · Pratosh Karthikeyan · P0.5 · Langfuse tracing with run_id and question_id tags · https://github.com/pratox1112/finqa-verify/pull/11 (manual Langfuse check passed 2026-10-30)
+- 2026-10-30 · Pratosh Karthikeyan · P0.6 · Pilot script, FinanceBench loader, pilot question selection · https://github.com/pratox1112/finqa-verify/pull/12
+- 2026-10-30 · Pratosh Karthikeyan · P1.1–P1.9 · Phase 1 started on one branch; data decisions recorded in docs/DECISIONS.md · https://github.com/pratox1112/finqa-verify/pull/13
+- 2026-11-01 · Pratosh Karthikeyan · P1.1–P1.9, G1 · Filing pipeline merged; automated QA on all 206 10-Ks (151 pass, 29 warn, 26 flag); Gate 1 waits on teammates' confirmation and Gate 0 · https://github.com/pratox1112/finqa-verify/pull/13
 - 2026-11-01 · Pratosh Karthikeyan · P0.9 · Shared data folder (OneDrive) and teammate setup steps in CONTRIBUTING.md; shareable link
-- 2026-11-04 · Rahul Vishnuvardhana (with Claude Code) · P3.0, P3.1, P3.2, P3.5 · Company resolver, filing search, closed-book (S0) and single-shot RAG (R0) generators; dev check on the pilot questions; S0/R0 prompt freeze pending · https://github.com/pratox1112/finqa-verify/pull/17
+- 2026-11-04 · Rahul Vishnuvardhana · P3.0, P3.1, P3.2, P3.5 · Company resolver, filing search, closed-book (S0) and single-shot RAG (R0) generators; dev check on the pilot questions; S0/R0 prompt freeze pending · https://github.com/pratox1112/finqa-verify/pull/17

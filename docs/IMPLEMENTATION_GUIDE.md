@@ -2,7 +2,7 @@
 
 **When Does Verification Help? Disentangling Agentic Retrieval and Grounded Verification in Numerical Financial QA**
 
-This guide explains **how** to build each part of the project. [`ROADMAP.md`](../ROADMAP.md) lists the tasks and gates, [`PROGRESS.md`](../PROGRESS.md) tracks status, and [`CLAUDE.md`](../CLAUDE.md) tells Claude Code how to work. Section numbers here (for example §0.4) are referenced from the roadmap, so keep them stable.
+This guide explains **how** to build each part of the project. [`ROADMAP.md`](../ROADMAP.md) lists the tasks and gates, [`PROGRESS.md`](../PROGRESS.md) tracks status, and [`CLAUDE.md`](../CLAUDE.md) tells the AI assistant how to work. Section numbers here (for example §0.4) are referenced from the roadmap, so keep them stable.
 
 ---
 
@@ -84,8 +84,8 @@ Adjust once the midterm and final dates are confirmed.
 │   ├── workflows/ci.yml          # every branch, every PR, post-merge on main
 │   ├── workflows/integration.yml # manual trigger only
 │   └── CODEOWNERS
-├── .claude/settings.json         # Claude Code permissions (Git/GitHub denied)
-├── CLAUDE.md                     # instructions Claude Code reads every session
+├── .claude/settings.json         # AI assistant permissions (Git/GitHub denied)
+├── CLAUDE.md                     # instructions the AI assistant reads every session
 ├── ROADMAP.md  PROGRESS.md  CONTRIBUTING.md  README.md
 ├── configs/
 │   ├── base.yaml
@@ -245,14 +245,14 @@ The same workflow runs on every push to `main`, which is every merge: that's the
 - **`CONTRIBUTING.md`:** branch naming (`section-chunking`), PR titles (`Section-aware chunking ...`; no task IDs in Git names), local checks, the shared artifact location, and the freeze-change process.
 - **Branch and PR practice:** one task per branch, PRs under ~400 changed lines where possible, rebase on `main`, squash-merge.
 
-### 0.9 Claude Code guardrails
+### 0.9 AI assistant guardrails
 
-Claude Code never runs Git or GitHub commands that change state; it writes code and gives humans the commands. Enforced by:
+The AI assistant never runs Git or GitHub commands that change state; it writes code and gives humans the commands. Enforced by:
 
-- **`.claude/settings.json`** (kept locally and gitignored since 2026-11-01; each Claude Code user needs a copy): a permissions deny list blocking state-changing Git commands and the `gh` CLI, and an allow list for read-only Git commands (`status`, `diff`, `log`). Check the current Claude Code docs for the exact rule syntax. Personal overrides go in the gitignored `.claude/settings.local.json` and must not loosen the deny list.
-- **`CLAUDE.md`** at the repo root, which Claude Code reads at the start of every session.
+- **`.claude/settings.json`** (kept locally and gitignored since 2026-11-01; each AI assistant user needs a copy): a permissions deny list blocking state-changing Git commands and the `gh` CLI, and an allow list for read-only Git commands (`status`, `diff`, `log`). Check the assistant's current docs for the exact rule syntax. Personal overrides go in the gitignored `.claude/settings.local.json` and must not loosen the deny list.
+- **`CLAUDE.md`** at the repo root, which the AI assistant reads at the start of every session.
 
-A human creates and reviews both files, since they govern Claude Code itself.
+A human creates and reviews both files, since they govern the AI assistant itself.
 
 ---
 
@@ -296,7 +296,7 @@ Embed with the locked model (with its query instruction prefix) and load into Ch
 
 ### 1.8 Quality checks
 
-A person inspects at least one parsed 10-K per company (sections, intact tables, correct unit scale). Claude Code generates a review sheet per company to speed this up. Results go in `data/QA_CHECKS.md`.
+A person inspects at least one parsed 10-K per company (sections, intact tables, correct unit scale). The AI assistant generates a review sheet per company to speed this up. Results go in `data/QA_CHECKS.md`.
 
 ---
 
@@ -555,5 +555,5 @@ total ≈ questions × [ S0 + R0 + R1 + R0+calc + R1−calc drafts
 | Too few errors to analyze | Claim-level analysis; mid-size model; counts with every rate |
 | Annotation bias | Blinded cells; two labels per claim; kappa |
 | Broken `main` / stale environments | CI on every branch; post-merge checks; `uv sync` hook; stop-the-line rule |
-| Accidental Git/GitHub actions by Claude Code | Permission deny list in `.claude/settings.json`; human-only Git rule |
+| Accidental Git/GitHub actions by the AI assistant | Permission deny list in `.claude/settings.json`; human-only Git rule |
 | Scope creep | Feature freeze at Gate 4; out-of-scope list in `ROADMAP.md` |

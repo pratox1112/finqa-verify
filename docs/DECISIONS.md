@@ -30,7 +30,7 @@ Every research-design and process decision, newest at the bottom. Format: date, 
 
 **Why:** Branch names carry no task IDs, so CI cannot tell task PRs from others by name; requiring the update everywhere is simple and hard to forget, and the label covers the rare exceptions.
 
-## 2026-10-30 · Pratosh Karthikeyan (drafted by Claude Code) · Config defaults
+## 2026-10-30 · Pratosh Karthikeyan · Config defaults
 
 **Decision:** In `configs/base.yaml`, `retrieval.calculator` defaults to `false` (the guide's sample said `true`), and every grid config sets `calculator` explicitly: R0 files `false`, R1 files `true`. `data.question_split` defaults to `dev` (the guide's sample said `test`).
 
@@ -95,17 +95,17 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 3. **Gold values stated in the question's unit:** when a question asks for a figure "in USD millions" (or thousands, billions) and the gold answer is a bare number, the stated unit is applied, so `$1577.00` becomes 1,577,000,000 (full units, per the schema rule). *Why:* otherwise a correct model claim in full units would be scored wrong.
 4. **Fiscal labels from the filing's XBRL cover page:** `fiscal_year` and the quarter in `period` come from `DocumentFiscalYearFocus` / `DocumentFiscalPeriodFocus`, falling back to the period-of-report date when missing (each fallback logged). *Why:* follows the company's own fiscal calendar (Apple FY2022 ends September 2022) and matches the XBRL facts the verifier uses.
 5. **Sections kept:** 10-K Items 1, 1A, 7, 7A, 8; 10-Q Part I Items 1–4 and Part II Item 1A. *Why:* covers the FinanceBench evidence while keeping the index focused.
-6. **Long jobs** (filing download, embedding) are run by Claude Code in the session, with the counts reported; outputs stay in gitignored `data/`.
-7. **Restatement check (P1.8):** Claude Code proposes a candidate restated item from the XBRL data; a human confirms it against the filings.
+6. **Long jobs** (filing download, embedding) are run by the AI assistant in the session, with the counts reported; outputs stay in gitignored `data/`.
+7. **Restatement check (P1.8):** The AI assistant proposes a candidate restated item from the XBRL data; a human confirms it against the filings.
 8. **Quality checks (P1.9):** Pratosh inspects a few companies now; the team completes the rest later. Gate 1 stays open until every company is checked.
 
-## 2026-10-30 · Pratosh Karthikeyan (drafted by Claude Code) · Gold values and units from the question
+## 2026-10-30 · Pratosh Karthikeyan · Gold values and units from the question
 
 **Decision:** `finqa.verifiers.numbers` reads every number as (value, unit) in full units. For a gold answer that is a single number, the unit comes from the answer itself when it has one (`$`, `%`, `x`, "per share"), otherwise from the question: "in USD millions/billions/thousands" → USD at that scale (the answer is scaled unless it already carries a scale word); "percent", "%", "margin", "growth rate" → %; "per share", EPS → USD/share; "days", cash conversion cycle, DSO/DIO/DPO → days; "ratio", "turnover", "times", return on assets/equity → ratio. Bare four-digit years are not numbers. Result on the 127 in-scope questions: 52 single-number gold answers (19 USD, 15 %, 13 ratio, 4 days, 1 unitless zero), 49 text answers containing numbers, 26 text only (`data/SCOPE.md`).
 
 **Open for P2.3 (scoring):** for the 49 text answers containing numbers, which number is "the" gold value, or whether they are scored claim by claim against all extracted numbers, is a scoring decision to make before P2.3.
 
-## 2026-10-30 · Pratosh Karthikeyan (drafted by Claude Code) · Filing download details
+## 2026-10-30 · Pratosh Karthikeyan · Filing download details
 
 **Decision:** Only original 10-K and 10-Q filings are downloaded; amendments (10-K/A, 10-Q/A) are not, since they are usually partial and the XBRL facts already record restated values (P1.8). Each filing is saved as Markdown (tables kept) plus the kept sections as split by edgartools, so parsing (P1.5) needs no network. The manifest `data/filings_manifest.csv` (accession, form, fiscal year and period, label source, paths) is small and is committed, so the exact set of filings is reproducible; the filings themselves stay in gitignored `data/raw/`.
 
@@ -117,7 +117,7 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 
 **Why:** Neither source alone is reliable; filing order is unambiguous, and taking each company's naming convention from the majority of its own labels lets one bad label never override it.
 
-## 2026-10-30 · Pratosh Karthikeyan (drafted by Claude Code) · Section parsing method and known gaps
+## 2026-10-30 · Pratosh Karthikeyan · Section parsing method and known gaps
 
 **Decision:** Sections are cut from each filing's **Markdown** (so tables stay tables), using edgartools' section boundaries: the edgartools section's opening and closing words are located in the Markdown by comparing letters and digits only; where an opening appears several times (table of contents, cross-references), the occurrence whose following text best matches the section wins, and where closing boilerplate repeats, the occurrence nearest the expected end wins. Spans are widened to whole lines, the section's own "Item N." heading is pulled in, and the next item's heading is trimmed off (edgartools splits items a few words off). Where edgartools has no section, the section's own heading is used (logged as `heading` fallback). Markdown escapes are removed except `\|`. Result on all 819 filings: 4,003 of 4,095 expected sections from edgartools boundaries, 8 by heading fallback, 0 failed, 84 absent from the filing (`data/parse_stats.csv`).
 
@@ -141,7 +141,7 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 
 **Observations from the trial:** real bge token counts are lower than the chunker's estimate (sample of 128 chunks from a 3M 10-K: mean 262, 3 over 512), so the 450-token limit leaves headroom. A filtered search (3M, FY2018, 10-K, Item 8) returns only matching chunks, but for "capital expenditure" it does not rank the cash-flow statement ("Purchases of property, plant and equipment") in the top 3. That vocabulary gap is part of what the retrieval arms are measured on; not tuned here.
 
-## 2026-11-01 · Pratosh Karthikeyan (drafted by Claude Code) · XBRL lookup and metric map
+## 2026-11-01 · Pratosh Karthikeyan · XBRL lookup and metric map
 
 **Decision:** (1) `src/finqa/ingestion/xbrl.py` looks up every value a company reported for a us-gaap concept and period, across all its filings (10-K, 10-Q and 8-K recasts), each with accession, form and filing date. Periods are matched by actual dates (end date plus length: instant, 3, 6, 9 or 12 months), never by the filing's fiscal-year label. A schema Period ("FY2018", "Q3 FY2022", "9M FY2022") is turned into an end date through the manifest's labels; "6M"/"9M" close with the Q2/Q3 10-Q. (2) `data/metric_map.yaml` maps 25 base line items used by FinanceBench questions to every concept the 31 companies use for them (e.g. revenue has six, including `RevenuesNetOfInterestExpense` for JPMorgan and American Express; inventory adds Nike's, Ulta's and Boeing's own tags). A metric lookup returns the values of all mapped concepts, each tagged with its concept. Ratios (DPO, ROA, margins) are computed from these, not mapped. A company with no value (banks have no current assets) gets "no mapping": unverifiable, not an error. Percentages are converted from XBRL fractions (0.234 → 23.4). Coverage per company: `data/xbrl_coverage.csv`.
 
@@ -151,7 +151,7 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 
 **Why:** dates are the only reliable period key (a 10-K's comparatives carry the later filing's fiscal year); listing every concept in use avoids silently missing a company's own tag; returning all values keeps the restated and original figures side by side, which RQ2a needs.
 
-## 2026-11-01 · Pratosh Karthikeyan (drafted by Claude Code) · Financial statements outside Item 8; edgartools mis-splits
+## 2026-11-01 · Pratosh Karthikeyan · Financial statements outside Item 8; edgartools mis-splits
 
 **Finding (P1.9 quality checks):** 35 of 206 10-Ks had no financial statements in the parsed Item 8, affecting 16 of the 127 in-scope questions. Item 8 only said "see Item 15" and the statements were printed elsewhere: after Item 15 or the signatures (Activision FY2017–20, Netflix FY2013–18, PayPal FY2020–23, Ulta FY2021–22, Corning FY2018–23), inside the span edgartools calls Item 7 (PepsiCo FY2019–23), or in Exhibit 13, which was not downloaded (CVS FY2016–18, Pfizer FY2019, Verizon FY2019, Walmart FY2016–17). Separately, edgartools split Corning's 10-Ks wrongly, taking note numbers ("7. Income Taxes") for items, so Corning's Item 1, 1A and 7 held the wrong text.
 
@@ -161,7 +161,7 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 
 **Known limitations:** (1) General Mills FY2022–23: edgartools renders the statements as one value per paragraph instead of tables; the numbers are present and in order, but not as tables (FinanceBench uses GM FY2022). (2) MGM FY2021: statements present, but "Total assets" is not on its own table row, so the automatic check flags it. (3) The earlier "Exhibit 13" gap is closed: Walmart FY2016–17 and Verizon FY2019 now take their statements from Exhibit 13, and Microsoft FY2014–15 turn out to have theirs in Item 8 after all (the earlier note was wrong about them).
 
-## 2026-11-01 · Pratosh Karthikeyan (drafted by Claude Code) · Unit scale in multi-row table headers
+## 2026-11-01 · Pratosh Karthikeyan · Unit scale in multi-row table headers
 
 **Finding (P1.9 quality checks):** the General Mills FY2020 review sheet showed its three financial statements with unit scale **none**, although each states "(In Millions, Except per Share Data)". The filing renders a multi-row header as body rows: the title row, then the company name, then the scale. The same layout hides the scale in JPMorgan ("(in millions, except ratios)"), Pfizer ("(MILLIONS)"), Nike, American Express and others.
 
@@ -169,7 +169,7 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 
 **Result:** chunks unchanged in number and text; tables with a stated scale rose from 36,281 to 39,237 of 92,182 (39.4% → 42.6% of all tables). A sample of the new detections were all table-wide statements ("(MILLIONS)", "(in millions, except ratios)", "December 31, (in millions)"). The index takes the change through `index --sync`, which updates metadata in place without re-embedding when only the metadata changed. About 500 table chunks still state a scale lower down or in a multi-cell row (MGM most); left as None.
 
-## 2026-11-01 · Pratosh Karthikeyan (drafted by Claude Code) · Automated quality checks replace the manual review
+## 2026-11-01 · Pratosh Karthikeyan · Automated quality checks replace the manual review
 
 **Decision (Pratosh, for time; teammates to confirm):** P1.9's manual review of one 10-K per company is replaced by automated checks on **all 206 parsed 10-Ks** (`src/finqa/ingestion/qa_check.py`, results in `data/QA_CHECKS.md`). No person reviewed the sheets; `data/QA_CHECKS.md` says so. The 31 review sheets in `data/qa_sheets/` stay for spot checks by hand.
 
@@ -189,19 +189,19 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 
 **Known limitations, not fixed (for time):** the Windows-1252 characters (4,618 chunks); JPMorgan FY2020–24 statements in Item 7, so Phase 2 retrieval should not rely on the section label alone for JPMorgan; AWW's section-wide scale (the 2026-10-30 open question); General Mills FY2022–23 statements as text; MGM's unlabelled total rows.
 
-## 2026-11-01 · Pratosh Karthikeyan · Claude Code files kept out of the repository
+## 2026-11-01 · Pratosh Karthikeyan · AI assistant files kept out of the repository
 
 **Decision:** `CLAUDE.md` and `.claude/` (including `.claude/settings.json`) are removed from the repository and gitignored; they stay on Pratosh's machine. This changes P0.11, which had both committed so the rules applied to every teammate.
 
-**Consequence:** a teammate who clones the repo gets neither the Claude Code instructions nor the permission deny list that blocks Git and GitHub commands (T17). Anyone who uses Claude Code on this repo gets a copy of both files from Pratosh first. The rules themselves (frozen files, scoring only against gold answers, no test-split runs from branches) still hold for everyone through ROADMAP, CONTRIBUTING, CI and the frozen-file guard.
+**Consequence:** a teammate who clones the repo gets neither the AI assistant instructions nor the permission deny list that blocks Git and GitHub commands (T17). Anyone who uses an AI coding assistant on this repo gets a copy of both files from Pratosh first. The rules themselves (frozen files, scoring only against gold answers, no test-split runs from branches) still hold for everyone through ROADMAP, CONTRIBUTING, CI and the frozen-file guard.
 
-## 2026-11-04 · Rahul Vishnuvardhana (drafted by Claude Code) · Start the S0 and R0 parts of Phase 3 before Gate 2 (PROPOSED, needs team agreement)
+## 2026-11-04 · Rahul Vishnuvardhana · Start the S0 and R0 parts of Phase 3 before Gate 2 (PROPOSED, needs team agreement)
 
 **Proposal:** build the company resolver (P3.1), the filing search tool (P3.2), the closed-book generator (P3.0) and single-shot RAG (P3.5) now, in parallel with Phase 2, and develop them only on the 20 pilot questions reserved for the dev split (`data/pilot_questions.json`). No test-split run until Gate 2 is passed and the S0/R0 prompts are frozen. Gate 2 and Gate 3 stay `todo`.
 
 **Why:** M1 (due 2026-11-09) needs S0 and R0 numbers, and Phase 2 is unclaimed; none of this code depends on Phase 2 (same reasoning as "Start Phase 1 before Gate 0 sign-off", 2026-10-30). Risk: if the Phase 2 runner needs a different generator interface (`generate(question_id, company, question, *, run_id) -> Draft`), the generators follow it.
 
-## 2026-11-04 · Rahul Vishnuvardhana (drafted by Claude Code) · Company resolver and R0 search filters (PROPOSED, needs team agreement)
+## 2026-11-04 · Rahul Vishnuvardhana · Company resolver and R0 search filters (PROPOSED, needs team agreement)
 
 **Resolver (P3.1):** names are normalized (case, punctuation, "&" = "and", legal suffixes such as Inc/Corp/Co, share-class words such as "Class A") and scored with rapidfuzz `WRatio` against the FinanceBench name, SEC name, former names and aliases in `data/companies.csv`; a ticker (any share class or historical ticker) scores 100. One company is returned only if it scores at least **90** and leads the next company by at least **5** (`retrieval.resolver_threshold` / `resolver_margin` in `configs/base.yaml`); otherwise only ranked candidates come back, never a guess. Checked on all 31 FinanceBench names (each resolves to itself) and on brands, former names, typos and an ambiguous name (`tests/test_resolver.py`).
 
