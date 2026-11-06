@@ -43,6 +43,7 @@ class FilingSearch:
         *,
         form: str | None = None,  # "10-K" | "10-Q"
         period: str | None = None,  # e.g. "Q2 FY2023"
+        is_table: bool | None = None,  # True: tables only; False: text only
         k: int | None = None,
     ) -> list[Chunk]:
         """Nearest chunks first. `section` is as stored, e.g. "Item 8" or "Part I, Item 1"."""
@@ -58,6 +59,7 @@ class FilingSearch:
             section=section,
             form=form,
             period=period,
+            is_table=is_table,
         )
 
 

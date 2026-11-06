@@ -5,13 +5,17 @@ empty evidence set. Doubles as the contamination check: high closed-book accurac
 mean the model has seen FinanceBench (reused in P7.5).
 
 Config: configs/baselines/s0_closed_book.yaml. Prompts: src/finqa/prompts/s0_*.txt.
+The runner calls `generate(question, cfg, ctx)` (finqa.generators.base); the model wrapper is
+built once per config and reused for every question.
 """
 
 from __future__ import annotations
 
+import functools
 import time
 
 from finqa.config import Config
+from finqa.generators.base import Question, RunContext
 from finqa.generators.common import answer, draft, messages
 from finqa.llm import LLM
 from finqa.schemas import Draft
@@ -27,16 +31,29 @@ class ClosedBookGenerator:
         self.cfg = cfg
         self.llm = llm
 
-    def generate(self, question_id: str, company: str, question: str, *, run_id: str) -> Draft:
+    def __call__(self, question: Question, ctx: RunContext) -> Draft:
         started = time.monotonic()
-        with self.llm.tracer.question(run_id, question_id) as trace_id:
-            prompt = messages(SYSTEM_PROMPT, USER_PROMPT, company=company, question=question)
-            call = answer(self.llm, prompt, run_id, question_id)
+        qid = question.question_id
+        with self.llm.tracer.question(ctx.run_id, qid):
+            prompt = messages(
+                SYSTEM_PROMPT, USER_PROMPT, company=question.company, question=question.question
+            )
+            call = answer(self.llm, prompt, ctx.run_id, qid)
         return draft(
-            question_id=question_id,
+            question_id=qid,
             arm=self.cfg.retrieval.arm,
             call=call,
             evidence={},
-            trace_id=trace_id,
+            trace_id=ctx.trace_id,
             started=started,
         )
+
+
+@functools.cache
+def _generator(cfg: Config) -> ClosedBookGenerator:
+    return ClosedBookGenerator(cfg, LLM(cfg))
+
+
+def generate(question: Question, cfg: Config, ctx: RunContext) -> Draft:
+    """The runner's entry point for the closed_book arm (finqa.eval.runner.GENERATORS)."""
+    return _generator(cfg)(question, ctx)

@@ -50,6 +50,7 @@ class RetrievalConfig(_Section):
     max_agent_steps: int = Field(gt=0)
     resolver_threshold: float = Field(ge=0, le=100)  # rapidfuzz score for a single match
     resolver_margin: float = Field(ge=0)  # lead over the runner-up a single match needs
+    rag_text_chunks: int = Field(ge=0)  # R0: top_k tables plus this many text chunks
 
 
 class VerificationConfig(_Section):

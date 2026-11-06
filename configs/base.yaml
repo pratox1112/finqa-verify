@@ -17,6 +17,7 @@ retrieval:
   max_agent_steps: 8
   resolver_threshold: 90        # company resolver: score (0-100) for one confident match
   resolver_margin: 5            # ... and its lead over the next company; else candidates
+  rag_text_chunks: 1            # R0 retrieves top_k tables plus this many text chunks
 verification:
   arm: "none"                   # none | self_check | grounded
   max_revisions: 2

@@ -81,3 +81,16 @@ def test_rejects_empty_query_and_bad_k(tool: FilingSearch) -> None:
         tool.search_filings(CIKS[0], 2018, None, "  ")
     with pytest.raises(ValueError):
         FilingSearch(tool.collection, tool.embedder, top_k=0)
+
+
+def test_is_table_selects_tables_or_text(tmp_path: Path) -> None:
+    text = CHUNKS[0].model_copy(
+        update={"chunk_id": "text-1", "is_table": False, "unit_scale": None}
+    )
+    collection = open_collection("fake-model", tmp_path / "mixed")
+    add_chunks(collection, [CHUNKS[0], text], FakeEmbedder())
+    tool = FilingSearch(collection, FakeEmbedder(), top_k=5)
+    assert [
+        h.chunk_id for h in tool.search_filings(None, None, None, "capital", is_table=False)
+    ] == ["text-1"]
+    assert all(h.is_table for h in tool.search_filings(None, None, None, "capital", is_table=True))

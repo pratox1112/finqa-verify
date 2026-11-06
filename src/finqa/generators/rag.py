@@ -13,11 +13,18 @@ Search filters come from the question text, the same information the agent gets:
 If the filtered search finds nothing, filters are dropped one at a time (period, then form,
 then year); the company filter is kept whenever the company resolved.
 
-The search query is the question itself.
+The runner calls `generate(question, cfg, ctx)` (finqa.generators.base); the model wrapper,
+resolver and index are opened once per config and reused for every question.
+
+The search query is the question itself. R0 retrieves the top_k nearest **tables** plus the
+`rag_text_chunks` nearest text chunks (configs/base.yaml): on the dev questions, a plain
+top-5 mostly returned prose and notes, while the answers sit in the financial statements
+(docs/DECISIONS.md 2026-11-05).
 """
 
 from __future__ import annotations
 
+import functools
 import logging
 import re
 import time
@@ -25,6 +32,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from finqa.config import Config
+from finqa.generators.base import Question, RunContext
 from finqa.generators.common import answer, draft, messages
 from finqa.llm import LLM
 from finqa.schemas import Chunk, Draft
@@ -112,17 +120,22 @@ class RagGenerator:
         cik = resolution.company.cik if resolution.company else None
         if cik is None:
             logger.warning("company %r did not resolve; searching all companies", company)
+        r = self.cfg.retrieval
         for filters in relaxations(cik, question_filters(question)):
             with self.llm.tracer.tool("search_filings", {**filters, "query": question}) as span:
-                hits = self.search.search_filings(
-                    filters["cik"],
-                    filters["fiscal_year"],
-                    None,
-                    question,
-                    form=filters["form"],
-                    period=filters["period"],
-                    k=self.cfg.retrieval.top_k,
-                )
+                hits = []
+                for is_table, k in ((True, r.top_k), (False, r.rag_text_chunks)):
+                    if k:
+                        hits += self.search.search_filings(
+                            filters["cik"],
+                            filters["fiscal_year"],
+                            None,
+                            question,
+                            form=filters["form"],
+                            period=filters["period"],
+                            is_table=is_table,
+                            k=k,
+                        )
                 if span:
                     span.update(output=[h.chunk_id for h in hits])
             if hits:
@@ -130,20 +143,35 @@ class RagGenerator:
             logger.info("no chunks for %s; relaxing filters", filters)
         return []
 
-    def generate(self, question_id: str, company: str, question: str, *, run_id: str) -> Draft:
+    def __call__(self, question: Question, ctx: RunContext) -> Draft:
         started = time.monotonic()
-        with self.llm.tracer.question(run_id, question_id) as trace_id:
-            chunks = self.retrieve(company, question)
+        qid, company = question.question_id, question.company
+        with self.llm.tracer.question(ctx.run_id, qid):
+            chunks = self.retrieve(company, question.question)
             text = "\n\n".join(excerpt(c, company) for c in chunks) or "(no excerpts found)"
             prompt = messages(
-                SYSTEM_PROMPT, USER_PROMPT, company=company, question=question, excerpts=text
+                SYSTEM_PROMPT,
+                USER_PROMPT,
+                company=company,
+                question=question.question,
+                excerpts=text,
             )
-            call = answer(self.llm, prompt, run_id, question_id)
+            call = answer(self.llm, prompt, ctx.run_id, qid)
         return draft(
-            question_id=question_id,
+            question_id=qid,
             arm=self.cfg.retrieval.arm,
             call=call,
             evidence={c.chunk_id: c for c in chunks},
-            trace_id=trace_id,
+            trace_id=ctx.trace_id,
             started=started,
         )
+
+
+@functools.cache
+def _generator(cfg: Config) -> RagGenerator:
+    return RagGenerator(cfg, LLM(cfg), CompanyResolver.from_csv(), FilingSearch.open(cfg))
+
+
+def generate(question: Question, cfg: Config, ctx: RunContext) -> Draft:
+    """The runner's entry point for the rag arm (finqa.eval.runner.GENERATORS)."""
+    return _generator(cfg)(question, ctx)
