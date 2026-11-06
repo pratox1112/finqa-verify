@@ -100,12 +100,12 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
-| P3.0 | Closed-book generator (S0) | review | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-04 | `generators/closed_book.py`, config `baselines/s0_closed_book.yaml`; dev check on the 20 pilot questions (`scripts/draft_pilot.py`). Started before Gate 2: see DECISIONS.md 2026-11-04 (proposed). |
+| P3.0 | Closed-book generator (S0) | review | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-05 | `generators/closed_book.py` (runner interface `generate(question, cfg, ctx)`), config `baselines/s0_closed_book.yaml`. Dev, scored with the Phase 2 runner: 3/20 (15%); 2 failed drafts are model repetition loops (scored incorrect). |
 | P3.1 | Company resolver | review | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-04 | `tools/resolver.py` (rapidfuzz; threshold 90, margin 5 in base.yaml); tests for Alphabet share classes, Meta/Facebook, brands, ambiguous "American". |
-| P3.2 | Filing search tool | review | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-04 | `tools/search.py`: `search_filings(cik, fiscal_year, section, query)` plus optional form/period for 10-Qs. |
-| P3.3 | On-demand fetch tool | todo | | | | |
-| P3.4 | Calculator tool | todo | | | | |
-| P3.5 | Single-shot RAG generator | review | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-04 | `generators/rag.py`; filters from the question text (DECISIONS.md 2026-11-04, proposed). **[HUMAN] early freeze of the S0/R0 prompts still to do** (team approval, then FROZEN.txt + commit hash). |
+| P3.2 | Filing search tool | review | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-04 | `tools/search.py`: `search_filings(cik, fiscal_year, section, query)` plus optional form/period (10-Qs) and is_table filters. |
+| P3.3 | On-demand fetch tool | review | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-05 | `tools/fetch.py`: `fetch_filing(cik, form, fiscal_year, quarter=None)` reuses the Phase 1 steps (labels, download, parse, chunk, index); no-op if indexed; statuses fetched / already_indexed / not_found / empty. Live EDGAR integration test passed (3M FY2013 10-K, temporary index). |
+| P3.4 | Calculator tool | review | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-05 | `tools/calculate.py`: `calculate(expression, variables)` via asteval after an arithmetic-only allow-list; returns result + expression; tests for growth rate, margin, ratio, CAGR and 15 rejected inputs. |
+| P3.5 | Single-shot RAG generator | review | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-05 | `generators/rag.py` (runner interface; base.py copied byte-for-byte from main): top-5 tables + 1 text chunk; answer-claim normalization and recovery of Groq-refused answers (DECISIONS.md 2026-11-04/05, proposed). Dev, scored: 8/20 (40%), 0 failed, 6 refusals. **[HUMAN] early freeze of the S0/R0 prompts still to do.** |
 | P3.6 | Agent generator | todo | | | | |
 | P3.7 | Freeze prompts | todo | | | | |
 | P3.8 | Test-set drafts | todo | | | | |
@@ -251,3 +251,5 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-11-01 · Pratosh Karthikeyan · P1.1–P1.9, G1 · Filing pipeline merged; automated QA on all 206 10-Ks (151 pass, 29 warn, 26 flag); Gate 1 waits on teammates' confirmation and Gate 0 · https://github.com/pratox1112/finqa-verify/pull/13
 - 2026-11-01 · Pratosh Karthikeyan · P0.9 · Shared data folder (OneDrive) and teammate setup steps in CONTRIBUTING.md; shareable link
 - 2026-11-04 · Rahul Vishnuvardhana · P3.0, P3.1, P3.2, P3.5 · Company resolver, filing search, closed-book (S0) and single-shot RAG (R0) generators; dev check on the pilot questions; S0/R0 prompt freeze pending · https://github.com/pratox1112/finqa-verify/pull/17
+- 2026-11-05 · Rahul Vishnuvardhana · P3.3, P3.4, P3.5 · On-demand fetch tool and calculator tool; R0 retrieves top-5 tables plus 1 text chunk (dev gold-evidence recall 0.13 to 0.36) · https://github.com/pratox1112/finqa-verify/pull/17
+- 2026-11-05 · Rahul Vishnuvardhana · P3.0, P3.5 · S0/R0 on the runner interface; answer-claim normalization and Groq refusal recovery; scored dev S0 3/20, R0 8/20 · https://github.com/pratox1112/finqa-verify/pull/17
