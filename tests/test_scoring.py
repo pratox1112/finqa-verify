@@ -60,10 +60,26 @@ def test_failed_generation_is_incorrect():
         "This figure is not available in the filing.",
         "I don't know.",
         "Insufficient information to answer.",
+        "The excerpts do not contain Netflix's FY2015 capital expenditures.",
+        "The provided excerpts don't include the cash flow statement.",
+        "The filing does not provide enough detail to compute the ratio.",
+        "This figure is not included in the provided excerpts.",
     ],
 )
 def test_refusals(text: str):
     assert score("q1", "?", NUMBER_GOLD, [], None, text, None, 0.01).outcome == "refused"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Revenue does not include excise taxes; it was $2B.",
+        "The company did not disclose a dividend cut and kept paying.",
+    ],
+)
+def test_refusal_wording_with_claims_is_an_answer(text: str):
+    s = score("q1", "?", NUMBER_GOLD, [claim(1_577_000_000.0)], "c1", text, None, 0.01)
+    assert s.outcome == "correct"
 
 
 def test_wrong_number_is_not_a_refusal():

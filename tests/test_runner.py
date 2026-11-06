@@ -183,7 +183,10 @@ def test_verify_with_other_retrieval_refused(tmp_path: Path, splits: Path):
         )
 
 
-def test_unbuilt_arm_is_reported(tmp_path: Path, splits: Path):
+def test_unbuilt_arm_is_reported(tmp_path: Path, splits: Path, monkeypatch: pytest.MonkeyPatch):
+    # Point the config's arm at a module that does not exist, so the test does not
+    # depend on which generators are built yet.
+    monkeypatch.setitem(runner.GENERATORS, "rag", "finqa.generators.not_built:generate")
     with pytest.raises(runner.RunRefused, match="not built yet"):
         draft(tmp_path, splits, split="dev", generator=None)
 

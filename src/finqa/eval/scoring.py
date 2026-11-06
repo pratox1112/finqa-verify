@@ -37,7 +37,14 @@ REFUSAL = re.compile(
     r"cannot (?:be )?determin|can ?not (?:answer|find|calculate|compute)|unable to"
     r"|not (?:available|provided|disclosed|enough information|possible to determine)"
     r"|insufficient (?:information|data)|no (?:information|data) (?:is )?(?:available|provided)"
-    r"|(?:do not|don't) (?:know|have (?:access|enough))",
+    r"|(?:do not|don't) (?:know|have (?:access|enough))"
+    # R0 is told "if the excerpts do not contain what you need, say so" (P3.5 prompt).
+    r"|(?:excerpts?|filings?|documents?) (?:do|does|did)(?: not|n't)"
+    r" (?:contain|include|provide|show)"
+    r"|(?:do|does|did)(?: not|n't) (?:contain|include|provide|show|state|disclose|mention)"
+    r" (?:the|this|that|any|enough|sufficient|what|a |an |information|data|details)"
+    r"|not (?:included|contained|found|shown|stated|mentioned) in the (?:provided )?"
+    r"(?:excerpts?|filings?|documents?|information)",
     re.IGNORECASE,
 )
 
