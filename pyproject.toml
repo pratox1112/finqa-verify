@@ -5,6 +5,7 @@ description = "When Does Verification Help? Agentic retrieval and grounded verif
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
 dependencies = [
+    "asteval>=1.0.10",
     "chromadb>=1.5.9",
     "edgartools>=5.62.1",
     "httpx>=0.28.1",
