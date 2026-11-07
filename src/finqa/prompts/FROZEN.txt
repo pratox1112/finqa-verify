@@ -2,3 +2,8 @@
 # Adding a name freezes that prompt; the CI frozen-file guard then blocks edits to it
 # (and to this file) unless the PR has the approved-freeze-change label.
 # Record each freeze, with the commit hash, in docs/DECISIONS.md.
+s0_system.txt
+s0_user.txt
+r0_system.txt
+r0_user.txt
+judge_v1.txt

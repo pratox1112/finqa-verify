@@ -1,7 +1,7 @@
 """Fail a pull request that changes a frozen file without the `approved-freeze-change` label.
 
-Frozen: src/finqa/schemas.py, data/splits.json, the `model:` section of configs/base.yaml,
-the prompt manifest src/finqa/prompts/FROZEN.txt, and every prompt it lists.
+Frozen: src/finqa/schemas.py, data/splits.json, data/midterm_subset.json, the `model:` section
+of configs/base.yaml, the prompt manifest src/finqa/prompts/FROZEN.txt, and every prompt it lists.
 Only files that already exist on the base branch are frozen; creating one is not a change.
 
 Usage (CI): python scripts/check_frozen.py --base HEAD^1 --head HEAD [--approved]
@@ -17,7 +17,7 @@ from typing import Any
 
 import yaml
 
-FROZEN_FILES = {"src/finqa/schemas.py", "data/splits.json"}
+FROZEN_FILES = {"src/finqa/schemas.py", "data/splits.json", "data/midterm_subset.json"}
 PROMPTS_DIR = "src/finqa/prompts/"
 PROMPT_MANIFEST = PROMPTS_DIR + "FROZEN.txt"
 BASE_CONFIG = "configs/base.yaml"

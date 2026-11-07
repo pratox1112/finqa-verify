@@ -100,12 +100,12 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
-| P3.0 | Closed-book generator (S0) | review | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-05 | `generators/closed_book.py` (runner interface `generate(question, cfg, ctx)`), config `baselines/s0_closed_book.yaml`. Dev, scored with the Phase 2 runner: 3/20 (15%); 2 failed drafts are model repetition loops (scored incorrect). |
-| P3.1 | Company resolver | review | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-04 | `tools/resolver.py` (rapidfuzz; threshold 90, margin 5 in base.yaml); tests for Alphabet share classes, Meta/Facebook, brands, ambiguous "American". |
-| P3.2 | Filing search tool | review | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-04 | `tools/search.py`: `search_filings(cik, fiscal_year, section, query)` plus optional form/period (10-Qs) and is_table filters. |
-| P3.3 | On-demand fetch tool | review | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-05 | `tools/fetch.py`: `fetch_filing(cik, form, fiscal_year, quarter=None)` reuses the Phase 1 steps (labels, download, parse, chunk, index); no-op if indexed; statuses fetched / already_indexed / not_found / empty. Live EDGAR integration test passed (3M FY2013 10-K, temporary index). |
-| P3.4 | Calculator tool | review | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-05 | `tools/calculate.py`: `calculate(expression, variables)` via asteval after an arithmetic-only allow-list; returns result + expression; tests for growth rate, margin, ratio, CAGR and 15 rejected inputs. |
-| P3.5 | Single-shot RAG generator | review | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-05 | `generators/rag.py` (runner interface; base.py copied byte-for-byte from main): top-5 tables + 1 text chunk; answer-claim normalization and recovery of Groq-refused answers (DECISIONS.md 2026-11-04/05, proposed). Dev, scored: 8/20 (40%), 0 failed, 6 refusals. **[HUMAN] early freeze of the S0/R0 prompts still to do.** |
+| P3.0 | Closed-book generator (S0) | done | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-07 | `generators/closed_book.py` (runner interface `generate(question, cfg, ctx)`), config `baselines/s0_closed_book.yaml`. Dev, scored with the Phase 2 runner: 3/20 (15%); 2 failed drafts are model repetition loops (scored incorrect). |
+| P3.1 | Company resolver | done | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-07 | `tools/resolver.py` (rapidfuzz; threshold 90, margin 5 in base.yaml); tests for Alphabet share classes, Meta/Facebook, brands, ambiguous "American". |
+| P3.2 | Filing search tool | done | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-07 | `tools/search.py`: `search_filings(cik, fiscal_year, section, query)` plus optional form/period (10-Qs) and is_table filters. |
+| P3.3 | On-demand fetch tool | done | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-07 | `tools/fetch.py`: `fetch_filing(cik, form, fiscal_year, quarter=None)` reuses the Phase 1 steps (labels, download, parse, chunk, index); no-op if indexed; statuses fetched / already_indexed / not_found / empty. Live EDGAR integration test passed (3M FY2013 10-K, temporary index). |
+| P3.4 | Calculator tool | done | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-07 | `tools/calculate.py`: `calculate(expression, variables)` via asteval after an arithmetic-only allow-list; returns result + expression; tests for growth rate, margin, ratio, CAGR and 15 rejected inputs. |
+| P3.5 | Single-shot RAG generator | done | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-07 | `generators/rag.py` (runner interface; base.py copied byte-for-byte from main): top-5 tables + 1 text chunk; answer-claim normalization and recovery of Groq-refused answers (DECISIONS.md 2026-11-04/05, proposed). Dev, scored: 8/20 (40%), 0 failed, 6 refusals. S0/R0 prompts frozen (FROZEN.txt, DECISIONS 2026-11-07; team approval via approved-freeze-change). |
 | P3.6 | Agent generator | todo | | | | |
 | P3.7 | Freeze prompts | todo | | | | |
 | P3.8 | Test-set drafts | todo | | | | |
@@ -117,8 +117,8 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
-| M1.1 | S0 on test | todo | | | | |
-| M1.2 | R0 on test | todo | | | | |
+| M1.1 | S0 on test | in-progress | Rahul Vishnuvardhana | [#20](https://github.com/pratox1112/finqa-verify/pull/20) | 2026-11-07 | Midterm: stratified 40-question test subset (`data/midterm_subset.json`, DECISIONS 2026-11-07); full 107 after M1. |
+| M1.2 | R0 on test | in-progress | Rahul Vishnuvardhana | [#20](https://github.com/pratox1112/finqa-verify/pull/20) | 2026-11-07 | Same 40 questions as M1.1 (paired); full 107 after M1. |
 | M1.3 | Main baseline table | todo | | | | |
 | M1.4 | Retrieval diagnostic | todo | | | | |
 | M1.5 | R0 error breakdown | todo | | | | |
@@ -265,3 +265,5 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-11-06 · Dheepak Karan Elumalai Santhakumari · P2.3 · Numeric scoring converts % ↔ ratio and honours the question's "round to N decimal places" (Coca-Cola ROA 1.35% vs gold 0.01 was scored wrong; raised on #17; DECISIONS.md) · branch scoring-fixes
 - 2026-11-06 · Dheepak Karan Elumalai Santhakumari · P2.1–P2.6, G2 · Phase 2 rows marked done (merged in #18); Gate 2 criteria met, waiting for team sign-off · branch scoring-fixes
 - 2026-11-06 · Dheepak Karan Elumalai Santhakumari · P2.3, P2.2 · Review of #19: refusal detection only counts sentences about the excerpts/filing ("the company does not disclose X" is an answer); verify stage flushes traces before a stop · branch scoring-fixes
+- 2026-11-07 · Rahul Vishnuvardhana · P3.0–P3.5 · Merged in #17 (approved by Dheepak); S0/R0 prompts frozen
+- 2026-11-07 · Rahul Vishnuvardhana · M1.1, M1.2, P2.3 · Judge prompt frozen; `finqa draft --subset` and the frozen 40-question midterm test subset (Groq paid tier unavailable; DECISIONS.md) · https://github.com/pratox1112/finqa-verify/pull/20

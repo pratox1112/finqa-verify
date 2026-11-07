@@ -9,6 +9,7 @@ Both stages append one line per question as soon as it is done and skip question
 written, so a killed run resumes where it stopped. run_meta.json records the config, git commit,
 model ID, thinking setting, date and package versions. Run IDs follow T13:
 {date}_{config-name}_{short-commit}. A test-split run needs a clean working tree on `main` (T12).
+`--subset` runs only the questions a frozen subset file lists (data/midterm_subset.json).
 A generator or verifier that raises is recorded with `error` set, never dropped, except for
 transient API errors (rate limit or server error after the retries, lost connection): those stop
 the run with RunStopped and nothing is written for that question, so rerunning resumes there.
@@ -135,12 +136,15 @@ def package_versions() -> dict[str, str]:
     return dict(sorted((d.metadata["Name"].lower(), d.version) for d in metadata.distributions()))
 
 
-def run_meta(cfg: Config, split: str, git: GitState, run_id: str) -> dict[str, Any]:
+def run_meta(
+    cfg: Config, split: str, git: GitState, run_id: str, subset: str | None = None
+) -> dict[str, Any]:
     return {
         "run_id": run_id,
         "config_name": cfg.name,
         "config": cfg.model_dump(),
         "split": split,
+        "subset": subset,
         "git_commit": git.commit,
         "git_branch": git.branch,
         "git_dirty": git.dirty,
@@ -228,8 +232,8 @@ def run_draft(
     meta_path = run_dir / "run_meta.json"
     if meta_path.exists():
         old = json.loads(meta_path.read_text(encoding="utf-8"))
-        if old["config"] != meta["config"] or old["split"] != meta["split"]:
-            raise RunRefused(f"{run_dir.name} exists with a different config or split")
+        if any(old.get(k) != meta.get(k) for k in ("config", "split", "subset")):
+            raise RunRefused(f"{run_dir.name} exists with a different config, split or subset")
     else:
         meta_path.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
 
@@ -296,10 +300,20 @@ def run_verify(
     return results
 
 
+def select_subset(questions: list[Question], path: Path) -> list[Question]:
+    """The questions a subset file lists (its "ids"), in split order; every ID must be there."""
+    ids = set(json.loads(path.read_text(encoding="utf-8"))["ids"])
+    chosen = [q for q in questions if q.question_id in ids]
+    if len(chosen) != len(ids):
+        raise RunRefused(f"{path.name}: {len(ids) - len(chosen)} IDs are not in this split")
+    return chosen
+
+
 def draft_command(
     config_path: str,
     split: str | None = None,
     limit: int | None = None,
+    subset: Path | None = None,
     runs_dir: Path = RUNS_DIR,
     splits_path: Path = SPLITS_PATH,
     financebench_path: Path = financebench.DEFAULT_PATH,
@@ -315,10 +329,11 @@ def draft_command(
         raise RunRefused("--limit is for development on dev only")
     generator = generator or resolve(GENERATORS, cfg.retrieval.arm)
     questions = load_questions(split, splits_path, financebench_path)[:limit]
+    if subset is not None:
+        questions = select_subset(questions, subset)
     run_id = make_run_id(cfg.name, git)
-    drafts = run_draft(
-        cfg, questions, generator, runs_dir / run_id, run_meta(cfg, split, git, run_id)
-    )
+    meta = run_meta(cfg, split, git, run_id, subset.name if subset else None)
+    drafts = run_draft(cfg, questions, generator, runs_dir / run_id, meta)
     failed = sum(d.error is not None for d in drafts)
     print(f"{run_id}: {len(drafts)} drafts ({failed} failed) → {runs_dir / run_id}")
     return 0
