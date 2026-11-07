@@ -184,6 +184,27 @@ def test_transient_error_in_verify_stops_without_recording(tmp_path: Path, split
     assert not runner.read_jsonl(only_run(tmp_path) / "verified_none.jsonl", VerifiedResult)
 
 
+class FlushCounter:
+    def __init__(self) -> None:
+        self.flushes = 0
+
+    def flush(self) -> None:
+        self.flushes += 1
+
+
+def test_stopped_verify_flushes_traces_first(tmp_path: Path, splits: Path):
+    draft(tmp_path, splits, split="dev")
+
+    def rate_limited(d, cfg):
+        raise FakeAPIError(429)
+
+    tracer = FlushCounter()
+    cfg = runner.load_config(CONFIG)
+    with pytest.raises(runner.RunStopped):
+        runner.run_verify(cfg, only_run(tmp_path), rate_limited, tracer=tracer)  # type: ignore[arg-type]
+    assert tracer.flushes == 1
+
+
 def test_cli_turns_stop_into_exit_code(monkeypatch: pytest.MonkeyPatch):
     from finqa import cli
 

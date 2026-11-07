@@ -73,6 +73,18 @@ def test_refusals(text: str):
 @pytest.mark.parametrize(
     "text",
     [
+        "The company does not disclose the buyer's terms.",
+        "Its segments do not include a separate software business.",
+    ],
+)
+def test_answer_without_claims_that_says_does_not_is_not_a_refusal(text: str):
+    # qualitative answers usually have no claims; these must reach the judge
+    assert not scoring.is_refusal([], text)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
         "Revenue does not include excise taxes; it was $2B.",
         "The company did not disclose a dividend cut and kept paying.",
     ],

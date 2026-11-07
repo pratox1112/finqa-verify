@@ -267,8 +267,10 @@ def run_verify(
     run_dir: Path,
     verifier: Verifier,
     clock: Callable[[], float] = time.monotonic,
+    tracer: Tracer | None = None,
 ) -> list[VerifiedResult]:
     """Verify stage over a run's saved drafts → verified_{arm}.jsonl. Resumes; returns all."""
+    tracer = tracer or Tracer()
     meta = json.loads((run_dir / "run_meta.json").read_text(encoding="utf-8"))
     if meta["config"]["retrieval"] != cfg.retrieval.model_dump():
         raise RunRefused("verify config's retrieval section differs from the run's drafts")
@@ -284,11 +286,13 @@ def run_verify(
             result = verifier(draft, cfg)
         except Exception as e:  # recorded and counted separately, never dropped
             if is_transient(e):
+                tracer.flush()
                 raise _stop("verify", draft.question_id, len(results), e) from e
             result = failed_verification(draft, cfg, e, clock() - start)
         _append(path, result)
         results.append(result)
         done.add(draft.question_id)
+    tracer.flush()
     return results
 
 
