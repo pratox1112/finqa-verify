@@ -60,10 +60,38 @@ def test_failed_generation_is_incorrect():
         "This figure is not available in the filing.",
         "I don't know.",
         "Insufficient information to answer.",
+        "The excerpts do not contain Netflix's FY2015 capital expenditures.",
+        "The provided excerpts don't include the cash flow statement.",
+        "The filing does not provide enough detail to compute the ratio.",
+        "This figure is not included in the provided excerpts.",
     ],
 )
 def test_refusals(text: str):
     assert score("q1", "?", NUMBER_GOLD, [], None, text, None, 0.01).outcome == "refused"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "The company does not disclose the buyer's terms.",
+        "Its segments do not include a separate software business.",
+    ],
+)
+def test_answer_without_claims_that_says_does_not_is_not_a_refusal(text: str):
+    # qualitative answers usually have no claims; these must reach the judge
+    assert not scoring.is_refusal([], text)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Revenue does not include excise taxes; it was $2B.",
+        "The company did not disclose a dividend cut and kept paying.",
+    ],
+)
+def test_refusal_wording_with_claims_is_an_answer(text: str):
+    s = score("q1", "?", NUMBER_GOLD, [claim(1_577_000_000.0)], "c1", text, None, 0.01)
+    assert s.outcome == "correct"
 
 
 def test_wrong_number_is_not_a_refusal():
@@ -106,3 +134,61 @@ def test_gold_loads_from_the_audit():
 
 def test_judge_prompt_exists():
     assert "Judgment" in scoring.JUDGE_PROMPT_PATH.read_text()
+
+
+ROA = (
+    "What is the FY2017 return on assets (ROA) for Coca Cola? "
+    "Round your answer to two decimal places."
+)
+RATIO_GOLD = Gold("q3", "0.01", "number", 0.01, "ratio")
+
+
+def test_percent_answer_for_a_ratio_gold_is_converted_and_rounded():
+    # Coca-Cola FY2017 ROA (financebench_id_03473): 1.35% = 0.0135, which rounds to 0.01
+    s = score("q3", ROA, RATIO_GOLD, [claim(1.35, "%")], "c1", "ROA was 1.35%.", None, 0.01)
+    assert s.outcome == "correct" and "as ratio: 0.0135" in s.reason
+
+
+def test_ratio_answer_for_a_ratio_gold_is_rounded():
+    s = score("q3", ROA, RATIO_GOLD, [claim(0.0135, "ratio")], "c1", "0.0135", None, 0.01)
+    assert s.outcome == "correct"
+
+
+def test_rounding_still_rejects_a_different_value():
+    s = score("q3", ROA, RATIO_GOLD, [claim(1.6, "%")], "c1", "ROA was 1.6%.", None, 0.01)
+    assert s.outcome == "incorrect"  # 0.016 rounds to 0.02
+
+
+def test_without_a_rounding_instruction_the_tolerance_decides():
+    s = score("q3", "What is the ROA?", RATIO_GOLD, [claim(1.35, "%")], "c1", "", None, 0.01)
+    assert s.outcome == "incorrect"
+
+
+def test_ratio_answer_for_a_percent_gold_is_converted():
+    gold = Gold("q4", "55.1%", "number", 55.1, "%")
+    q = "What is the gross margin? Round your answer to one decimal place."
+    assert score("q4", q, gold, [claim(0.551, "ratio")], "c1", "", None, 0.01).outcome == "correct"
+    assert score("q4", q, gold, [claim(0.5514, "ratio")], "c1", "", None, 0.01).outcome == (
+        "correct"
+    )
+
+
+def test_negative_ratio_rounds():
+    # AES FY2022 ROA (financebench_id_10420): gold -0.02
+    gold = Gold("q5", "-0.02", "number", -0.02, "ratio")
+    q = "What is AES's FY2022 ROA? Round your answer to two decimal places."
+    assert score("q5", q, gold, [claim(-1.7, "%")], "c1", "", None, 0.01).outcome == "correct"
+    assert score("q5", q, gold, [claim(-0.4, "%")], "c1", "", None, 0.01).outcome == "incorrect"
+
+
+@pytest.mark.parametrize(
+    ("question", "n"),
+    [
+        ("Round your answer to two decimal places.", 2),
+        ("Please round to one decimal place.", 1),
+        ("Answer rounded to 3 decimal places", 3),
+        ("What is the capex in USD millions?", None),
+    ],
+)
+def test_rounding_decimals(question: str, n: int | None):
+    assert scoring.rounding_decimals(question) == n

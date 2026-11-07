@@ -39,6 +39,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     except runner.RunRefused as e:
         print(f"refused: {e}", file=sys.stderr)
         return 2
+    except runner.RunStopped as e:
+        print(f"stopped: {e}", file=sys.stderr)
+        return 3
 
 
 if __name__ == "__main__":

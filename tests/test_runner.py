@@ -122,11 +122,104 @@ def test_failed_generation_is_kept_not_dropped(tmp_path: Path, splits: Path):
     assert len(drafts) == 2 and all("structured_output_invalid" in d.error for d in drafts)
 
 
+class FakeAPIError(Exception):
+    def __init__(self, status_code: int):
+        super().__init__(f"Error code: {status_code}")
+        self.status_code = status_code
+
+
+class APIConnectionError(Exception):  # same class name as groq's / openai's
+    pass
+
+
+@pytest.mark.parametrize(
+    "error", [FakeAPIError(429), FakeAPIError(503), APIConnectionError("reset"), TimeoutError()]
+)
+def test_transient_api_error_stops_the_run_and_resumes(
+    tmp_path: Path, splits: Path, error: Exception
+):
+    calls: list[str] = []
+
+    def rate_limited_on_second(question, cfg, ctx):
+        calls.append(question.question_id)
+        if len(calls) == 2:
+            raise error
+        return dummies.generate(question, cfg, ctx)
+
+    with pytest.raises(runner.RunStopped, match="fb_synth_002 after 1 finished"):
+        draft(tmp_path, splits, split="dev", generator=rate_limited_on_second)
+    run_dir = only_run(tmp_path)
+    (first,) = runner.read_jsonl(run_dir / "drafts.jsonl", Draft)  # nothing for question 2
+    assert first.error is None
+
+    draft(tmp_path, splits, split="dev")
+    drafts = runner.read_jsonl(run_dir / "drafts.jsonl", Draft)
+    assert [d.question_id for d in drafts] == ["fb_synth_001", "fb_synth_002"]
+    assert all(d.error is None for d in drafts)
+
+
+def test_client_error_is_still_a_failed_draft(tmp_path: Path, splits: Path):
+    def too_large(question, cfg, ctx):
+        raise FakeAPIError(413)  # a request Groq refuses: about the system, not the network
+
+    draft(tmp_path, splits, split="dev", generator=too_large)
+    drafts = runner.read_jsonl(only_run(tmp_path) / "drafts.jsonl", Draft)
+    assert len(drafts) == 2 and all("413" in (d.error or "") for d in drafts)
+
+
+def test_transient_error_in_verify_stops_without_recording(tmp_path: Path, splits: Path):
+    draft(tmp_path, splits, split="dev")
+
+    def rate_limited(d, cfg):
+        raise FakeAPIError(429)
+
+    with pytest.raises(runner.RunStopped):
+        runner.verify_command(
+            only_run(tmp_path).name,
+            CONFIG,
+            runs_dir=tmp_path / "runs",
+            git=CLEAN_MAIN,
+            verifier=rate_limited,
+        )
+    assert not runner.read_jsonl(only_run(tmp_path) / "verified_none.jsonl", VerifiedResult)
+
+
+class FlushCounter:
+    def __init__(self) -> None:
+        self.flushes = 0
+
+    def flush(self) -> None:
+        self.flushes += 1
+
+
+def test_stopped_verify_flushes_traces_first(tmp_path: Path, splits: Path):
+    draft(tmp_path, splits, split="dev")
+
+    def rate_limited(d, cfg):
+        raise FakeAPIError(429)
+
+    tracer = FlushCounter()
+    cfg = runner.load_config(CONFIG)
+    with pytest.raises(runner.RunStopped):
+        runner.run_verify(cfg, only_run(tmp_path), rate_limited, tracer=tracer)  # type: ignore[arg-type]
+    assert tracer.flushes == 1
+
+
+def test_cli_turns_stop_into_exit_code(monkeypatch: pytest.MonkeyPatch):
+    from finqa import cli
+
+    def stop(*a, **k):
+        raise runner.RunStopped("rate limited")
+
+    monkeypatch.setattr(runner, "draft_command", stop)
+    assert cli.main(["draft", "--config", "c.yaml"]) == 3
+
+
 def test_failed_verification_keeps_claims(tmp_path: Path, splits: Path):
     draft(tmp_path, splits, split="dev")
 
     def broken(d, cfg):
-        raise RuntimeError("api_error: 429")
+        raise RuntimeError("verifier_output_invalid")
 
     runner.verify_command(
         only_run(tmp_path).name, CONFIG, runs_dir=tmp_path / "runs", git=CLEAN_MAIN, verifier=broken
@@ -183,7 +276,10 @@ def test_verify_with_other_retrieval_refused(tmp_path: Path, splits: Path):
         )
 
 
-def test_unbuilt_arm_is_reported(tmp_path: Path, splits: Path):
+def test_unbuilt_arm_is_reported(tmp_path: Path, splits: Path, monkeypatch: pytest.MonkeyPatch):
+    # Point the config's arm at a module that does not exist, so the test does not
+    # depend on which generators are built yet.
+    monkeypatch.setitem(runner.GENERATORS, "rag", "finqa.generators.not_built:generate")
     with pytest.raises(runner.RunRefused, match="not built yet"):
         draft(tmp_path, splits, split="dev", generator=None)
 
