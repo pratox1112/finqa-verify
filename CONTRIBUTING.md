@@ -1,6 +1,6 @@
 # Contributing
 
-How the five of us (and Claude Code) work in this repo. The full rules are in [ROADMAP.md](ROADMAP.md) (Team rules T1–T17).
+How the five of us (and our AI coding assistant) work in this repo. The full rules are in [ROADMAP.md](ROADMAP.md) (Team rules T1–T17).
 
 ## First-time setup
 
@@ -40,7 +40,7 @@ How the five of us (and Claude Code) work in this repo. The full rules are in [R
    ```
 4. **Update `PROGRESS.md`** in the same PR (status `review`, notes, one Log line).
 5. **Open a PR** into `main`. Keep it under ~400 changed lines where possible (T8). Mention any dependency change.
-6. **Get one approving review** from a teammate who didn't write the code, including code Claude Code wrote (T9). CI must be green.
+6. **Get one approving review** from a teammate who didn't write the code, including code an AI assistant wrote (T9). CI must be green.
 7. **Squash and merge** (T10), then set the task to `done` with the PR link.
 
 If `main` is ever red, fixing it comes before everything else (T4).
@@ -74,13 +74,13 @@ To freeze a prompt, add its file name to `src/finqa/prompts/FROZEN.txt` and reco
 - Committed: small curated files in `data/` (`splits.json`, `SCOPE.md`, `QA_CHECKS.md`, `metric_map.yaml`, `companies.csv`, `financebench_audit.csv`).
 - Never committed: downloads and generated data (`data/raw/`, `data/xbrl/`, the index), `runs/`, caches, `.env` (T14).
 - **Shared artifact location:** the OneDrive folder [finqa-verify-data](https://northeastern-my.sharepoint.com/:f:/g/personal/karthikeyan_pr_northeastern_edu/IgCPfF2ujz4RQ4Efuad5WRoLAX_aFJbnD4WnFaMW-W79iWo?e=FRILx3) (ask Pratosh for access). It holds one zip per data folder: required `chroma.zip` (the search index), `chunks.zip`, `xbrl.zip`, `financebench.zip`; optional `raw.zip`, `sections.zip`, `sec.zip`. Unzip each into `data/` from the repo root: `Expand-Archive chroma.zip -DestinationPath data` (Windows) or `unzip chroma.zip -d data` (Mac, Linux). Then `uv run python -m finqa.ingestion.index --check` should report 182,198 chunks. Completed runs and the response cache go here too.
-- **Setup:** you need access to the GitHub repo, your own Groq and Langfuse keys in `.env` (copy `.env.example`), and, if you use Claude Code here, a copy of `CLAUDE.md` and `.claude/` from Pratosh. On an Intel Mac, install with `uv sync --no-group embed` (PyTorch has no Intel-Mac build; tests and checks still run).
+- **Setup:** you need access to the GitHub repo, your own Groq and Langfuse keys in `.env` (copy `.env.example`), and, if you use an AI coding assistant here, a copy of `CLAUDE.md` and `.claude/` from Pratosh. On an Intel Mac, install with `uv sync --no-group embed` (PyTorch has no Intel-Mac build; tests and checks still run).
 - Test-set runs only from a clean checkout of `main` (T12). Run IDs: `{date}_{config-name}_{short-commit}` (T13).
 
 ## Design decisions
 
 Any research-design decision (scoring edge cases, thresholds, inclusion rules) goes in `docs/DECISIONS.md` with date, who decided and why, before the code that depends on it is merged (T15).
 
-## Claude Code
+## AI coding assistant
 
-Claude Code reads `CLAUDE.md` every session. `CLAUDE.md` and `.claude/` are kept locally and gitignored, not in the repo; ask Pratosh for a copy before using Claude Code here. It never runs Git or GitHub commands that change anything. It ends each hand-off with a "Human steps" block of commands for you to run (T17).
+The AI assistant reads `CLAUDE.md` every session. `CLAUDE.md` and `.claude/` are kept locally and gitignored, not in the repo; ask Pratosh for a copy before using an AI coding assistant here. It never runs Git or GitHub commands that change anything. It ends each hand-off with a "Human steps" block of commands for you to run (T17).
