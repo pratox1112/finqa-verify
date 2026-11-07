@@ -117,8 +117,8 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
-| M1.1 | S0 on test | todo | | | | |
-| M1.2 | R0 on test | todo | | | | |
+| M1.1 | S0 on test | in-progress | Rahul Vishnuvardhana | [#20](https://github.com/pratox1112/finqa-verify/pull/20) | 2026-11-07 | Midterm: stratified 40-question test subset (`data/midterm_subset.json`, DECISIONS 2026-11-07); full 107 after M1. |
+| M1.2 | R0 on test | in-progress | Rahul Vishnuvardhana | [#20](https://github.com/pratox1112/finqa-verify/pull/20) | 2026-11-07 | Same 40 questions as M1.1 (paired); full 107 after M1. |
 | M1.3 | Main baseline table | todo | | | | |
 | M1.4 | Retrieval diagnostic | todo | | | | |
 | M1.5 | R0 error breakdown | todo | | | | |
@@ -266,3 +266,4 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-11-06 · Dheepak Karan Elumalai Santhakumari · P2.1–P2.6, G2 · Phase 2 rows marked done (merged in #18); Gate 2 criteria met, waiting for team sign-off · branch scoring-fixes
 - 2026-11-06 · Dheepak Karan Elumalai Santhakumari · P2.3, P2.2 · Review of #19: refusal detection only counts sentences about the excerpts/filing ("the company does not disclose X" is an answer); verify stage flushes traces before a stop · branch scoring-fixes
 - 2026-11-07 · Rahul Vishnuvardhana · P3.0–P3.5 · Merged in #17 (approved by Dheepak); S0/R0 prompts frozen
+- 2026-11-07 · Rahul Vishnuvardhana · M1.1, M1.2, P2.3 · Judge prompt frozen; `finqa draft --subset` and the frozen 40-question midterm test subset (Groq paid tier unavailable; DECISIONS.md) · https://github.com/pratox1112/finqa-verify/pull/20

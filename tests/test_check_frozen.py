@@ -59,3 +59,9 @@ def test_prompt_not_in_manifest_is_editable() -> None:
 def test_editing_the_manifest_is_a_violation() -> None:
     base, head = readers({PROMPT_MANIFEST: "rag_v1.md\n"}, {PROMPT_MANIFEST: ""})
     assert find_violations([PROMPT_MANIFEST], base, head) == [f"{PROMPT_MANIFEST} is frozen"]
+
+
+def test_modifying_the_midterm_subset_is_a_violation() -> None:
+    path = "data/midterm_subset.json"
+    base, head = readers({path: "{}"}, {path: '{"ids": []}'})
+    assert find_violations([path], base, head) == [f"{path} is frozen"]

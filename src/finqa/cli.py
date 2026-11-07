@@ -1,6 +1,7 @@
 """`finqa` command line (ROADMAP P2.2).
 
 uv run finqa draft  --config configs/grid/r0_v0.yaml --split dev
+uv run finqa draft  --config configs/grid/r0_v0.yaml --split test --subset data/midterm_subset.json
 uv run finqa verify --run <run_id> --config configs/grid/r0_v1.yaml
 """
 
@@ -9,6 +10,7 @@ from __future__ import annotations
 import argparse
 import sys
 from collections.abc import Sequence
+from pathlib import Path
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -21,6 +23,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--split", choices=["dev", "test"], default=None, help="default: data.question_split"
     )
     draft.add_argument("--limit", type=int, default=None, help="first N questions (dev only)")
+    draft.add_argument(
+        "--subset", type=Path, default=None, help="only the IDs in this file (frozen subsets)"
+    )
 
     verify = sub.add_parser("verify", help="run a verifier over a run's saved drafts")
     verify.add_argument("--run", required=True, help="run ID under runs/")
@@ -34,7 +39,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         if args.command == "draft":
-            return runner.draft_command(args.config, split=args.split, limit=args.limit)
+            return runner.draft_command(
+                args.config, split=args.split, limit=args.limit, subset=args.subset
+            )
         return runner.verify_command(args.run, args.config)
     except runner.RunRefused as e:
         print(f"refused: {e}", file=sys.stderr)

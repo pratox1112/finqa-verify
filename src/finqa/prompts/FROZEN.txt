@@ -6,3 +6,4 @@ s0_system.txt
 s0_user.txt
 r0_system.txt
 r0_user.txt
+judge_v1.txt

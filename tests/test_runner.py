@@ -252,6 +252,36 @@ def test_limit_only_on_dev(tmp_path: Path, splits: Path):
         draft(tmp_path, splits, split="test", limit=1)
 
 
+def subset_file(tmp_path: Path, ids: list[str]) -> Path:
+    path = tmp_path / "subset.json"
+    path.write_text(json.dumps({"ids": ids}))
+    return path
+
+
+def test_subset_runs_only_listed_questions(tmp_path: Path, splits: Path):
+    draft(tmp_path, splits, split="dev", subset=subset_file(tmp_path, ["fb_synth_002"]))
+    run_dir = only_run(tmp_path)
+    drafts = runner.read_jsonl(run_dir / "drafts.jsonl", Draft)
+    assert [d.question_id for d in drafts] == ["fb_synth_002"]
+    assert json.loads((run_dir / "run_meta.json").read_text())["subset"] == "subset.json"
+
+
+def test_subset_allowed_on_test(tmp_path: Path, splits: Path):
+    subset = subset_file(tmp_path, ["fb_synth_003"])
+    assert draft(tmp_path, splits, split="test", subset=subset) == 0
+
+
+def test_subset_with_ids_outside_the_split_refused(tmp_path: Path, splits: Path):
+    with pytest.raises(runner.RunRefused, match="not in this split"):
+        draft(tmp_path, splits, split="test", subset=subset_file(tmp_path, ["fb_synth_001"]))
+
+
+def test_resume_with_other_subset_refused(tmp_path: Path, splits: Path):
+    draft(tmp_path, splits, split="dev", subset=subset_file(tmp_path, ["fb_synth_002"]))
+    with pytest.raises(runner.RunRefused, match="subset"):
+        draft(tmp_path, splits, split="dev")
+
+
 def test_resume_with_other_config_refused(tmp_path: Path, splits: Path):
     draft(tmp_path, splits, split="dev")
     meta_path = only_run(tmp_path) / "run_meta.json"
@@ -288,6 +318,8 @@ def test_cli_arguments():
     args = build_parser().parse_args(["draft", "--config", "c.yaml", "--split", "dev"])
     assert (args.command, args.config, args.split, args.limit) == ("draft", "c.yaml", "dev", None)
     assert build_parser().parse_args(["verify", "--run", "r", "--config", "c.yaml"]).run == "r"
+    args = build_parser().parse_args(["draft", "--config", "c.yaml", "--subset", "s.json"])
+    assert args.subset == Path("s.json")
     with pytest.raises(SystemExit):
         build_parser().parse_args(["draft", "--config", "c.yaml", "--split", "train"])
 
