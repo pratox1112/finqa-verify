@@ -258,3 +258,4 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-11-03 · Dheepak Karan Elumalai Santhakumari · P2.6 · Retrieval diagnostic with a calibrated overlap threshold and hit@k · branch dheepak/retrieval-diagnostic
 - 2026-11-03 · Dheepak Karan Elumalai Santhakumari · — · Numeric citation check (diagnostic for the mid-term, reused by the grounded verifier later; DECISIONS.md) · branch dheepak/citation-check
 - 2026-11-06 · Dheepak Karan Elumalai Santhakumari · P2.3 · Refusal detection covers R0's "excerpts do not contain" wording; runner test for an unbuilt arm no longer depends on which generators exist (it failed once rag.py from #17 is merged) · branch scoring-fixes
+- 2026-11-06 · Dheepak Karan Elumalai Santhakumari · P2.2 · Transient API errors (429/5xx after retries, lost connection) stop the run so it can resume, instead of being scored as wrong answers (raised on #17; DECISIONS.md) · branch scoring-fixes

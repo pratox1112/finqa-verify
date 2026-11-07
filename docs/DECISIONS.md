@@ -278,3 +278,9 @@ Most adjacent-year matches are text that is identical across years (geographies,
 - It is a diagnostic only, never used for correctness (rule 10). It is the same logic the grounded verifier's check 1 (P4.3) will reuse.
 
 **Why:** a confident, cited but wrong number is the failure this project targets. The share of cited claims whose citation doesn't hold the number motivates claim-level verification directly. **Check on real data:** for 14 of the 15 single-number, single-fact questions, the gold value is found in the question's gold-evidence chunk. The miss is a value written in prose without a scale word.
+
+## 2026-11-06 · Dheepak Karan Elumalai Santhakumari · Transient API errors stop the run instead of becoming failed drafts
+
+**Decision:** amends decision 2 ("Failures") of the 2026-10-30 schema review. A generator or verifier error that is **transient** (HTTP 429 or 5xx still failing after `llm.py`'s retries, a lost connection or a timeout) is no longer recorded: the runner raises `RunStopped`, writes nothing for that question, and `finqa` exits with code 3. Rerunning the same command resumes from that question. Every other error (no tool call, invalid output, a request Groq refuses with a 4xx such as 413 or `tool_use_failed`, a repetition loop) is still a failed draft, scored incorrect and never dropped.
+
+**Why:** raised by Rahul on PR #17. On the free tier (7,000 input tokens and 1,000 output tokens per minute) a 107-question test run would turn rate limits into "wrong answers", lowering accuracy for reasons that have nothing to do with the system. Failures that come from the system's own output must still count against it. The generators already raise these errors (`generators/common.py` on `rag-baselines`); only the runner caught them.

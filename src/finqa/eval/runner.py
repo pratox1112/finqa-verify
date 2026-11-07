@@ -9,7 +9,9 @@ Both stages append one line per question as soon as it is done and skip question
 written, so a killed run resumes where it stopped. run_meta.json records the config, git commit,
 model ID, thinking setting, date and package versions. Run IDs follow T13:
 {date}_{config-name}_{short-commit}. A test-split run needs a clean working tree on `main` (T12).
-A generator or verifier that raises is recorded with `error` set, never dropped.
+A generator or verifier that raises is recorded with `error` set, never dropped, except for
+transient API errors (rate limit or server error after the retries, lost connection): those stop
+the run with RunStopped and nothing is written for that question, so rerunning resumes there.
 """
 
 from __future__ import annotations
@@ -31,6 +33,7 @@ from finqa.config import CONFIGS_DIR, Config, load_config
 from finqa.eval.questions import SPLITS_PATH, load_questions
 from finqa.generators.base import Generator, Question, RunContext
 from finqa.ingestion import financebench
+from finqa.llm import is_retryable
 from finqa.schemas import Draft, VerifiedResult
 from finqa.tracing import Tracer, trace_id_for
 
@@ -51,6 +54,27 @@ VERIFIERS = {
     "self_check": "finqa.verifiers.self_check:verify",  # V1, P4.2
     "grounded": "finqa.verifiers.grounded:verify",  # V2, P4.3-P4.6
 }
+
+
+class RunStopped(RuntimeError):
+    """A transient API error outlasted the retries; rerun the same command to resume."""
+
+
+def is_transient(e: BaseException) -> bool:
+    """HTTP 429 / 5xx after the retries, or a lost connection / timeout.
+
+    These say nothing about the system being evaluated (a rate limit is not a wrong answer),
+    so they stop the run instead of becoming a failed draft."""
+    if is_retryable(e) or isinstance(e, (ConnectionError, TimeoutError)):
+        return True
+    return any(c.__name__ in ("APIConnectionError", "APITimeoutError") for c in type(e).__mro__)
+
+
+def _stop(stage: str, question_id: str, done: int, e: Exception) -> RunStopped:
+    return RunStopped(
+        f"{stage} stopped at {question_id} after {done} finished questions: {_error(e)}. "
+        "Nothing was recorded for it; rerun the same command to resume."
+    )
 
 
 class RunRefused(RuntimeError):
@@ -227,6 +251,9 @@ def run_draft(
             try:
                 draft = generator(q, cfg, ctx)
             except Exception as e:  # recorded and scored incorrect, never dropped
+                if is_transient(e):
+                    tracer.flush()
+                    raise _stop("draft", q.question_id, len(drafts), e) from e
                 draft = failed_draft(q, cfg, ctx, e, clock() - start)
         _append(path, draft)
         drafts.append(draft)
@@ -256,6 +283,8 @@ def run_verify(
         try:
             result = verifier(draft, cfg)
         except Exception as e:  # recorded and counted separately, never dropped
+            if is_transient(e):
+                raise _stop("verify", draft.question_id, len(results), e) from e
             result = failed_verification(draft, cfg, e, clock() - start)
         _append(path, result)
         results.append(result)
