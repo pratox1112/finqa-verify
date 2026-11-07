@@ -19,6 +19,9 @@ dependencies = [
     "tenacity>=9.2.1",
 ]
 
+[project.scripts]
+finqa = "finqa.cli:main"
+
 [tool.uv]
 # `uv sync` installs the embedding model's libraries too; CI skips them (--no-group embed),
 # since unit tests use a fake embedder.

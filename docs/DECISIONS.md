@@ -195,6 +195,90 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 
 **Consequence:** a teammate who clones the repo gets neither the AI assistant instructions nor the permission deny list that blocks Git and GitHub commands (T17). Anyone who uses an AI coding assistant on this repo gets a copy of both files from Pratosh first. The rules themselves (frozen files, scoring only against gold answers, no test-split runs from branches) still hold for everyone through ROADMAP, CONTRIBUTING, CI and the frozen-file guard.
 
+## 2026-11-02 · Dheepak Karan Elumalai Santhakumari · Start Phase 2 before Gate 0/1 sign-off
+
+**Decision:** Phase 2 (evaluation harness) starts now, while Gate 0 (schema review, CODEOWNERS, everyone running the checks) and Gate 1 (confirming the automated quality checks) still wait on teammates. Both gates stay `todo` / `review` in `PROGRESS.md` until those sign-offs are done.
+
+**Why:** the mid-term report and presentation are due Mon 2026-11-09, earlier than the guide's timeline (week 3, Nov 12–18). Phase 2 builds only on frozen contracts (`schemas.py`) and merged Phase 1 outputs, so the open sign-offs don't block it. Same reasoning as the 2026-10-30 "Start Phase 1 before Gate 0 sign-off" entry.
+
+## 2026-11-02 · Dheepak Karan Elumalai Santhakumari · Question types and the dev/test split
+
+**Decision (P2.1):**
+1. **Types describe what the question asks**, not the form of the gold answer:
+   - `single_fact`: one figure read from a filing.
+   - `calculation`: arithmetic within one period (ratios, margins, turnover, working capital; an average balance inside a ratio's definition still counts as one period).
+   - `multi_period`: compares or combines periods (growth, change, CAGR, multi-year average, trend, "improving").
+   - `qualitative`: a name, list, description or explanation.
+
+   Whether the gold answer is text is handled by scoring (`answer_kind` in the audit), not by the type.
+2. **Proposed by keyword rules** (`scripts/propose_question_types.py`), not by the model. The model is the system under test, and rules are reproducible and readable. ROADMAP P2.1 says "model-proposed", but every tag is confirmed by a person, so the proposal method doesn't change the final tags.
+3. **Confirmation:** borderline proposals were reviewed and every tag was approved by Dheepak. Six were changed from `qualitative` to `multi_period` so that the same question shape gets the same type, whatever the gold answer form (e.g. "Does AMEX have an improving operating margin…" matches Adobe's identical question): `financebench_id_00206`, `_00302`, `_00563`, `_00723`, `_00724`, `_02049`. Every tag is in `data/question_types.csv` (`proposed_type`, `rule`, `confirmed_type`).
+4. **Split:** dev = the 20 model-pilot questions (reserved for dev on 2026-10-30), test = the other 107. Dev by type: calculation 8, multi_period 8, single_fact 2, qualitative 2. Test: qualitative 35, calculation 31, multi_period 24, single_fact 17. Dev is not re-stratified, so that no question the pilot looked at reaches test.
+
+**Why:** the per-type breakdown is reported for every configuration, so the same question shape must always get the same type. `data/splits.json` is frozen once on `main`.
+
+## 2026-11-02 · Dheepak Karan Elumalai Santhakumari · How answers are scored
+
+**Decision (P2.3; settles the open item "scoring of the 49 text answers that contain numbers" from the Phase 1 report):** each answer gets one outcome, decided in this order:
+1. **Failed** generation (`Draft.error` set) → incorrect, never dropped.
+2. **Refused:** no claims and the answer text declines ("cannot be determined", "not available", "insufficient information", …) → `refused`. This is counted separately from incorrect, and selective accuracy = correct / (correct + incorrect) is reported next to accuracy.
+3. **Single-number gold** (`answer_kind = number`, 52 questions in scope): the answer claim (`Draft.answer_claim_id`) must satisfy |value − gold| ≤ tolerance × |gold| (`verification.tolerance`, 1%). A gold of 0 needs exactly 0. Other claims don't decide the answer.
+4. **Text gold, with or without numbers** (49 + 26 questions): an LLM judge (the configured model through `llm.py`, temperature 0, prompt `src/finqa/prompts/judge_v1.txt`) decides whether the answer reaches the gold's conclusion and every key figure matches up to rounding. Its verdicts are checked against human labels on a random sample, and the agreement is reported.
+
+**Why:** requiring every number in a text gold answer to match fails on about 15 of the 49. The number reader picks up non-figures such as "3M" (3,000,000), aircraft models "737, 777, 787", and list markers "(1)", "(2)". The real answer in those is the conclusion. The judge uses the project's one model, because ROADMAP rule 8 allows no extra models, and the human-label check is what makes its verdicts trustworthy. A refusal is a different failure from a confident wrong number, which is what this project studies, so the two are kept apart. The judge prompt is frozen before any test-set scoring.
+
+## 2026-11-03 · Dheepak Karan Elumalai Santhakumari · Statistics in the results tables
+
+**Decision (P2.4):**
+- **Confidence intervals:** question-level percentile bootstrap, 10,000 resamples, fixed seed 0, 95%. Every percentage is printed as count, percent and CI ("8/10, 80.0% [55.0–100.0]").
+- **Paired comparison** of two systems on the same questions: McNemar's exact two-sided binomial test on the discordant pairs, with the four cells (both correct, only A, only B, both wrong). This is pulled forward from P9.3 so that the mid-term S0-vs-R0 comparison has a significance test. Holm correction across planned pairs stays in P9.3.
+- **Refusals** get their own column, and selective accuracy (correct among non-refused) is shown next to accuracy (scoring decision, 2026-11-02).
+- **Cost:** tokens × the Groq list price recorded 2026-10-30 ($0.80 / $4.00 per million input / output tokens), labelled an estimate.
+
+**Why:** with ~107 test questions an accuracy CI is about ±9 points, so two systems' intervals overlap even when one is clearly better on the same questions. A paired test uses that pairing. A fixed seed makes every table reproducible.
+
+## 2026-11-03 · Dheepak Karan Elumalai Santhakumari · Error classifier details
+
+**Decision (P2.5, rules in `docs/LABELING_PROTOCOL.md` §4):**
+- `wrong_unit_or_scale` also fires for a factor of 10^±2, not only 10^±3/6/9, because a fraction given for a percent (0.125 for 12.5%) is a scale error under the schema's percent convention.
+- `wrong_period` tries the same metric in fiscal years ±1, ±2 and −3, nearest first.
+- The XBRL rules (period, line item, company) run only when the answer claim's `metric` is a name in `data/metric_map.yaml` and the question is annual (10-K). Quarterly periods aren't derivable from the question alone.
+- `arithmetic` recomputes the claim's `expression` with a small evaluator that accepts only numbers, named inputs, + − × ÷, powers and parentheses.
+- Human labels keep the frozen `ErrorType` values. The extra categories "gold-ambiguous" and "technical failure" go in `Annotation.note`, so no schema change is needed.
+
+**Why:** each rule stays deterministic and reproducible, XBRL still never decides correctness, and the frozen schema is untouched.
+
+## 2026-11-03 · Dheepak Karan Elumalai Santhakumari · Retrieval diagnostic threshold
+
+**Decision (P2.6):**
+- **Overlap measure:** text is normalized (lowercase, letters and digits only) into word 4-grams. A chunk's overlap with one gold evidence item = shared 4-grams / the smaller side's 4-grams.
+- **Items compared one at a time:** a question can cite several pages (e.g. a balance sheet and an income statement), and joining them hides a chunk that holds one page completely.
+- **Threshold:** gold evidence counts as retrieved at overlap ≥ **0.6** (`diagnostics` in `configs/base.yaml`).
+- **hit@k** uses the same test on the top k of one ranked retrieval, with no LLM call.
+
+**Calibration** (all 127 in-scope questions; every chunk of the search index for the question's own filing vs. the same company's adjacent-year filing):
+
+| Threshold | Found in own filing | Found in adjacent-year filing |
+|---|---|---|
+| 0.5 | 116/127 | 29/127 |
+| **0.6** | **115/127** | **22/127** |
+| 0.7 | 110/127 | 14/127 |
+
+Most adjacent-year matches are text that is identical across years (geographies, acquisitions, descriptions), so they are legitimate. 0.6 keeps nearly every own-filing match while cutting the partial boilerplate matches. **Spot check** of 10 dev questions (11 evidence pages): every best chunk holds the gold page's content.
+
+**Finding: 12 of 127 questions have gold evidence that is not in the index** at this threshold: `financebench_id_00476`, `_00735`, `_00746`, `_00941`, `_01254`, `_02608`, `_03838`, `_04417`, `_04660`, `_05915`, `_07661`, `_10130`. They include the debt-securities questions, which are answered from the 10-K cover page, and a legal-proceedings question (Item 3); neither part is indexed. Retrieval-based arms can't succeed on these, so the retrieval ceiling is 115/127. This is reported with the retrieval results.
+
+**Calibration uses the search index (`data/chroma`), not `data/chunks`:** the shared `chunks.zip` predates the 2026-11-01 Item 8 fixes for 34 filings (176,792 chunks vs. 182,198 in the index; e.g. PayPal FY2022 has 1 Item 8 chunk in the file, 173 in the index).
+
+## 2026-11-03 · Dheepak Karan Elumalai Santhakumari · Numeric citation check (diagnostic)
+
+**Decision:** in addition to the ROADMAP tasks, the mid-term reports how often a claim's cited chunk actually contains the claimed value (`src/finqa/eval/citation_check.py`).
+- Numbers are read with the shared reader. A bare table number is also tried at the table's stated `unit_scale`. Values match within the relative tolerance, **ignoring sign**, because filings print outflows in parentheses.
+- Claims with an `expression` (derived values), claims with no citation, and citations to chunks the draft never saw are **not checkable** and are left out of the rate.
+- It is a diagnostic only, never used for correctness (rule 10). It is the same logic the grounded verifier's check 1 (P4.3) will reuse.
+
+**Why:** a confident, cited but wrong number is the failure this project targets. The share of cited claims whose citation doesn't hold the number motivates claim-level verification directly. **Check on real data:** for 14 of the 15 single-number, single-fact questions, the gold value is found in the question's gold-evidence chunk. The miss is a value written in prose without a scale word.
+
 ## 2026-11-04 · Rahul Vishnuvardhana · Start the S0 and R0 parts of Phase 3 before Gate 2 (PROPOSED, needs team agreement)
 
 **Proposal:** build the company resolver (P3.1), the filing search tool (P3.2), the closed-book generator (P3.0) and single-shot RAG (P3.5) now, in parallel with Phase 2, and develop them only on the 20 pilot questions reserved for the dev split (`data/pilot_questions.json`). No test-split run until Gate 2 is passed and the S0/R0 prompts are frozen. Gate 2 and Gate 3 stay `todo`.
@@ -222,3 +306,15 @@ Decisions from the P0.3 schema review, applied to `src/finqa/schemas.py` and gui
 **Decision:** (1) `answer_claim_id` is normalized in the generator: an ID written as "3" means "c3", "null" means unset, and when it is unset or unknown but claims exist, the last claim is used (the prompts now say to list inputs first and the answer last, and to write the ID exactly). Scoring reads it only when the gold answer is a number, so qualitative answers are unaffected. (2) When Groq refuses a call with `tool_use_failed` (its tool-call parser trips, e.g. the model names the tool "Call"), the model's answer is read back from Groq's `failed_generation` text and validated exactly like a normal answer; anything invalid (e.g. a repetition loop) stays an error draft and is scored incorrect. Token counts of recovered calls are unknown (0).
 
 **Why (dev, the 20 pilot questions, scored with the Phase 2 runner and scoring):** before (1), correct answers were scored "no answer claim" (Block: 101.5% vs gold 101.5%, `answer_claim_id` left null). Before (2), Netflix's correct answer ($5,466.3M, cited) was lost to a misnamed tool. R0 dev accuracy: 6/20 (30%) before both and before the retrieval change, 8/20 (40%) after, 0 failed drafts; S0 3/20 (15%), 2 failed drafts that are real model repetition loops.
+
+## 2026-11-06 · Dheepak Karan Elumalai Santhakumari · Transient API errors stop the run instead of becoming failed drafts
+
+**Decision:** amends decision 2 ("Failures") of the 2026-10-30 schema review. A generator or verifier error that is **transient** (HTTP 429 or 5xx still failing after `llm.py`'s retries, a lost connection or a timeout) is no longer recorded: the runner raises `RunStopped`, writes nothing for that question, and `finqa` exits with code 3. Rerunning the same command resumes from that question. Every other error (no tool call, invalid output, a request Groq refuses with a 4xx such as 413 or `tool_use_failed`, a repetition loop) is still a failed draft, scored incorrect and never dropped.
+
+**Why:** raised by Rahul on PR #17. On the free tier (7,000 input tokens and 1,000 output tokens per minute) a 107-question test run would turn rate limits into "wrong answers", lowering accuracy for reasons that have nothing to do with the system. Failures that come from the system's own output must still count against it. The generators already raise these errors (`generators/common.py` on `rag-baselines`); only the runner caught them.
+
+## 2026-11-06 · Dheepak Karan Elumalai Santhakumari · Numeric scoring: % vs ratio, and the question's rounding
+
+**Decision:** amends rule 3 of "How answers are scored" (2026-11-02). Before the tolerance check, (1) the answer claim's value is converted when it is a percent and the gold is a ratio, or the other way round (1.35 `%` → 0.0135 against a `ratio` gold; 0.551 `ratio` → 55.1 against a `%` gold); other units are compared as before. (2) When the question says "round ... to N decimal places", the answer is also correct if it is within half a unit of the gold's last decimal (|value − gold| ≤ 0.5 × 10^−N), i.e. it rounds to the gold. The 1% relative tolerance still applies on its own. The score's reason shows the converted value.
+
+**Why:** raised by Rahul on PR #17. Coca-Cola FY2017 ROA (`financebench_id_03473`, dev): the model answered 1.35%, the gold is 0.01 ("round your answer to two decimal places"). 1.35% is 0.0135, which rounds to 0.01, so the answer is right, but it was scored incorrect twice over: no %/ratio conversion, and 0.0135 is 35% away from the rounded gold, far outside 1%. The schema stores percents as percent numbers (12.5% = 12.5), so a model writing ROA as a percent is following the schema. **Scope on the 52 single-number golds:** 13 ratio golds and 4 days golds ask for two decimals, 11 % golds ask for one decimal; the 19 USD golds and the 4 other % golds have no rounding instruction and are unchanged. The error classifier still compares raw values, so a correct %-for-ratio answer never reaches it, and a wrong one is not mislabeled as a 100x scale error.

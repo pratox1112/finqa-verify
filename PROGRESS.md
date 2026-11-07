@@ -32,7 +32,7 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 
 | Name | Role (see docs/IMPLEMENTATION_GUIDE.md §1) |
 |---|---|
-| Dheepak Karan Elumalai Santhakumari | *TBD* |
+| Dheepak Karan Elumalai Santhakumari | B. Evaluation + C. Generators (S0, R0) for M1 |
 | Mohammed Ibrahim | *TBD* |
 | Pratosh Karthikeyan | *TBD* |
 | Rahul Vishnuvardhana | *TBD* |
@@ -87,13 +87,13 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
-| P2.1 | Question types and split | todo | | | | |
-| P2.2 | Runner | todo | | | | |
-| P2.3 | Scoring | todo | | | | |
-| P2.4 | Results tables | todo | | | | |
-| P2.5 | Rule-based error classifier | todo | | | | |
-| P2.6 | Retrieval diagnostic | todo | | | | |
-| G2 | **GATE 2** | todo | | | | |
+| P2.1 | Question types and split | done | Dheepak Karan Elumalai Santhakumari | [#18](https://github.com/pratox1112/finqa-verify/pull/18) | 2026-11-06 | Keyword-rule proposals confirmed (6 changed) → data/splits.json: dev 20 (pilot) / test 107. Decisions in DECISIONS.md 2026-11-02. |
+| P2.2 | Runner | done | Dheepak Karan Elumalai Santhakumari | [#18](https://github.com/pratox1112/finqa-verify/pull/18) + scoring-fixes | 2026-11-06 | src/finqa/eval/runner.py + `finqa draft/verify` CLI: drafts.jsonl / verified_{arm}.jsonl, resume (half-written line cut), run_meta.json, T13 run IDs, T12 test-split guard, failures kept with `error`. Dummy generator/verifier in eval/dummies.py; pipeline smoke test in tests/test_runner.py (results-table part comes with P2.4). 16 tests. |
+| P2.3 | Scoring | done | Dheepak Karan Elumalai Santhakumari | [#18](https://github.com/pratox1112/finqa-verify/pull/18) + scoring-fixes | 2026-11-06 | src/finqa/eval/scoring.py: failed → incorrect; refused (no claims + declining text, incl. R0's "the excerpts do not contain ..." wording); single-number gold → answer claim within 1% of gold, after % ↔ ratio conversion, or rounding to the gold when the question asks for N decimals; text gold → LLM judge (prompts/judge_v1.txt) to be checked against human labels; selective accuracy. Decision in DECISIONS.md 2026-11-02. 18 tests. |
+| P2.4 | Results tables | done | Dheepak Karan Elumalai Santhakumari | [#18](https://github.com/pratox1112/finqa-verify/pull/18) | 2026-11-06 | src/finqa/eval/tables.py (score a run; accuracy by type with refusals, selective accuracy, failures; latency/token p50/p95; estimated cost; McNemar comparison) + eval/stats.py (bootstrap CI, exact McNemar). Dummy run → tables in tests/test_tables.py (also the P0.7 pipeline smoke test). 8 tests. |
+| P2.5 | Rule-based error classifier | done | Dheepak Karan Elumalai Santhakumari | [#18](https://github.com/pratox1112/finqa-verify/pull/18) | 2026-11-06 | src/finqa/eval/error_types.py: 7 rules in order (scale incl. 10^±2 for fraction/percent, period ±1/±2/−3 years, line item, company via XBRL for mapped metrics and 10-K questions only, arithmetic via a safe expression evaluator, retrieval miss, other). docs/LABELING_PROTOCOL.md written (scoring, conventions, error types, human labels with gold-ambiguous / technical-failure notes, κ). 11 tests incl. the real 3M restatement. |
+| P2.6 | Retrieval diagnostic | done | Dheepak Karan Elumalai Santhakumari | [#18](https://github.com/pratox1112/finqa-verify/pull/18) | 2026-11-06 | src/finqa/eval/retrieval_diag.py: word-4-gram overlap per gold evidence item, retrieved at ≥ 0.6 (new `diagnostics` config section); items found / items; hit@k + curve. Calibrated on all 127 questions against the index; spot check 10/10 correct. 12 questions have gold evidence outside the index (cover page, Item 3, …). Shared chunks.zip is older than the index for 34 filings (DECISIONS.md). 6 tests. |
+| G2 | **GATE 2** | review | Dheepak Karan Elumalai Santhakumari | [#18](https://github.com/pratox1112/finqa-verify/pull/18) | 2026-11-06 | Criteria met: the dummy system runs through draft and verify and produces tables with counts and 95% CIs (tests/test_tables.py::test_dummy_run_produces_tables_with_counts_and_cis, in CI); error classifier (tests/test_error_types.py) and retrieval diagnostic (tests/test_retrieval_diag.py) tested; data/splits.json frozen on main (scripts/check_frozen.py). Also checked on real drafts: S0/R0 dev runs scored with the runner and scoring (#17). Waiting: team sign-off. |
 
 
 ## Phase 3: Retrieval arms
@@ -250,6 +250,18 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-10-30 · Pratosh Karthikeyan · P1.1–P1.9 · Phase 1 started on one branch; data decisions recorded in docs/DECISIONS.md · https://github.com/pratox1112/finqa-verify/pull/13
 - 2026-11-01 · Pratosh Karthikeyan · P1.1–P1.9, G1 · Filing pipeline merged; automated QA on all 206 10-Ks (151 pass, 29 warn, 26 flag); Gate 1 waits on teammates' confirmation and Gate 0 · https://github.com/pratox1112/finqa-verify/pull/13
 - 2026-11-01 · Pratosh Karthikeyan · P0.9 · Shared data folder (OneDrive) and teammate setup steps in CONTRIBUTING.md; shareable link
+- 2026-11-02 · Dheepak Karan Elumalai Santhakumari · P2.1 · Question types (keyword rules, confirmed) and dev/test split (dev = 20 pilot questions); Phase 2 started before Gate 0/1 sign-off (DECISIONS.md) · branch dheepak/question-split
+- 2026-11-02 · Dheepak Karan Elumalai Santhakumari · P2.2 · Runner with draft and verify stages, resume, run metadata, test-split guard and the finqa command · branch dheepak/runner
+- 2026-11-02 · Dheepak Karan Elumalai Santhakumari · P2.3 · Scoring against gold only: numeric tolerance, refusals, failures, LLM judge for text answers · branch dheepak/scoring
+- 2026-11-03 · Dheepak Karan Elumalai Santhakumari · P2.4 · Results tables with counts, bootstrap CIs, refusals, selective accuracy, cost and a paired McNemar test · branch dheepak/results-tables
+- 2026-11-03 · Dheepak Karan Elumalai Santhakumari · P2.5 · Rule-based error classifier and the labeling protocol · branch dheepak/error-classifier
+- 2026-11-03 · Dheepak Karan Elumalai Santhakumari · P2.6 · Retrieval diagnostic with a calibrated overlap threshold and hit@k · branch dheepak/retrieval-diagnostic
+- 2026-11-03 · Dheepak Karan Elumalai Santhakumari · — · Numeric citation check (diagnostic for the mid-term, reused by the grounded verifier later; DECISIONS.md) · branch dheepak/citation-check
 - 2026-11-04 · Rahul Vishnuvardhana · P3.0, P3.1, P3.2, P3.5 · Company resolver, filing search, closed-book (S0) and single-shot RAG (R0) generators; dev check on the pilot questions; S0/R0 prompt freeze pending · https://github.com/pratox1112/finqa-verify/pull/17
 - 2026-11-05 · Rahul Vishnuvardhana · P3.3, P3.4, P3.5 · On-demand fetch tool and calculator tool; R0 retrieves top-5 tables plus 1 text chunk (dev gold-evidence recall 0.13 to 0.36) · https://github.com/pratox1112/finqa-verify/pull/17
 - 2026-11-05 · Rahul Vishnuvardhana · P3.0, P3.5 · S0/R0 on the runner interface; answer-claim normalization and Groq refusal recovery; scored dev S0 3/20, R0 8/20 · https://github.com/pratox1112/finqa-verify/pull/17
+- 2026-11-06 · Dheepak Karan Elumalai Santhakumari · P2.3 · Refusal detection covers R0's "excerpts do not contain" wording; runner test for an unbuilt arm no longer depends on which generators exist (it failed once rag.py from #17 is merged) · branch scoring-fixes
+- 2026-11-06 · Dheepak Karan Elumalai Santhakumari · P2.2 · Transient API errors (429/5xx after retries, lost connection) stop the run so it can resume, instead of being scored as wrong answers (raised on #17; DECISIONS.md) · branch scoring-fixes
+- 2026-11-06 · Dheepak Karan Elumalai Santhakumari · P2.3 · Numeric scoring converts % ↔ ratio and honours the question's "round to N decimal places" (Coca-Cola ROA 1.35% vs gold 0.01 was scored wrong; raised on #17; DECISIONS.md) · branch scoring-fixes
+- 2026-11-06 · Dheepak Karan Elumalai Santhakumari · P2.1–P2.6, G2 · Phase 2 rows marked done (merged in #18); Gate 2 criteria met, waiting for team sign-off · branch scoring-fixes
+- 2026-11-06 · Dheepak Karan Elumalai Santhakumari · P2.3, P2.2 · Review of #19: refusal detection only counts sentences about the excerpts/filing ("the company does not disclose X" is an answer); verify stage flushes traces before a stop · branch scoring-fixes
