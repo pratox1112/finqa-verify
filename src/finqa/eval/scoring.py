@@ -4,8 +4,11 @@ Every answer gets one outcome, decided in this order (docs/DECISIONS.md, 2026-11
 
 1. failed:     the generation failed (`error` set) → incorrect, never dropped
 2. refused:    no claims and the answer text declines ("cannot determine", "not available", …)
-3. numeric:    gold is a single number (`answer_kind == "number"`) → the answer claim's value
-               must be within the relative tolerance of the gold value (exact match for a 0 gold)
+3. numeric:    gold is a single number (`answer_kind == "number"`) → the answer claim's value,
+               converted between % and ratio when the two differ (1.35% → 0.0135), must be
+               within the relative tolerance of the gold value (exact match for a 0 gold), or,
+               when the question says "round ... to N decimal places", round to the gold value
+               (within half a unit of the last decimal: 0.0135 → 0.01)
 4. judge:      gold is text, with or without numbers → an LLM judge compares the answer with
                the gold answer (same conclusion; key figures match up to rounding). Its verdicts
                are checked against human labels on a sample.
@@ -100,6 +103,38 @@ def within_tolerance(value: float, gold: float, tolerance: float) -> bool:
     return abs(value - gold) <= tolerance * abs(gold) * (1 + 1e-9)
 
 
+DECIMALS = re.compile(
+    r"\bround\w*\b[^.]{0,40}?\bto (?:the nearest )?(one|two|three|four|\d) decimal",
+    re.IGNORECASE,
+)
+_WORDS = {"one": 1, "two": 2, "three": 3, "four": 4}
+
+
+def rounding_decimals(question: str) -> int | None:
+    """N when the question asks to round to N decimal places, else None."""
+    m = DECIMALS.search(question)
+    if m is None:
+        return None
+    n = m.group(1).lower()
+    return _WORDS[n] if n in _WORDS else int(n)
+
+
+def in_gold_unit(value: float, unit: str, gold_unit: str) -> float:
+    """Convert between percent numbers and ratios (12.5 % ↔ 0.125); other units unchanged."""
+    if unit == "%" and gold_unit == "ratio":
+        return value / 100
+    if unit == "ratio" and gold_unit == "%":
+        return value * 100
+    return value
+
+
+def matches_gold(value: float, gold: float, tolerance: float, decimals: int | None) -> bool:
+    """Within the relative tolerance, or rounds to the gold value at the asked precision."""
+    if within_tolerance(value, gold, tolerance):
+        return True
+    return decimals is not None and abs(value - gold) <= 0.5 * 10**-decimals * (1 + 1e-9)
+
+
 def is_refusal(claims: Sequence[Claim], answer_text: str) -> bool:
     return not claims and bool(REFUSAL.search(answer_text))
 
@@ -124,8 +159,11 @@ def score(
         claim = next((c for c in claims if c.claim_id == answer_claim_id), None)
         if claim is None:
             return AnswerScore(question_id, "incorrect", "numeric", "no answer claim")
-        ok = within_tolerance(claim.value, gold.value, tolerance)
+        value = in_gold_unit(claim.value, claim.unit, gold.unit)
+        ok = matches_gold(value, gold.value, tolerance, rounding_decimals(question))
         reason = f"{claim.value:g} {claim.unit} vs gold {gold.value:g} {gold.unit or '?'}"
+        if value != claim.value:
+            reason += f" (as {gold.unit}: {value:g})"
         return AnswerScore(question_id, "correct" if ok else "incorrect", "numeric", reason)
     if judge is None:
         raise ValueError(f"{question_id}: a text gold answer needs a judge")
