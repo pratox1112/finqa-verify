@@ -129,7 +129,7 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 | M1.10 | Methods documents | todo | | | | |
 | M1.11 | Related work and contribution statement | todo | | | | |
 | M1.12 | Architecture figure | review | Rahul Vishnuvardhana | baseline-results-report | 2026-11-08 | Figure 1 in `report/m1/main.tex`. |
-| M1.13 | Draft the report | in-progress | Rahul Vishnuvardhana | baseline-results-report | 2026-11-08 | `report/m1/` builds to 4 pages. Open: FinGround and VeriFin citations (two `\todo` marks in Related work); judge-vs-human agreement. Slide deck drafted separately. |
+| M1.13 | Draft the report | in-progress | Rahul Vishnuvardhana | baseline-results-report | 2026-11-08 | `report/m1/` builds to 4 pages. FinGround (arXiv 2604.23588) and VeriFin (arXiv 2608.10213) cited in Related work. Open: judge-vs-human agreement; error spot-check sentence. Slide deck drafted separately. |
 | M1.14 | Final check | todo | | | | |
 | GM1 | **GATE M1** | todo | | | | |
 
