@@ -1,0 +1,71 @@
+% Midterm report (ROADMAP M1.13). Numbers come from docs/RESULTS.md, which
+% `uv run finqa report --milestone m1` regenerates from the saved runs; numbers.tex holds them.
+\documentclass{article}
+\usepackage[preprint]{neurips_2024}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsfonts}
+\usepackage{xcolor}
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+\input{numbers}
+
+\title{When Does Verification Help? Disentangling Agentic Retrieval and Grounded Verification in Numerical Financial QA\\[2pt]\large Midterm report}
+
+\author{Dheepak Karan Elumalai Santhakumari \quad Mohammed Ibrahim \quad Pratosh Karthikeyan\\
+Rahul Vishnuvardhana \quad Shubh Bharatkumar Panchal\\
+Northeastern University}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Language models answering questions over SEC filings often give confident but wrong numbers. Two common remedies are agentic retrieval, where the model searches and computes with tools, and verification, where each claimed number is checked before the answer is returned. We ask whether the two fix the same errors or different ones. This midterm report describes the evaluation pipeline, which is complete, and reports baselines on a stratified 40-question subset of our FinanceBench test split: closed-book answering (S0) reaches \SzeroAll{} (5/40, 95\% CI 2.5--22.5) and single-shot retrieval (R0) reaches \RzeroAll{} (14/40, CI 20.0--50.0) (exact McNemar $p=\McNemarP$). The gold evidence page reaches R0's context for only \GoldRetrieved{} of questions (7/40) and 13 of its 16 wrong answers are retrieval misses, so finding evidence, not computing with it, is the current bottleneck. This sets the order of the agentic and verified systems that follow.
+\end{abstract}
+
+\section{Introduction and motivation}
+Financial analysts need exact figures: a revenue number off by a factor of a thousand, or taken from the wrong fiscal year, is worse than no answer. Retrieval-augmented generation \citep{lewis2020rag} grounds answers in documents, yet on FinanceBench \citep{islam2023financebench} retrieval systems still fail on a large share of questions. Two lines of work try to close the gap. \emph{Agentic retrieval} lets the model choose its own searches and use tools such as a calculator \citep{yao2023react,schick2023toolformer}. \emph{Verification} checks the model's claims after drafting, either by asking the model to critique itself \citep{dhuliawala2024cove} or with external tools \citep{gou2024critic}. Both add cost, and it is unclear whether they are complements or substitutes.
+
+\textbf{RQ1.} Do agentic retrieval and grounded verification fix the same errors or different ones? \textbf{RQ2.} What happens when evidence conflicts, both (a) in natural restatements, where a later filing revises an earlier figure, and (b) under controlled perturbations of the retrieved numbers?
+
+\textbf{Contributions.} (1) A reproducible pipeline over 819 SEC filings with one frozen model, frozen prompts and frozen splits, in which every configuration is scored against gold answers by the same rules. (2) A grounded verifier that checks \emph{every} number in a draft three ways: against the cited passage, against the company's XBRL facts, and by recomputing derived values. (3) Open ablations that separate retrieval from the calculator and verification from revision.
+
+\section{Related work}
+\textbf{Financial QA.} FinQA \citep{chen2021finqa} and TAT-QA \citep{zhu2021tatqa} test numerical reasoning over given tables and text. FinanceBench \citep{islam2023financebench} instead requires finding the evidence in full 10-K and 10-Q filings, which is the setting we study.
+\textbf{Agents and tools.} ReAct \citep{yao2023react} interleaves reasoning with tool calls, and Toolformer \citep{schick2023toolformer} learns when to call tools such as a calculator. Our agent (R1) follows ReAct with search, fetch and calculator tools.
+\textbf{Verifying numerical claims.} Chain-of-Verification \citep{dhuliawala2024cove} has the model plan and answer verification questions about its own draft; CRITIC \citep{gou2024critic} critiques outputs with external tools. \citet{huang2024cannot} show that self-correction without external feedback often fails, which motivates comparing an LLM self-check (V1) with a grounded check (V2). Closest to our goal are FinGround \todo{citation} and VeriFin \todo{citation}, which verify financial answers against source documents; we differ by checking each number with three independent signals and by crossing verification with retrieval in one controlled design.
+\textbf{Commercial systems.} Commercial financial research assistants do cross-check answers against sources, so verification itself is not new. Their methods are not published and cannot be tested; our contribution is an explicit, per-number check with open, reproducible ablations.
+
+\section{Methods}
+\textbf{Data.} The FinanceBench public sample has 150 questions; we keep the 127 on 10-K and 10-Q filings (8-K and earnings-release questions have no item structure or XBRL facts). We split them into a dev set of 20, used for all prompt development, and a test set of 107, stratified into calculation, multi-period, qualitative and single-fact questions. From EDGAR we parse \Filings{} filings of 31 companies into section-aware chunks (text up to 450 tokens; tables split by row groups up to 800 tokens, each carrying its stated unit scale) and embed them with BGE-base in a Chroma index.
+
+\textbf{Systems.} All systems use one model, Qwen3.8-27B served by Groq, at temperature 0 with thinking off, and produce the same structured draft: claims with value, unit, period, cited chunk IDs and, for derived values, an arithmetic expression. \emph{S0} answers closed-book; it is the baseline and our contamination check. \emph{R0} resolves the company, derives the fiscal year and form from the question, retrieves the five nearest tables plus one text chunk in one filtered search, and answers once. \emph{R1} is an agent with search, on-demand filing fetch and a calculator. Verification arms run on the \emph{same saved drafts}: V0 (none), V1 (LLM self-check in the style of CoVe) and V2 (grounded: cited text, XBRL and recomputation, with a revision loop). Figure~\ref{fig:arch} shows the pipeline.
+
+\begin{figure}[t]
+\centering\small\setlength{\fboxsep}{2pt}
+\fbox{\parbox{0.16\linewidth}{\centering Question\\(FinanceBench)}}~$\rightarrow$~%
+\fbox{\parbox{0.23\linewidth}{\centering\textbf{Generator}\\S0 closed-book\\R0 filtered top-$k$\\R1 agent + calculator}}~$\rightarrow$~%
+\fbox{\parbox{0.12\linewidth}{\centering Draft\\(claims cite chunks)}}~$\rightarrow$~%
+\fbox{\parbox{0.20\linewidth}{\centering\textbf{Verifier}\\V0 none \ V1 self-check\\V2 text + XBRL + recompute}}~$\rightarrow$~%
+\fbox{\parbox{0.10\linewidth}{\centering Score vs gold only}}
+\caption{Pipeline. Each retrieval arm drafts once; all verification arms reuse those drafts, so differences between them come only from verification. Correctness is always judged against FinanceBench gold answers, never by a verifier or by XBRL.}
+\label{fig:arch}
+\end{figure}
+
+\textbf{Designs.} RQ1 uses a $2\times3$ grid (R0, R1 $\times$ V0, V1, V2). Because R1 differs from R0 in both retrieval and the calculator, a $2\times2$ design (R0, R0+calc, R1 without calculator, R1; V0 only) separates the two. RQ2a runs R1 with V0 and V2 on 30 to 50 templated questions about restated figures; RQ2b injects retrieved chunks whose key number is perturbed and measures whether answers follow the context or the model's memory.
+
+\textbf{Scoring and error labels.} Correctness comes only from gold answers, the same way for every system. A failed generation is incorrect; an answer that declines with no claims is a \emph{refusal}, reported separately. For a single-number gold (52 questions) the designated answer claim must be within 1\% of the gold after unit normalization (percent and ratio are converted; a question's rounding instruction is honoured). For text golds (75 questions) a frozen LLM judge decides whether the answer reaches the gold's conclusion with matching key figures; its agreement with human labels on a sample is reported. Incorrect answers get one rule-based error type: wrong unit or scale, wrong period, wrong line item, wrong company (the three via XBRL), arithmetic, retrieval miss, or other. XBRL may name an error type but never decides correctness. All rates carry question-level bootstrap 95\% confidence intervals; paired comparisons use the exact McNemar test.
+
+\textbf{Midterm protocol.} Prompts for S0, R0 and the judge were frozen in git before any test run. Because the free API tier allows about 200{,}000 tokens a day, the midterm runs use a stratified subset of 40 test questions (12 calculation, 9 multi-period, 13 qualitative, 6 single-fact), drawn with a fixed seed and frozen before any run. The no-verification arm V0 returns the draft unchanged, so R0's drafts are scored directly. The full 107-question runs follow and replace these numbers.
+
+\section{Preliminary results}
+\input{results}
+
+\section{Next steps}
+Move serving to a self-hosted copy of the same open weights (vLLM on one A100) to lift the free tier's per-request and daily token limits, which R1's long contexts exceed, and rerun every system there; build and freeze the agent (R1) and run it with the $2\times2$ arms; build V1 and V2 with the revision loop and test V2 on planted errors; run the full grid on all 107 test questions; annotate errors with two annotators and report Cohen's $\kappa$; then run RQ2a, RQ2b and the coverage analysis. Limitations: one model family, FinanceBench's small size, possible contamination, and the midterm subset's wide confidence intervals.
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+\end{document}

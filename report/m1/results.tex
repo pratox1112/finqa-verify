@@ -1,0 +1,33 @@
+\begin{table}[h]
+\centering\small
+\caption{S0 vs R0 on the 40-question test subset: correct/total (\%). Bootstrap 95\% CIs for the overall rows. Selective accuracy is correct/answered, leaving refusals out.}
+\label{tab:main}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Question type (n) & S0 closed-book & R0 single-shot RAG & R0 refused & R0 selective acc. \\
+\midrule
+Calculation (12) & 0/12 (0.0) & 4/12 (33.3) & 1 & 4/11 (36.4) \\
+Multi-period (9) & 0/9 (0.0) & 2/9 (22.2) & 4 & 2/5 (40.0) \\
+Qualitative (13) & 4/13 (30.8) & 5/13 (38.5) & 3 & 5/10 (50.0) \\
+Single-fact (6) & 1/6 (16.7) & 3/6 (50.0) & 2 & 3/4 (75.0) \\
+\midrule
+All (40) & 5/40 (12.5) & 14/40 (35.0) & 10 & 14/30 (46.7) \\
+\quad 95\% CI & [2.5, 22.5] & [20.0, 50.0] & & [30.0, 63.3] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Main result.} Retrieval nearly triples accuracy: R0 answers \RzeroAll{} of the subset correctly (14/40) against \SzeroAll{} (5/40) for S0; CIs in Table~\ref{tab:main}. On the same questions R0 alone is right on 11 and S0 alone on 2 (exact McNemar $p=\McNemarP$). R0's main failure is declining to answer: it refuses 10 of 40 questions (25\%), 4 of the 9 multi-period ones, and is right on 46.7\% of the questions it does answer (14/30, CI [30.0, 63.3]). R0 reads about four times as many input tokens as S0 (median 4{,}212 vs 984) at an estimated \$0.005 per question; latencies are dominated by free-tier rate-limit waits and are not compared.
+
+\textbf{Retrieval diagnostic.} The gold evidence page reaches R0's context for only \GoldRetrieved{} of questions (7/40, CI [7.5, 30.0]). R0 is right on 4 of those 7 and on 10 of the other 33, where the answer can also appear on another page or filing than the one FinanceBench cites. The error classifier agrees (Figure~\ref{fig:errors}): 13 of R0's 16 incorrect answers are retrieval misses, one is an arithmetic slip and two are unclassified. For a single filtered top-$k$ search, finding the evidence, not reading or computing with it, is the bottleneck. This shapes the next phase: a grounded verifier can only check numbers against evidence that was found, so the agent's iterative search (R1) should come first.
+
+\begin{figure}[h]
+\centering\small
+\input{../../docs/figures/m1_error_types}
+\caption{Error types of R0's 16 incorrect answers (rule-based classifier, before the human spot-check). The 10 refusals are a separate outcome.}
+\label{fig:errors}
+\end{figure}
+
+\textbf{Contamination.} Without retrieval the model answers only 1 of the 27 single-fact, calculation and multi-period questions; 4 of its 5 correct answers are qualitative, where general knowledge of a company can suffice. With overall closed-book accuracy at \SzeroAll{} (5/40, CI upper bound 22.5\%) and almost no correct numbers, we see no sign that the model memorized FinanceBench answers.
+
+\textbf{Pipeline reliability.} No generation failed across the 80 test drafts. The section parser needed its heading fallback for 0.6\% of expected sections (25/4{,}095), and a unit scale was detected for 42.5\% of tables (39{,}269/92{,}308; the rest state none). In the model pilot, tool calls succeeded 55/55 times and structured output was valid 20/20 times. The frozen LLM judge scored the 40 answers to text-gold questions (23 from S0, 17 from R0; R0 refused the other 6); its agreement with human labels and a human spot-check of the error labels are in progress.

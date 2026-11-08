@@ -161,8 +161,3 @@ def comparison_table(name_a: str, rows_a: Sequence[Row], name_b: str, rows_b: Se
         f"| {name_a} vs {name_b} | {m.n} | {m.both_correct} | {m.only_a} | {m.only_b} "
         f"| {m.both_wrong} | {m.p_value:.4f} |\n"
     )
-
-
-def report_command(milestone: str) -> int:
-    """`finqa report`: regenerate every table and figure for a milestone (ROADMAP M1.9)."""
-    raise NotImplementedError("milestone report: ROADMAP M1.9")

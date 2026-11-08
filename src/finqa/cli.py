@@ -3,6 +3,7 @@
 uv run finqa draft  --config configs/grid/r0_v0.yaml --split dev
 uv run finqa draft  --config configs/grid/r0_v0.yaml --split test --subset data/midterm_subset.json
 uv run finqa verify --run <run_id> --config configs/grid/r0_v1.yaml
+uv run finqa report --milestone m1
 """
 
 from __future__ import annotations
@@ -30,6 +31,9 @@ def build_parser() -> argparse.ArgumentParser:
     verify = sub.add_parser("verify", help="run a verifier over a run's saved drafts")
     verify.add_argument("--run", required=True, help="run ID under runs/")
     verify.add_argument("--config", required=True, help="experiment YAML under configs/")
+
+    report = sub.add_parser("report", help="regenerate a milestone's tables and figures")
+    report.add_argument("--milestone", required=True, choices=["m1"])
     return parser
 
 
@@ -42,6 +46,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             return runner.draft_command(
                 args.config, split=args.split, limit=args.limit, subset=args.subset
             )
+        if args.command == "report":
+            from finqa.eval import report
+
+            return report.report_command(args.milestone)
         return runner.verify_command(args.run, args.config)
     except runner.RunRefused as e:
         print(f"refused: {e}", file=sys.stderr)
