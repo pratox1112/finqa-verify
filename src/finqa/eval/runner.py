@@ -116,6 +116,18 @@ def check_split_allowed(split: str, git: GitState) -> None:
         raise RunRefused(f"test-split runs only from main, not {git.branch or 'a detached HEAD'}")
 
 
+def check_model_frozen(split: str, cfg: Config, base: Path = CONFIGS_DIR / "base.yaml") -> None:
+    """Test-split runs use configs/base.yaml's frozen model settings (ROADMAP rule 5).
+
+    The frozen-file guard only watches base.yaml, so an override file that sets `model:`
+    (e.g. a dev-only comparison against another server) must never reach the test split.
+    """
+    if split != "test":
+        return
+    if cfg.model != load_config(base, base).model:
+        raise RunRefused("test-split runs must use the frozen model settings in configs/base.yaml")
+
+
 def make_run_id(config_name: str, git: GitState, today: date | None = None) -> str:
     """T13: {date}_{config-name}_{short-commit}, e.g. 2026-11-10_r0_v0_a1b2c3d."""
     return f"{(today or date.today()).isoformat()}_{config_name}_{git.short}"
@@ -325,6 +337,7 @@ def draft_command(
     split = split or cfg.data.question_split
     git = git or git_state()
     check_split_allowed(split, git)
+    check_model_frozen(split, cfg)
     if limit is not None and split == "test":
         raise RunRefused("--limit is for development on dev only")
     generator = generator or resolve(GENERATORS, cfg.retrieval.arm)
@@ -353,6 +366,7 @@ def verify_command(
         raise RunRefused(f"no run {run_id} in {runs_dir}")
     split = json.loads((run_dir / "run_meta.json").read_text(encoding="utf-8"))["split"]
     check_split_allowed(split, git or git_state())
+    check_model_frozen(split, cfg)
     verifier = verifier or resolve(VERIFIERS, cfg.verification.arm)
     results = run_verify(cfg, run_dir, verifier)
     failed = sum(r.error is not None for r in results)
