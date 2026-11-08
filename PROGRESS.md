@@ -121,7 +121,7 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 | M1.2 | R0 on test | review | Rahul Vishnuvardhana | [#20](https://github.com/pratox1112/finqa-verify/pull/20), baseline-results-report | 2026-11-08 | Run `2026-11-07_r0_v0_876a8ae` complete: 40/40 drafts, 0 failed, 14/40 correct, 10 refused. Same 40 questions as M1.1 (paired); full 107 after M1. |
 | M1.3 | Main baseline table | review | Rahul Vishnuvardhana | baseline-results-report | 2026-11-08 | Table M1-A in `docs/RESULTS.md` (accuracy, refusals, selective accuracy, efficiency, McNemar). |
 | M1.4 | Retrieval diagnostic | review | Rahul Vishnuvardhana | baseline-results-report | 2026-11-08 | Table M1-B: gold evidence retrieved 7/40. |
-| M1.5 | R0 error breakdown | review | Rahul Vishnuvardhana | baseline-results-report | 2026-11-08 | Figure M1-1 (`docs/figures/m1_error_types.tex`). Human spot-check of `runs/<R0 run>/error_spotcheck.csv` still pending. |
+| M1.5 | R0 error breakdown | review | Rahul Vishnuvardhana | baseline-results-report | 2026-11-08 | Figure M1-1 (`docs/figures/m1_error_types.tex`). Human spot-check of all 16: agrees with 10/16; 3 answers look correct but score incorrect (gold sign convention, rounded gold outside 1% tolerance, judge miss) and 5 had gold pages in context the overlap test missed. Scores unchanged; scoring questions raised with the team. |
 | M1.6 | Contamination check | review | Rahul Vishnuvardhana | baseline-results-report | 2026-11-08 | In `docs/RESULTS.md`; S0 5/40. |
 | M1.7 | Pipeline and model reliability table | review | Rahul Vishnuvardhana | baseline-results-report | 2026-11-08 | Table M1-C. |
 | M1.8 | (Optional) Agent on dev | todo | | | | |
@@ -129,7 +129,7 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 | M1.10 | Methods documents | todo | | | | |
 | M1.11 | Related work and contribution statement | todo | | | | |
 | M1.12 | Architecture figure | review | Rahul Vishnuvardhana | baseline-results-report | 2026-11-08 | Figure 1 in `report/m1/main.tex`. |
-| M1.13 | Draft the report | in-progress | Rahul Vishnuvardhana | baseline-results-report | 2026-11-08 | `report/m1/` builds to 4 pages. FinGround (arXiv 2604.23588) and VeriFin (arXiv 2608.10213) cited in Related work. Open: judge-vs-human agreement; error spot-check sentence. Slide deck drafted separately. |
+| M1.13 | Draft the report | in-progress | Rahul Vishnuvardhana | baseline-results-report | 2026-11-08 | `report/m1/` builds to 4 pages. FinGround (arXiv 2604.23588) and VeriFin (arXiv 2608.10213) cited in Related work. Spot-check reported in Results. Open: judge-vs-human agreement. Slide deck drafted separately. |
 | M1.14 | Final check | todo | | | | |
 | GM1 | **GATE M1** | todo | | | | |
 
