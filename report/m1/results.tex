@@ -1,6 +1,6 @@
 \begin{table}[h]
 \centering\small
-\caption{S0 vs R0 on all 107 test questions: correct/total (\%). Bootstrap 95\% CIs for the overall rows. Selective accuracy is correct/answered, leaving refusals out. Strict scoring; a failed generation is incorrect.}
+\caption{S0 vs R0 on all 107 test questions: correct/total (\%), bootstrap 95\% CIs for the overall rows. Selective accuracy is correct/answered. Strict scoring; a failed generation is incorrect.}
 \label{tab:main}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
@@ -17,17 +17,17 @@ All (107) & 18/107 (16.8) & 33/107 (30.8) & 22 & 33/85 (38.8) \\
 \end{tabular}
 \end{table}
 
-\textbf{Main result.} Retrieval nearly doubles accuracy: R0 answers \RzeroAll{} of the test questions correctly (33/107) against \SzeroAll{} (18/107) for S0; CIs in Table~\ref{tab:main}. On the same questions R0 alone is right on 24 and S0 alone on 9 (exact McNemar $p=\McNemarP$). R0 also often declines to answer, though wrong answers remain more common (52): it refuses 22 of 107 questions (21\%), 7 of the 17 single-fact and 7 of the 24 multi-period ones, and is right on 38.8\% of the questions it does answer (33/85, CI [28.2, 49.4]). R0 reads about 4.5 times as many input tokens as S0 (median 4{,}463 vs 983). These are strict numbers; six gold answers flagged before scoring (Section~3) await blind adjudication and can move each system by at most six questions.
+\textbf{Main result.} Retrieval nearly doubles accuracy: R0 answers \RzeroAll{} of the test questions correctly (33/107) against \SzeroAll{} (18/107) for S0; CIs in Table~\ref{tab:main}. On the same questions R0 alone is right on 24 and S0 alone on 9 (exact McNemar $p=\McNemarP$). R0 also declines to answer 22 of the 107 questions (21\%), including 7 of the 17 single-fact and 7 of the 24 multi-period ones, though wrong answers (52) remain more common; it is right on 38.8\% of the questions it does answer (33/85, CI [28.2, 49.4]). R0 reads about 4.5 times as many input tokens as S0 (median 4{,}463 vs 983) and is slower (p95 latency 41.1 s vs 23.8 s). These are strict numbers; six gold answers flagged before scoring (Section~\ref{sec:methods}) await blind adjudication and can move each system by at most six questions.
 
-\textbf{Retrieval diagnostic.} The gold evidence page reaches R0's context for only \GoldRetrieved{} of questions (27/106, CI [17.0, 34.0]; one failed draft excluded). R0 is right on 12 of those 27 and on 21 of the other 79 (the figure often also appears on another page or filing). The rule-based classifier labels 31 of R0's 52 incorrect answers as retrieval misses (Figure~\ref{fig:errors}), but it counts any answer without the gold chunk as a miss and so overcounts: on the 40-question subset (below), a human check of all 16 incorrect answers agreed with 10 labels and found 10 retrieval misses among 13 genuine errors. The overlap test also misses some gold pages that are in context, so \GoldRetrieved{} is a lower bound. Retrieval is the main bottleneck: a grounded verifier can only check numbers against evidence that was found, so the agent's iterative search (R1) should come first.
+\textbf{Retrieval diagnostic.} The gold evidence page reaches R0's context for only \GoldRetrieved{} of questions (27/106, CI [17.0, 34.0]; one failed draft excluded). R0 is right on 12 of those 27 and on 21 of the other 79. The rule-based classifier labels 31 of R0's 52 incorrect answers as retrieval misses (Figure~\ref{fig:errors}), but it counts any answer without the gold chunk as a miss and so overcounts: on the 40-question Groq subset (Section~\ref{sec:methods}), a human check of all 16 incorrect answers agreed with 10 labels and found 10 retrieval misses among 13 genuine errors. The overlap test also misses some gold pages that are in context, so \GoldRetrieved{} is a lower bound. Retrieval is the main bottleneck: a grounded verifier can only check numbers against evidence that was found, so the agent's iterative search (R1) should come first.
 
 \begin{figure}[h]
 \centering\small
 \input{../../docs/figures/m1_error_types}
-\caption{Error types of R0's 52 incorrect answers (rule-based classifier, which overcounts retrieval misses; human check in the text). The 22 refusals are a separate outcome.}
+\caption{Error types of R0's 52 incorrect answers (rule-based classifier; it overcounts retrieval misses, see text). The 22 refusals are a separate outcome.}
 \label{fig:errors}
 \end{figure}
 
-\textbf{Contamination.} Without retrieval the model answers 6 of the 72 single-fact, calculation and multi-period questions; 12 of its 18 correct answers are qualitative, where general knowledge of a company can suffice. With overall closed-book accuracy at \SzeroAll{} (CI upper bound 24.3\%) and no correct calculations, we see no sign that the model memorized FinanceBench answers.
+\textbf{Contamination.} Without retrieval the model answers only 6 of the 72 single-fact, calculation and multi-period questions correctly; 12 of its 18 correct answers are qualitative, where general knowledge of a company can suffice. With overall closed-book accuracy at \SzeroAll{} (CI upper bound 24.3\%) and no correct calculations, we see no sign that the model memorized FinanceBench answers.
 
-\textbf{Pipeline reliability.} 2 of the 214 test drafts failed and score incorrect: S0 hit the 2{,}048-token output limit in a repetition loop, and R0 returned a unit outside the answer schema that the server's guided decoding did not block. The section parser needed its heading fallback for 0.6\% of expected sections, and a unit scale was detected for 42.5\% of tables. The frozen LLM judge scored the 112 answers to text-gold questions (62 from S0, 50 from R0); its agreement with human labels is in progress.
+\textbf{Pipeline reliability.} 2 of the 214 test drafts failed and score incorrect: S0 hit the 2{,}048-token output limit in a repetition loop, and R0 returned a unit outside the answer schema that the server's guided decoding did not block. The frozen LLM judge scored the 112 answers to text-gold questions (62 from S0, 50 from R0); its agreement with human labels is in progress.
