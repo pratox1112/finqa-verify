@@ -22,8 +22,23 @@ GOLD = {
     "fb_synth_002": Gold("fb_synth_002", "Yes, 1.4.", "text_with_numbers", None, ""),
     "fb_synth_003": Gold("fb_synth_003", "$1,200", "number", 1200.0, "USD"),
 }
-HPC = CONFIGS_DIR / "hpc_dev"
-HPC_CONFIGS = ("s0_closed_book_vllm.yaml", "r0_v0_vllm.yaml")
+GROQ_OVERRIDE = """model:
+  id: "groq:qwen/qwen3.8-27b"
+  temperature: 0
+  thinking: "off"
+  max_tokens: 2048
+retrieval:
+  arm: "rag"
+  calculator: false
+"""
+
+
+@pytest.fixture
+def groq_config(tmp_path: Path) -> Path:
+    """An override whose model differs from base.yaml (the old Groq serving)."""
+    path = tmp_path / "r0_v0_groq.yaml"
+    path.write_text(GROQ_OVERRIDE, encoding="utf-8")
+    return path
 
 
 # --- Thinking switch and client --------------------------------------------------------------
@@ -61,12 +76,10 @@ def test_vllm_client_needs_a_base_url():
         build_vllm_model("vllm:Qwen/Qwen3.8-27B", Secrets(_env_file=None), {})
 
 
-@pytest.mark.parametrize("name", HPC_CONFIGS)
-def test_hpc_configs_change_only_the_serving(name: str, tmp_path: Path):
-    cfg = load_config(HPC / name)
-    base = load_config(CONFIGS_DIR / "base.yaml")
+def test_base_model_is_self_hosted_with_thinking_off(tmp_path: Path):
+    cfg = load_config(CONFIGS_DIR / "base.yaml")
     assert cfg.model.id == "vllm:Qwen/Qwen3.8-27B"
-    assert cfg.model.model_dump(exclude={"id"}) == base.model.model_dump(exclude={"id"})
+    assert (cfg.model.temperature, cfg.model.thinking, cfg.model.max_tokens) == (0, "off", 2048)
     LLM(cfg, chat_model=object(), cache_dir=tmp_path)  # a valid thinking setting for vllm
 
 
@@ -93,10 +106,11 @@ def draft(config: Path, split: str, runs: Path, splits: Path) -> int:
     )
 
 
-@pytest.mark.parametrize("name", HPC_CONFIGS)
-def test_hpc_configs_refused_on_test_even_from_clean_main(name: str, tmp_path: Path, splits):
+def test_other_model_refused_on_test_even_from_clean_main(
+    groq_config: Path, tmp_path: Path, splits: Path
+):
     with pytest.raises(runner.RunRefused, match="frozen model settings"):
-        draft(HPC / name, "test", tmp_path / "runs", splits)
+        draft(groq_config, "test", tmp_path / "runs", splits)
     assert not (tmp_path / "runs").exists()
 
 
@@ -111,17 +125,17 @@ def judge_says_no(question, gold_answer, model_answer):
     return Judgment(correct=False, reason="different conclusion")
 
 
-def run_pair(tmp_path: Path, splits: Path, split: str) -> tuple[Path, list[str]]:
+def run_pair(tmp_path: Path, splits: Path, split: str, other: Path) -> tuple[Path, list[str]]:
     runs = tmp_path / "runs"
     ids = []
-    for config in (CONFIGS_DIR / "grid/r0_v0.yaml", HPC / "r0_v0_vllm.yaml"):
+    for config in (other, CONFIGS_DIR / "grid/r0_v0.yaml"):
         draft(config, split, runs, splits)
         ids.append(f"{runner.make_run_id(config.stem, CLEAN_MAIN)}")
     return runs, ids
 
 
-def test_agreement_report_per_question(tmp_path: Path, splits: Path):
-    runs, (a, b) = run_pair(tmp_path, splits, "dev")
+def test_agreement_report_per_question(tmp_path: Path, splits: Path, groq_config: Path):
+    runs, (a, b) = run_pair(tmp_path, splits, "dev", groq_config)
     questions = {q.question_id: q for q in load_questions("dev", splits, FIXTURE)}
     assert (
         compare.compare_command(
