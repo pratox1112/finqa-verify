@@ -26,7 +26,7 @@ from typing import Any, TypeVar
 
 from langchain_core.messages import AIMessage, BaseMessage, messages_from_dict, messages_to_dict
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from pydantic import BaseModel
+from pydantic import BaseModel, SecretStr
 from tenacity import (
     RetryCallState,
     Retrying,
@@ -42,12 +42,32 @@ logger = logging.getLogger(__name__)
 
 REPO_ROOT = CONFIGS_DIR.parent
 
-# How each `model.thinking` setting is passed to Groq. Confirmed for qwen/qwen3.8-27b from
-# Groq's model page on 2026-10-30: "none" = instruct (non-thinking) mode (docs/DECISIONS.md).
-THINKING_PARAMS: dict[str, dict[str, Any]] = {
-    "off": {"reasoning_effort": "none"},
-    "on": {"reasoning_effort": "default"},
+# How each `model.thinking` setting is passed, per provider (the model ID's prefix).
+# groq: confirmed for qwen/qwen3.8-27b from Groq's model page on 2026-10-30: "none" = instruct
+#   (non-thinking) mode (docs/DECISIONS.md).
+# vllm: a self-hosted vLLM server (OpenAI-compatible API). Qwen3.8-27B's chat template thinks
+#   unless the request sets enable_thinking to false, so it is sent explicitly on every call.
+THINKING_PARAMS: dict[str, dict[str, dict[str, Any]]] = {
+    "groq": {
+        "off": {"reasoning_effort": "none"},
+        "on": {"reasoning_effort": "default"},
+    },
+    "vllm": {
+        "off": {"extra_body": {"chat_template_kwargs": {"enable_thinking": False}}},
+        "on": {"extra_body": {"chat_template_kwargs": {"enable_thinking": True}}},
+    },
 }
+
+
+def thinking_params(model_id: str, thinking: str) -> dict[str, Any]:
+    """The request parameters for `thinking` on `model_id`'s provider."""
+    provider = model_id.split(":", 1)[0]
+    if provider not in THINKING_PARAMS:
+        raise ValueError(f"unknown model provider {provider!r} in {model_id!r}")
+    if thinking not in THINKING_PARAMS[provider]:
+        raise ValueError(f"unknown thinking setting {thinking!r}")
+    return THINKING_PARAMS[provider][thinking]
+
 
 Schema = TypeVar("Schema", bound=BaseModel)
 
@@ -174,6 +194,21 @@ def _usage(message: AIMessage) -> tuple[int, int]:
     return usage.get("input_tokens", 0), usage.get("output_tokens", 0)
 
 
+def build_vllm_model(model_id: str, secrets: Secrets, kwargs: dict[str, Any]) -> Any:
+    """An OpenAI-compatible client for `vllm:<served model name>` at VLLM_BASE_URL."""
+    from langchain_openai import ChatOpenAI
+
+    if not secrets.vllm_base_url:
+        raise ValueError(f"{model_id} needs VLLM_BASE_URL (e.g. http://localhost:8000/v1)")
+    api_key = secrets.vllm_api_key or SecretStr("EMPTY")  # vLLM without --api-key accepts any
+    return ChatOpenAI(
+        model=model_id.split(":", 1)[1],
+        base_url=secrets.vllm_base_url,
+        api_key=api_key,
+        **kwargs,
+    )
+
+
 class LLM:
     def __init__(
         self,
@@ -185,8 +220,7 @@ class LLM:
         clock: Callable[[], float] = time.monotonic,
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
-        if cfg.model.thinking not in THINKING_PARAMS:
-            raise ValueError(f"unknown thinking setting {cfg.model.thinking!r}")
+        thinking_params(cfg.model.id, cfg.model.thinking)  # fail fast on a bad setting
         self.cfg = cfg
         self.tracer = tracer if tracer is not None else Tracer()
         self._model = chat_model if chat_model is not None else self._build_model()
@@ -206,16 +240,19 @@ class LLM:
         self.usage: dict[str, int] = {"calls": 0, "cache_hits": 0, "tokens_in": 0, "tokens_out": 0}
 
     def _build_model(self) -> Any:
-        from langchain.chat_models import init_chat_model
-
         m = self.cfg.model
         secrets = Secrets()
         kwargs: dict[str, Any] = {
             "temperature": m.temperature,
             "max_tokens": m.max_tokens,
             "max_retries": 0,  # retries happen here, so they are logged and rate-limited
-            **THINKING_PARAMS[m.thinking],
+            **thinking_params(m.id, m.thinking),
         }
+        if m.id.startswith("vllm:"):
+            return build_vllm_model(m.id, secrets, kwargs)
+
+        from langchain.chat_models import init_chat_model
+
         if secrets.groq_api_key:
             kwargs["api_key"] = secrets.groq_api_key.get_secret_value()
         return init_chat_model(m.id, **kwargs)
