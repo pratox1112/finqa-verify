@@ -1,10 +1,12 @@
 """Midterm report: every M1 table and figure from saved runs (ROADMAP M1.3-M1.7, M1.9).
 
-    uv run finqa report --milestone m1
+    uv run finqa report --milestone m1                   # full test split (default)
+    uv run finqa report --milestone m1 --scope subset    # the 40-question midterm subset
 
-Reads the newest S0 and R0 test-split runs on the midterm subset in runs/ (run_meta.json:
-split "test", subset "midterm_subset.json"), scores them against gold (finqa.eval.scoring;
-text answers through the frozen judge, whose calls are cached) and writes:
+Reads the newest S0 and R0 test-split runs of the chosen scope in runs/ (run_meta.json: split
+"test"; subset null for the full split, "midterm_subset.json" for the subset), scores them
+against gold (finqa.eval.scoring; text answers through each run's own model as judge, whose
+calls are cached) and writes (the subset scope adds "_midterm_subset" to the docs file names):
 
   docs/RESULTS.md                        Tables M1-A (accuracy, efficiency, S0 vs R0),
                                          M1-B (retrieval diagnostic), M1-C (pipeline and model
@@ -41,6 +43,7 @@ DOCS_DIR = REPO_ROOT / "docs"
 DATA_DIR = REPO_ROOT / "data"
 PILOT_PATH = DOCS_DIR / "PILOT.md"
 SUBSET = "midterm_subset.json"
+SCOPES: dict[str, str | None] = {"full": None, "subset": SUBSET}  # --scope -> meta "subset"
 S0, R0 = "s0_closed_book", "r0_v0"
 
 # question_id -> (cik, 10-K fiscal year or None) for the classifier's XBRL rules
@@ -50,8 +53,9 @@ Locate = Callable[[Question], tuple[str | None, int | None]]
 # --- Runs ------------------------------------------------------------------------------------
 
 
-def find_run(runs_dir: Path, config_name: str, subset: str = SUBSET) -> Path:
-    """The newest test-split run of `config_name` on `subset` (run IDs start with the date)."""
+def find_run(runs_dir: Path, config_name: str, subset: str | None = None) -> Path:
+    """The newest test-split run of `config_name` on `subset` (None = the full test split;
+    run IDs start with the date)."""
     matches = []
     for meta_path in sorted(runs_dir.glob("*/run_meta.json")):
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
@@ -62,7 +66,8 @@ def find_run(runs_dir: Path, config_name: str, subset: str = SUBSET) -> Path:
         ):
             matches.append(meta_path.parent)
     if not matches:
-        raise RunRefused(f"no test run of {config_name} on {subset} in {runs_dir}")
+        where = subset or "the full test split"
+        raise RunRefused(f"no test run of {config_name} on {where} in {runs_dir}")
     return matches[-1]
 
 
@@ -74,15 +79,24 @@ def run_config(run_dir: Path) -> Config:
 # --- Sections --------------------------------------------------------------------------------
 
 
-def accuracy_section(rows: dict[str, list[tables.Row]], n: int) -> str:
-    parts = ["## Table M1-A: S0 vs R0 on the midterm test subset\n"]
+def accuracy_section(rows: dict[str, list[tables.Row]], n: int, scope: str = "full") -> str:
+    if scope == "subset":
+        where = "test subset"
+        about = (
+            f"Stratified subset of {n} of the 107 test questions, fixed before any test run "
+            "(`data/midterm_subset.json`, DECISIONS.md 2026-11-07)."
+        )
+    else:
+        where = "test split"
+        about = f"All {n} test questions (`data/splits.json`)."
+    parts = [f"## Table M1-A: S0 vs R0 on the {where}\n"]
     parts.append(
-        f"Stratified subset of {n} of the 107 test questions, fixed before any test run "
-        "(`data/midterm_subset.json`, DECISIONS.md 2026-11-07). Bootstrap 95% CIs over "
-        "questions. Selective accuracy = correct / answered (refusals left out).\n"
+        f"{about} Bootstrap 95% CIs over questions. Selective accuracy = correct / answered "
+        "(refusals left out). Strict scoring against FinanceBench gold; a failed generation "
+        "scores incorrect.\n"
     )
-    parts.append(tables.accuracy_table(rows[S0], f"S0 closed-book (test subset, n={n})"))
-    parts.append(tables.accuracy_table(rows[R0], f"R0 single-shot RAG (test subset, n={n})"))
+    parts.append(tables.accuracy_table(rows[S0], f"S0 closed-book ({where}, n={n})"))
+    parts.append(tables.accuracy_table(rows[R0], f"R0 single-shot RAG ({where}, n={n})"))
     parts.append("**Efficiency per question**\n")
     parts.append(tables.efficiency_table([("S0", rows[S0]), ("R0", rows[R0])]))
     parts.append("**Paired comparison (same questions)**\n")
@@ -300,6 +314,7 @@ def default_locate() -> Locate:
 
 def report_command(
     milestone: str,
+    scope: str = "full",
     runs_dir: Path = RUNS_DIR,
     docs_dir: Path = DOCS_DIR,
     data_dir: Path = DATA_DIR,
@@ -312,13 +327,17 @@ def report_command(
     """`finqa report`: regenerate every table and figure for a milestone (ROADMAP M1.9)."""
     if milestone != "m1":
         raise RunRefused(f"no report for milestone {milestone!r} yet")
+    if scope not in SCOPES:
+        raise RunRefused(f"unknown scope {scope!r}; use one of {sorted(SCOPES)}")
+    subset = SCOPES[scope]
+    suffix = "" if scope == "full" else "_midterm_subset"
     questions = questions or {q.question_id: q for q in load_questions("test")}
     gold = gold or load_gold()
     rows: dict[str, list[tables.Row]] = {}
     drafts: dict[str, list[Draft]] = {}
     cfgs: dict[str, Config] = {}
     for name in (S0, R0):
-        run_dir = find_run(runs_dir, name)
+        run_dir = find_run(runs_dir, name, subset)
         cfgs[name] = cfg = run_config(run_dir)
         drafts[name] = read_jsonl(run_dir / "drafts.jsonl", Draft)
         judge = make_judge(cfg, run_dir.name)
@@ -352,14 +371,15 @@ def report_command(
     )
     refused = sum(r.outcome == "refused" for r in rows[R0])
     n = len(rows[R0])
-    runs = ", ".join(f"`{find_run(runs_dir, name).name}`" for name in (S0, R0))
+    runs = ", ".join(f"`{find_run(runs_dir, name, subset).name}`" for name in (S0, R0))
     results = "\n".join(
         [
             "# Results\n",
-            "Generated by `uv run finqa report --milestone m1`; do not edit by hand. "
+            f"Generated by `uv run finqa report --milestone m1 --scope {scope}`; do not edit "
+            "by hand. "
             f"Runs: {runs}. Model `{r0_cfg.model.id}`, thinking `{r0_cfg.model.thinking}`, "
             f"temperature {r0_cfg.model.temperature}.\n",
-            accuracy_section(rows, n),
+            accuracy_section(rows, n, scope),
             contamination_section(rows[S0]),
             retrieval,
             error_section(diagnoses, refused),
@@ -367,12 +387,13 @@ def report_command(
         ]
     )
     (docs_dir / "figures").mkdir(parents=True, exist_ok=True)
-    (docs_dir / "RESULTS.md").write_text(results, encoding="utf-8")
-    (docs_dir / "figures" / "m1_error_types.tex").write_text(
+    results_path = docs_dir / f"RESULTS{suffix}.md"
+    results_path.write_text(results, encoding="utf-8")
+    (docs_dir / "figures" / f"m1_error_types{suffix}.tex").write_text(
         figure_tex(diagnoses), encoding="utf-8"
     )
-    (find_run(runs_dir, R0) / "error_spotcheck.csv").write_text(
+    (find_run(runs_dir, R0, subset) / "error_spotcheck.csv").write_text(
         spotcheck_csv(diagnoses, questions), encoding="utf-8"
     )
-    print(f"M1 report: {n} questions per system -> {docs_dir / 'RESULTS.md'}")
+    print(f"M1 report ({scope}): {n} questions per system -> {results_path}")
     return 0

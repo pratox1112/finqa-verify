@@ -34,6 +34,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     report = sub.add_parser("report", help="regenerate a milestone's tables and figures")
     report.add_argument("--milestone", required=True, choices=["m1"])
+    report.add_argument(
+        "--scope",
+        choices=["full", "subset"],
+        default="full",
+        help="full test split (default) or the frozen midterm subset",
+    )
     return parser
 
 
@@ -49,7 +55,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "report":
             from finqa.eval import report
 
-            return report.report_command(args.milestone)
+            return report.report_command(args.milestone, args.scope)
         return runner.verify_command(args.run, args.config)
     except runner.RunRefused as e:
         print(f"refused: {e}", file=sys.stderr)

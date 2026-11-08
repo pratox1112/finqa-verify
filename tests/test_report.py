@@ -1,4 +1,4 @@
-"""M1 report from two dummy test-subset runs (ROADMAP M1.9). No model calls."""
+"""M1 report from dummy test runs, subset and full split (ROADMAP M1.9). No model calls."""
 
 import json
 from pathlib import Path
@@ -49,9 +49,23 @@ def setup(tmp_path: Path):
     return runs, tmp_path / "docs", questions
 
 
-def make_report(runs: Path, docs: Path, questions) -> int:
+def draft_full(runs: Path, splits: Path) -> None:
+    for name in CONFIGS:
+        runner.draft_command(
+            str(CONFIGS_DIR / name),
+            split="test",
+            runs_dir=runs,
+            splits_path=splits,
+            financebench_path=FIXTURE,
+            git=runner.GitState(commit="b" * 40, short="bbbbbbb", branch="main", dirty=False),
+            generator=dummies.generate,
+        )
+
+
+def make_report(runs: Path, docs: Path, questions, scope: str = "subset") -> int:
     return report.report_command(
         "m1",
+        scope=scope,
         runs_dir=runs,
         docs_dir=docs,
         questions=questions,
@@ -65,16 +79,18 @@ def make_report(runs: Path, docs: Path, questions) -> int:
 def test_report_writes_every_m1_table_and_figure(setup):
     runs, docs, questions = setup
     assert make_report(runs, docs, questions) == 0
-    results = (docs / "RESULTS.md").read_text(encoding="utf-8")
+    results = (docs / "RESULTS_midterm_subset.md").read_text(encoding="utf-8")
+    assert not (docs / "RESULTS.md").exists()
+    assert "S0 vs R0 on the test subset" in results
     for title in ("Table M1-A", "Contamination check", "Table M1-B", "Figure M1-1", "Table M1-C"):
         assert title in results
     assert "| **all** | 1/3, 33.3% [" in results
     assert "| S0 vs R0 | 3 | 1 | 0 | 0 | 2 | 1.0000 |" in results
     assert "| Filings indexed | 819 (206 10-K, 613 10-Q) |" in results  # real Phase 1 data
-    figure = (docs / "figures" / "m1_error_types.tex").read_text(encoding="utf-8")
+    figure = (docs / "figures" / "m1_error_types_midterm_subset.tex").read_text(encoding="utf-8")
     assert r"\texttt{retrieval\_miss} & \rule{0.600\linewidth}{1.6ex} 2 \\" in figure
 
-    r0_run = report.find_run(runs, report.R0)
+    r0_run = report.find_run(runs, report.R0, report.SUBSET)
     spotcheck = (r0_run / "error_spotcheck.csv").read_text(encoding="utf-8").splitlines()
     assert len(spotcheck) == 1 + 2  # header + the two incorrect answers
     assert len((r0_run / "scores.jsonl").read_text(encoding="utf-8").splitlines()) == 3
@@ -82,21 +98,46 @@ def test_report_writes_every_m1_table_and_figure(setup):
 
 def test_report_refuses_runs_on_different_questions(setup):
     runs, docs, questions = setup
-    s0_drafts = report.find_run(runs, report.S0) / "drafts.jsonl"
+    s0_drafts = report.find_run(runs, report.S0, report.SUBSET) / "drafts.jsonl"
     lines = s0_drafts.read_text(encoding="utf-8").splitlines(keepends=True)
     s0_drafts.write_text("".join(lines[:2]), encoding="utf-8")
     with pytest.raises(runner.RunRefused, match="different questions"):
         make_report(runs, docs, questions)
 
 
-def test_missing_run_and_unknown_milestone_are_refused(tmp_path: Path):
+def test_full_scope_reads_full_split_runs_only(setup):
+    runs, docs, questions = setup
+    with pytest.raises(runner.RunRefused, match="full test split"):
+        make_report(runs, docs, questions, scope="full")  # only subset runs exist so far
+    draft_full(runs, runs.parent / "splits.json")
+    full_r0 = report.find_run(runs, report.R0)
+    assert json.loads((full_r0 / "run_meta.json").read_text(encoding="utf-8"))["subset"] is None
+    assert full_r0 != report.find_run(runs, report.R0, report.SUBSET)
+
+    assert make_report(runs, docs, questions, scope="full") == 0
+    results = (docs / "RESULTS.md").read_text(encoding="utf-8")
+    assert "S0 vs R0 on the test split" in results
+    assert "All 3 test questions" in results
+    assert "--scope full" in results
+    assert full_r0.name in results
+    assert (docs / "figures" / "m1_error_types.tex").exists()
+    assert (full_r0 / "scores.jsonl").exists()
+    assert not (docs / "RESULTS_midterm_subset.md").exists()
+
+
+def test_missing_run_unknown_milestone_and_scope_are_refused(tmp_path: Path):
     with pytest.raises(runner.RunRefused, match="no test run"):
         report.find_run(tmp_path, report.R0)
     with pytest.raises(runner.RunRefused, match="milestone"):
         report.report_command("m2", runs_dir=tmp_path)
+    with pytest.raises(runner.RunRefused, match="scope"):
+        report.report_command("m1", scope="half", runs_dir=tmp_path)
 
 
 def test_cli_report_arguments():
-    assert build_parser().parse_args(["report", "--milestone", "m1"]).milestone == "m1"
+    args = build_parser().parse_args(["report", "--milestone", "m1"])
+    assert (args.milestone, args.scope) == ("m1", "full")
+    args = build_parser().parse_args(["report", "--milestone", "m1", "--scope", "subset"])
+    assert args.scope == "subset"
     with pytest.raises(SystemExit):
         build_parser().parse_args(["report", "--milestone", "m9"])
