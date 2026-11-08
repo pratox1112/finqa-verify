@@ -101,6 +101,8 @@ class Secrets(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     groq_api_key: SecretStr | None = None
+    vllm_base_url: str | None = None  # self-hosted vLLM server, e.g. http://localhost:8000/v1
+    vllm_api_key: SecretStr | None = None
     edgar_identity: str | None = None
     langfuse_public_key: str | None = None
     langfuse_secret_key: SecretStr | None = None
