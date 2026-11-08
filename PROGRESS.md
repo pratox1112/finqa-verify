@@ -129,7 +129,7 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 | M1.10 | Methods documents | todo | | | | |
 | M1.11 | Related work and contribution statement | todo | | | | |
 | M1.12 | Architecture figure | review | Rahul Vishnuvardhana | baseline-results-report | 2026-11-08 | Figure 1 in `report/m1/main.tex`. |
-| M1.13 | Draft the report | in-progress | Rahul Vishnuvardhana | baseline-results-report | 2026-11-08 | `report/m1/` builds to 4 pages with the full 107-question numbers (strict). Open: errata adjudication of 6 flagged golds, judge-vs-human agreement on 112 text-gold answers, human check of the 52 full-run R0 errors. Slide deck to update. |
+| M1.13 | Draft the report | review | Rahul Vishnuvardhana | baseline-results-report | 2026-11-08 | `report/m1/` builds to 4 pages with the full 107-question numbers (strict), retitled "Agentic Claim-Level Verification for Numerically Reliable Financial Question Answering". Follow-ups (not blocking): errata adjudication of 6 flagged golds, judge-vs-human agreement on 112 text-gold answers, hand check of the 52 full-run R0 errors. |
 | M1.14 | Final check | todo | | | | |
 | GM1 | **GATE M1** | todo | | | | |
 
@@ -270,3 +270,4 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-11-08 · Rahul Vishnuvardhana · M1.1–M1.7, M1.9, M1.12, M1.13 · `finqa report --milestone m1` generates docs/RESULTS.md and Figure M1-1 from the Groq subset runs (S0 5/40, R0 14/40, McNemar p = 0.023); 4-page midterm draft in report/m1/ · branch baseline-results-report
 - 2026-11-08 · Rahul Vishnuvardhana · — · Model serving switched to self-hosted vLLM (Qwen3.8-27B, bf16, A100 80 GB, thinking off per request; approved by Dheepak; DECISIONS 2026-11-08). Dev agreement with Groq: S0 19/20, R0 17/20 same outcome, McNemar p = 1.0. Runner refuses test runs with non-frozen model settings · branch self-hosted-serving
 - 2026-11-08 · Rahul Vishnuvardhana · M1.1, M1.2, M1.9, M1.13 · Full 107-question S0/R0 runs on vLLM from clean main 835b8b8, scored strict (S0 18/107, R0 33/107, McNemar p = 0.0135); rounding rule dropped and 6 golds flagged for blind errata before scoring (DECISIONS); `finqa report --scope`; paper updated · branch baseline-results-report
+- 2026-11-08 · Rahul Vishnuvardhana · M1.13 · Report retitled; refusal claim corrected (wrong answers 52 outnumber refusals 22); M1.13 to review · branch baseline-results-report
