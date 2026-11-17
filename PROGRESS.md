@@ -106,10 +106,10 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 | P3.3 | On-demand fetch tool | done | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-07 | `tools/fetch.py`: `fetch_filing(cik, form, fiscal_year, quarter=None)` reuses the Phase 1 steps (labels, download, parse, chunk, index); no-op if indexed; statuses fetched / already_indexed / not_found / empty. Live EDGAR integration test passed (3M FY2013 10-K, temporary index). |
 | P3.4 | Calculator tool | done | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-07 | `tools/calculate.py`: `calculate(expression, variables)` via asteval after an arithmetic-only allow-list; returns result + expression; tests for growth rate, margin, ratio, CAGR and 15 rejected inputs. |
 | P3.5 | Single-shot RAG generator | done | Rahul Vishnuvardhana | [#17](https://github.com/pratox1112/finqa-verify/pull/17) | 2026-11-07 | `generators/rag.py` (runner interface; base.py copied byte-for-byte from main): top-5 tables + 1 text chunk; answer-claim normalization and recovery of Groq-refused answers (DECISIONS.md 2026-11-04/05, proposed). Dev, scored: 8/20 (40%), 0 failed, 6 refusals. S0/R0 prompts frozen (FROZEN.txt, DECISIONS 2026-11-07; team approval via approved-freeze-change). |
-| P3.6 | Agent generator | todo | | | | |
+| P3.6 | Agent generator | todo | | | 2026-11-17 | Design in ROADMAP *Architecture*: LangGraph agent with resolver, filing search, fetch and calculator; V0, V1, V2 apply. Unclaimed. |
 | P3.7 | Freeze prompts | todo | | | | |
 | P3.8 | Test-set drafts | todo | | | | |
-| P3.9 | Retrieval × calculator design | todo | | | | |
+| P3.9 | Retrieval × calculator design | todo | | | 2026-11-17 | Design in ROADMAP *Architecture*: R0+calc and R1−calc, configs in `configs/ablations/`, V0 only. Unclaimed. |
 | G3 | **GATE 3** | todo | | | | |
 
 
@@ -271,3 +271,4 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-11-08 · Rahul Vishnuvardhana · — · Model serving switched to self-hosted vLLM (Qwen3.8-27B, bf16, A100 80 GB, thinking off per request; approved by Dheepak; DECISIONS 2026-11-08). Dev agreement with Groq: S0 19/20, R0 17/20 same outcome, McNemar p = 1.0. Runner refuses test runs with non-frozen model settings · branch self-hosted-serving
 - 2026-11-08 · Rahul Vishnuvardhana · M1.1, M1.2, M1.9, M1.13 · Full 107-question S0/R0 runs on vLLM from clean main 835b8b8, scored strict (S0 18/107, R0 33/107, McNemar p = 0.0135); rounding rule dropped and 6 golds flagged for blind errata before scoring (DECISIONS); `finqa report --scope`; paper updated · branch baseline-results-report
 - 2026-11-08 · Rahul Vishnuvardhana · M1.13 · Report retitled; refusal claim corrected (wrong answers 52 outnumber refusals 22); M1.13 to review · branch baseline-results-report
+- 2026-11-17 · — · P3.6, P3.9 · Architecture decisions written into ROADMAP.md (Locked decisions and a new Architecture section): five generators, agent tools, 2 × 3 verification grid, 2 × 2 calculator arms with V0 only; model row updated to self-hosted vLLM
