@@ -88,7 +88,7 @@ Five people and an AI coding assistant share this repo. These rules apply to eve
 
 | Item | Value |
 |---|---|
-| Model | Qwen3.8-27B via Groq (exact model ID confirmed in P0.6) |
+| Model | Qwen3.8-27B (`Qwen/Qwen3.8-27B`), self-hosted with vLLM since 2026-11-08; was Groq (`docs/DECISIONS.md`) |
 | Temperature | 0 |
 | Thinking mode | One fixed setting for all runs (default: off), recorded in every log |
 | Embeddings | `BAAI/bge-base-en-v1.5`, never changed after P1.6 |
@@ -98,6 +98,26 @@ Five people and an AI coding assistant share this repo. These rules apply to eve
 | Data | SEC EDGAR filings via `edgartools`; XBRL company facts |
 | Grid | Retrieval {`rag`, `agentic`} × Verification {`none`, `self_check`, `grounded`} |
 | Shared drafts | Each retrieval arm generates drafts once; all verification arms run on the same saved drafts |
+| Generators | S0 closed-book, R0 single-shot RAG, R1 agent, plus the 2 × 2 arms R0+calc and R1−calc |
+| Retrieval × calculator | 2 × 2 (R0, R0+calc, R1−calc, R1), verification V0 only |
+
+---
+
+## Architecture
+
+Question → **generator** → **draft** (claims citing chunk IDs) → **verifier** → **score** against FinanceBench gold. Every generator uses the runner's `generate(question, cfg, ctx)` interface and writes the same `Draft`, so the verifiers and scoring never depend on which generator made it.
+
+| Arm | Retrieval | Calculator | Verification arms | Config | Task |
+|---|---|---|---|---|---|
+| S0 | none | no | V0 | `configs/baselines/` | P3.0 |
+| R0 | one filtered search: top-5 tables + 1 text chunk | no | V0, V1, V2 | `configs/grid/r0_*` | P3.5 |
+| R0+calc | as R0 | `calculate` evaluates the model's arithmetic expressions | V0 | `configs/ablations/` | P3.9 |
+| R1 | the agent chooses its calls: resolver, filing search, fetch | `calculate` as a tool | V0, V1, V2 | `configs/grid/r1_*` | P3.6 |
+| R1−calc | as R1 | no (tool removed) | V0 | `configs/ablations/` | P3.9 |
+
+- **Agent tools** (P3.1–P3.4): resolver (company name → CIK), filing search (filtered search on the index), fetch (downloads, parses and indexes a missing filing), calculator (arithmetic only). The agent is a LangGraph loop with a step limit from config; every chunk it retrieves is kept as evidence.
+- **Verification grid:** 2 × 3, V0/V1/V2 on the saved drafts of R0 and R1. V1 revises its own claims; V2 checks cited text, XBRL and recomputation and sends failed claims back to the same generator, up to `max_revisions`.
+- **Data sources:** the search index feeds the generators, XBRL feeds V2 only. Neither decides correctness.
 
 ---
 
@@ -284,7 +304,7 @@ Five people and an AI coding assistant share this repo. These rules apply to eve
 
 ## Phase 3: Retrieval arms
 
-**Goal:** both generators produce complete, structured drafts on the test set.
+**Goal:** every generator (S0, R0, R1 and the 2 × 2 arms R0+calc and R1−calc) produces complete, structured drafts on the test set. See *Architecture* above.
 
 - **P3.0 Closed-book generator (S0)** — `src/finqa/generators/closed_book.py` (needed for M1)
   - The question goes straight to the model with no retrieval and no tools; output is a `Draft` with claims and an empty evidence set. Config: `configs/baselines/s0_closed_book.yaml`.
@@ -479,6 +499,7 @@ Report sections and points: Intro & Motivation (3), Related Work (2), Methods (4
 - **P11.1 README** — setup, environment variables, and exact commands to reproduce every table.
 - **P11.2 Reproducibility package** — configs, frozen prompts, `splits.json`, `SCOPE.md`, `DECISIONS.md`, and the response cache if size allows.
 - **P11.3 Final report** — **[HUMAN]** motivation, related work (FinGround and VeriFin positioning), methods, RQ1, RQ2a, RQ2b, coverage, limitations, future work.
+  - The architecture figure shows all five generators, the agent's four tools, the 2 × 3 verification grid and the 2 × 2 calculator design (see *Architecture*).
 - **P11.4 Presentation** — **[HUMAN]**
 - **GATE 11:** submitted.
 
