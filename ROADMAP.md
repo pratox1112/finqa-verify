@@ -137,7 +137,11 @@ There is no team server and no shared storage on the cluster. **Each runner down
 | Client | `VLLM_BASE_URL` in your `.env`; thinking off and temperature 0 are sent by `finqa.llm` |
 
 - **Storage:** about 55 GB per copy. Keep it in your scratch space, not your home folder, and expect to re-download it if scratch is cleaned.
-- **One script:** start the server with the shared Slurm script (to be added under `scripts/`) so nobody types the settings by hand.
+- **Shared Slurm scripts** in `scripts/slurm/`, so nobody types the settings by hand. `common.sh` holds the settings above; submit from the repo root with your course account (`sbatch --account=<account> scripts/slurm/<job>`):
+  - `setup_env.sbatch` builds the vLLM env and the project env on scratch and checks the installed versions;
+  - `download_model.sbatch` downloads the pinned revision;
+  - `serve_and_run.sbatch <command>` starts the server on one A100 80 GB (`--constraint=a100@80g`), runs the command against it, then stops the server. The `gpu` partition's limit is 8 hours; runs resume where they stopped.
+- **Everything heavy runs as a Slurm job.** The login node only runs light commands (`ls`, `tail`, `squeue`, `sacct`, `sbatch`).
 - **Keep the runners few** (two or three). Only the runners need a copy.
 
 **What needs the model:** generating drafts, V1, the V2 revision loop, and scoring (the LLM judge runs on the same model).
