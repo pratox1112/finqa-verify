@@ -121,6 +121,46 @@ Question → **generator** → **draft** (claims citing chunk IDs) → **verifie
 
 ---
 
+## Model serving
+
+There is no team server and no shared storage on the cluster. **Each runner downloads their own copy of the model and starts their own vLLM job on Explorer.** Everyone else works without the model.
+
+**Every copy must be identical** (settings from `docs/DECISIONS.md` 2026-11-08):
+
+| Setting | Value |
+|---|---|
+| Model | `Qwen/Qwen3.8-27B` at Hugging Face revision `37561816e66b5b9153b1b64c10968c18c1e6f4a0` (always download this revision, never the latest) |
+| vLLM | `0.32.0+cu129` (torch `2.13.0+cu129`) |
+| Precision | bfloat16, not quantized |
+| GPU | 1 × A100-SXM4-80GB |
+| Server flags | `--max-model-len 32768 --enable-auto-tool-choice --tool-call-parser qwen3_coder` |
+| Client | `VLLM_BASE_URL` in your `.env`; thinking off and temperature 0 are sent by `finqa.llm` |
+
+- **Storage:** about 55 GB per copy. Keep it in your scratch space, not your home folder, and expect to re-download it if scratch is cleaned.
+- **One script:** start the server with the shared Slurm script (to be added under `scripts/`) so nobody types the settings by hand.
+- **Keep the runners few** (two or three). Only the runners need a copy.
+
+**What needs the model:** generating drafts, V1, the V2 revision loop, and scoring (the LLM judge runs on the same model).
+
+| Phase | Needs the model | Works without it |
+|---|---|---|
+| 3 | R1, R0+calc, R1−calc drafts on dev and test; scoring | — |
+| 4 | V1, the V2 revision loop, the grid runs (P4.8), scoring | V0, V2's three checks, the planted-error suite |
+| 5 | — | everything |
+| 6 | the R1 runs with V0 and V2 (P6.3), scoring | detection, question set, analysis |
+| 7 | injection runs, closed-book re-run (P7.3, P7.5), scoring | selection, perturbation code, tiers, analysis |
+| 8 | — | everything (from saved V2 verdicts) |
+| 9 | variance re-runs (P9.1) | figures, tests, confidence intervals |
+| 10 | the live demo | — |
+| 11 | — | everything (from saved runs) |
+
+**Sharing results, not servers:**
+- After every large run, the runner uploads the run folder from `runs/` to the shared artifact location (`CONTRIBUTING.md`), so anyone can analyze it without the model.
+- The runner also uploads the LLM cache (`.cache/llm/`). The cache is keyed by the exact request, so a teammate with it can re-run or re-score those runs without a server.
+- **One grid cell is run by one person, start to finish**, on one server, so no test result mixes two servers. Outputs differ slightly between servers even with identical settings.
+
+---
+
 ## Milestones
 
 | Milestone | Requires | Deliverable |

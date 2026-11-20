@@ -48,6 +48,20 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 
 ---
 
+## Model runners
+
+Each runner downloads their own copy of the model and runs their own vLLM server (ROADMAP *Model serving*). Everyone else works without the model. Assign runners per phase; one grid cell is run by one person, start to finish.
+
+| Phase / runs | Runner | Model copy ready |
+|---|---|---|
+| Phase 3: R1, R0+calc, R1−calc drafts and scoring | *TBD* | |
+| Phase 4: V1, V2 revision loop, grid runs and scoring | *TBD* | |
+| Phase 6: restatement runs and scoring | *TBD* | |
+| Phase 7: injection and closed-book runs, scoring | *TBD* | |
+| Phase 9: variance re-runs | *TBD* | |
+
+---
+
 
 ## Phase 0: Foundations and contracts
 
@@ -272,3 +286,4 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-11-08 · Rahul Vishnuvardhana · M1.1, M1.2, M1.9, M1.13 · Full 107-question S0/R0 runs on vLLM from clean main 835b8b8, scored strict (S0 18/107, R0 33/107, McNemar p = 0.0135); rounding rule dropped and 6 golds flagged for blind errata before scoring (DECISIONS); `finqa report --scope`; paper updated · branch baseline-results-report
 - 2026-11-08 · Rahul Vishnuvardhana · M1.13 · Report retitled; refusal claim corrected (wrong answers 52 outnumber refusals 22); M1.13 to review · branch baseline-results-report
 - 2026-11-17 · — · P3.6, P3.9 · Architecture decisions written into ROADMAP.md (Locked decisions and a new Architecture section): five generators, agent tools, 2 × 3 verification grid, 2 × 2 calculator arms with V0 only; model row updated to self-hosted vLLM
+- 2026-11-20 · — · — · Model serving plan in ROADMAP.md (*Model serving*): no team server, each runner keeps an identical copy (pinned revision, same vLLM and flags), which phases need the model, runs and LLM cache shared via the shared artifact location; *Model runners* table added here, runners TBD
