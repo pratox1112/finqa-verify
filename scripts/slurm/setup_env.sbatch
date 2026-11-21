@@ -9,7 +9,7 @@
 #SBATCH --partition=short
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
-#SBATCH --time=02:00:00
+#SBATCH --time=06:00:00   # installing vLLM on scratch alone took about an hour
 #SBATCH --output=/scratch/%u/finqa/logs/%x-%j.out
 set -euo pipefail
 source "$SLURM_SUBMIT_DIR/scripts/slurm/common.sh"
