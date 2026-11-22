@@ -32,7 +32,7 @@ Checked in this order; the first that applies decides.
 | 3 | Gold is a single number (52 in-scope questions) | correct / incorrect | The **answer claim** (`Draft.answer_claim_id`) within tolerance (§2). No answer claim → incorrect. Other claims don't decide the answer |
 | 4 | Gold is text, with or without numbers (75 questions) | correct / incorrect | **LLM judge** (`src/finqa/prompts/judge_v1.txt`): correct only if the answer reaches the gold's conclusion, every key figure matches up to rounding with the same unit and scale, and nothing contradicts the gold. Illustrative numbers (list markers, product names such as "737", company names such as "3M") are not key figures |
 
-**Judge validation:** a random sample of about 25 judged answers is labelled by a person who doesn't see the judge's verdict, and the judge-human agreement is reported. The judge prompt is frozen before any test-set scoring. For the final report, prediction-powered inference (PPI) can combine the human sample with the judge's labels into one estimate with a confidence interval.
+**Judge validation:** a random sample of about 25 judged answers is labelled by a person who doesn't see the judge's verdict, and the judge-human agreement is reported. Labellers follow the same rules as the judge, plus the hedging rule in §6. The judge prompt is frozen before any test-set scoring. For the final report, prediction-powered inference (PPI) can combine the human sample with the judge's labels into one estimate with a confidence interval.
 
 ## 4. Error types (automatic, rule-based)
 
@@ -75,5 +75,5 @@ Used for the double-coded error sample (mid-term) and the full annotation (Phase
 | Gold answer uses a different but equivalent unit ($1.6Bn vs $1,600M) | Equal after normalization (§2) |
 | Restated figure | Gold follows the FinanceBench document; a claim matching only the restated value is incorrect, typed by §4 |
 | Answer gives the right number with the wrong sign | Incorrect; typed `other` unless another rule fires |
-| Answer hedges between two numbers | The answer claim decides (single-number gold); the judge decides (text gold) |
+| Answer hedges between two numbers | The answer claim decides (single-number gold); the judge decides (text gold). Human labels on text gold: offering several candidate values without committing to the gold one as the answer, or saying it cannot answer and then listing figures, is **incorrect**; if the judge accepted it, count a disagreement (DECISIONS 2026-11-22, `financebench_id_02119`) |
 | Out-of-scope question (8-K, earnings release) | Not scored: outside `data/SCOPE.md` |
