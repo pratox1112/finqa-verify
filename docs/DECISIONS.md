@@ -279,13 +279,13 @@ Most adjacent-year matches are text that is identical across years (geographies,
 
 **Why:** a confident, cited but wrong number is the failure this project targets. The share of cited claims whose citation doesn't hold the number motivates claim-level verification directly. **Check on real data:** for 14 of the 15 single-number, single-fact questions, the gold value is found in the question's gold-evidence chunk. The miss is a value written in prose without a scale word.
 
-## 2026-11-04 · Rahul Vishnuvardhana · Start the S0 and R0 parts of Phase 3 before Gate 2 (PROPOSED, needs team agreement)
+## 2026-11-04 · Rahul Vishnuvardhana · Start the S0 and R0 parts of Phase 3 before Gate 2 (PROPOSED; accepted by the team 2026-11-22)
 
 **Proposal:** build the company resolver (P3.1), the filing search tool (P3.2), the closed-book generator (P3.0) and single-shot RAG (P3.5) now, in parallel with Phase 2, and develop them only on the 20 pilot questions reserved for the dev split (`data/pilot_questions.json`). No test-split run until Gate 2 is passed and the S0/R0 prompts are frozen. Gate 2 and Gate 3 stay `todo`.
 
 **Why:** M1 (due 2026-11-09) needs S0 and R0 numbers, and Phase 2 is unclaimed; none of this code depends on Phase 2 (same reasoning as "Start Phase 1 before Gate 0 sign-off", 2026-10-30). Risk: if the Phase 2 runner needs a different generator interface (`generate(question_id, company, question, *, run_id) -> Draft`), the generators follow it.
 
-## 2026-11-04 · Rahul Vishnuvardhana · Company resolver and R0 search filters (PROPOSED, needs team agreement)
+## 2026-11-04 · Rahul Vishnuvardhana · Company resolver and R0 search filters (PROPOSED; accepted by the team 2026-11-22)
 
 **Resolver (P3.1):** names are normalized (case, punctuation, "&" = "and", legal suffixes such as Inc/Corp/Co, share-class words such as "Class A") and scored with rapidfuzz `WRatio` against the FinanceBench name, SEC name, former names and aliases in `data/companies.csv`; a ticker (any share class or historical ticker) scores 100. One company is returned only if it scores at least **90** and leads the next company by at least **5** (`retrieval.resolver_threshold` / `resolver_margin` in `configs/base.yaml`); otherwise only ranked candidates come back, never a guess. Checked on all 31 FinanceBench names (each resolves to itself) and on brands, former names, typos and an ambiguous name (`tests/test_resolver.py`).
 
@@ -293,7 +293,7 @@ Most adjacent-year matches are text that is identical across years (geographies,
 
 **Why:** using FinanceBench's gold `doc_name` would make R0's retrieval an oracle and unfair to R1, which must choose its own filters. Rules, not an extra LLM call, keep R0 at one model call. **To confirm:** that passing the FinanceBench `company` field (rather than resolving it from the question text) is acceptable for every arm.
 
-## 2026-11-05 · Rahul Vishnuvardhana · R0 retrieves tables plus one text chunk (PROPOSED, needs team agreement)
+## 2026-11-05 · Rahul Vishnuvardhana · R0 retrieves tables plus one text chunk (PROPOSED; accepted by the team 2026-11-22)
 
 **Decision:** R0's single search returns the `top_k` (5) nearest **table** chunks plus `rag_text_chunks` (1) nearest text chunk, all under the same filters, instead of the 5 nearest chunks of any kind (`retrieval.rag_text_chunks` in `configs/base.yaml`). The query stays the full question.
 
@@ -301,7 +301,7 @@ Most adjacent-year matches are text that is identical across years (geographies,
 
 **Known limit:** recall is still low for balance-sheet questions whose statement table ranks below note tables; R0 has one search by design, and this is what R1 is compared against.
 
-## 2026-11-05 · Rahul Vishnuvardhana · Generator output handling: answering claim and refused tool calls (PROPOSED, needs team agreement)
+## 2026-11-05 · Rahul Vishnuvardhana · Generator output handling: answering claim and refused tool calls (PROPOSED; accepted by the team 2026-11-22)
 
 **Decision:** (1) `answer_claim_id` is normalized in the generator: an ID written as "3" means "c3", "null" means unset, and when it is unset or unknown but claims exist, the last claim is used (the prompts now say to list inputs first and the answer last, and to write the ID exactly). Scoring reads it only when the gold answer is a number, so qualitative answers are unaffected. (2) When Groq refuses a call with `tool_use_failed` (its tool-call parser trips, e.g. the model names the tool "Call"), the model's answer is read back from Groq's `failed_generation` text and validated exactly like a normal answer; anything invalid (e.g. a repetition loop) stays an error draft and is scored incorrect. Token counts of recovered calls are unknown (0).
 
@@ -365,3 +365,9 @@ Most adjacent-year matches are text that is identical across years (geographies,
 **Decision:** (1) R0+calc (`configs/ablations/r0_calc_v0.yaml`) is R0's single search and excerpts, then a loop in which the model may call `calculate` as many times as it needs before calling `Answer`. It has no other tool and cannot search again. (2) The loop is capped by `retrieval.max_agent_steps` (8), the same limit R1 has; there is no separate setting. When the model stops without answering or uses every round, it gets R1's forced last answer (`r1_finalize.txt`). (3) Its system prompt `r0_calc_system.txt` is `r0_system.txt` plus one rule: do all arithmetic with `calculate`, with variable names that start with a letter, as in `r1_system.txt`. The user prompt is R0's, unchanged. (4) Its conversations are saved to `runs/<run_id>/agent_traces/`, in R1's format.
 
 **Why:** the 2 × 2 design separates retrieval from the calculator, so the calculator should work the same way in R0+calc as in R1: several calls in one answer, under the same limit. A single call would make R0+calc a different, stricter calculator than R1's, which would mix the two factors. The prompt keeps R0's wording so that the calculator is the only difference from R0.
+
+## 2026-11-22 · Pratosh Karthikeyan · Agent and 2 × 2 prompts frozen; test-run plan for Phase 3 (team approval confirmed 2026-11-22; merge needs approved-freeze-change)
+
+**Decision:** (1) **Prompts frozen.** `r1_system.txt`, `r1_nocalc_system.txt`, `r1_user.txt`, `r1_finalize.txt` and `r0_calc_system.txt` are added to `src/finqa/prompts/FROZEN.txt`. Their text is unchanged since the commits named here; blob hashes: r1_system.txt 05264337ccec and r1_nocalc_system.txt 6728f362997e (commit **cb06742**); r1_user.txt 1ae59b769a49 and r1_finalize.txt 12aaf9e7c4ba (commit **c852f0d**); r0_calc_system.txt 8d05315bf1a7 (commit **cf7efcc**). From here on they change only with the `approved-freeze-change` label and a new entry here, and never in response to test-set results. Tuning used the 20 dev questions only. (2) **No repeated-call fix.** On dev, R0+calc repeated one identical calculation until the round limit on 2 questions (`financebench_id_03473`, `04481`) without changing either outcome; the calculator replies to a repeated call as to any other, and the arm is frozen as is. (3) **R0 is re-run on the test split** at the frozen commit from `main`, together with R1, R0+calc and R1−calc, so all four arms of the 2 × 2 come from one commit. The earlier 107-question R0 test run stays in the record and is not mixed with the new runs. (4) **`fetch_filing` during runs:** a filing the agent fetches is indexed only in that job's node-local copy of the index (`FINQA_INDEX_DIR`) and is discarded when the job ends; the shared index is not changed by test runs. Each run's fetches are visible in its agent traces. (5) The four PROPOSED entries of 2026-11-04 and 2026-11-05 (early start of S0/R0, resolver and R0 filters, R0's tables plus one text chunk, generator output handling) are accepted as written.
+
+**Why:** Gate 3 requires the agent prompt frozen before its test run. Freezing all five prompts together, before any of the new arms touches the test split, keeps every test number from prompts fixed in advance. Re-running R0 at the same commit removes any doubt that a difference between arms comes from code changes since the midterm (the R0 code path is unchanged, so its answers should largely replay from the LLM cache). Keeping fetched filings per job means one question's fetch cannot change the index another arm or run searches.
