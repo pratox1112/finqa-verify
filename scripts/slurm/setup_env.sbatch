@@ -21,21 +21,25 @@ if [[ ! -x "$VLLM_ENV/bin/python" ]]; then
     log "creating vLLM env at $VLLM_ENV"
     uv venv --python "$VLLM_PYTHON" "$VLLM_ENV"
 fi
-log "installing vllm==$VLLM_VERSION, torch==$TORCH_VERSION ($TORCH_BACKEND)"
+log "installing vllm $VLLM_VERSION+$TORCH_BACKEND, torch==$TORCH_VERSION ($TORCH_BACKEND)"
 VIRTUAL_ENV="$VLLM_ENV" uv pip install --python "$VLLM_ENV/bin/python" \
-    --torch-backend "$TORCH_BACKEND" "vllm==$VLLM_VERSION" "torch==$TORCH_VERSION"
+    --torch-backend "$TORCH_BACKEND" "vllm @ $VLLM_WHEEL" "torch==$TORCH_VERSION"
 
-# Fail loudly if the installed versions are not the recorded ones.
+# Fail loudly if the installed versions are not the recorded ones. The "+cu129" suffix matters:
+# PyPI's plain vllm is the CUDA 13 build. (vLLM's CUDA extension can't be loaded here to check:
+# it needs the GPU driver, which CPU nodes don't have; the server job is the real test.)
 "$VLLM_ENV/bin/python" - "$VLLM_VERSION" "$TORCH_VERSION" "$TORCH_BACKEND" <<'PY'
 import sys
+from importlib.metadata import version
+
 import torch
-import vllm
 
 want_vllm, want_torch, backend = sys.argv[1:]
-print(f"vllm {vllm.__version__}, torch {torch.__version__}, CUDA {torch.version.cuda}")
+got_vllm = version("vllm")
+print(f"vllm {got_vllm}, torch {torch.__version__}, CUDA {torch.version.cuda}")
 cuda = backend.removeprefix("cu")
 ok = (
-    vllm.__version__.split("+")[0] == want_vllm
+    got_vllm == f"{want_vllm}+{backend}"
     and torch.__version__ == f"{want_torch}+{backend}"
     and (torch.version.cuda or "").replace(".", "") == cuda
 )
