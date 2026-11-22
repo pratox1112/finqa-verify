@@ -7,3 +7,8 @@ s0_user.txt
 r0_system.txt
 r0_user.txt
 judge_v1.txt
+r1_system.txt
+r1_nocalc_system.txt
+r1_user.txt
+r1_finalize.txt
+r0_calc_system.txt
