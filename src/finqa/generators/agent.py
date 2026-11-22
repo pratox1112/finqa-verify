@@ -32,6 +32,7 @@ import functools
 import json
 import logging
 import operator
+import re
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -77,13 +78,33 @@ class ResolveCompany(BaseModel):
 
 
 class SearchFilings(BaseModel):
-    cik: str = Field(description="the company's CIK, from resolve_company")
+    cik: str = Field(description='the 10-digit CIK from resolve_company, e.g. "0000066740"')
     query: str = Field(description="what to look for, e.g. 'capital expenditures cash flow'")
     fiscal_year: int | None = Field(default=None, description="the company's fiscal year")
     form: Literal["10-K", "10-Q"] | None = Field(default=None)
     period: str | None = Field(default=None, description='a 10-Q period, e.g. "Q2 FY2023"')
-    section: str | None = Field(default=None, description='e.g. "Item 7" or "Item 8"')
+    section: str | None = Field(
+        default=None,
+        description='10-K: "Item 7" or "Item 8"; 10-Q: "Part I, Item 1" or "Part I, Item 2"',
+    )
     tables_only: bool = Field(default=False, description="true: only tables")
+
+
+CIK = re.compile(r"\d{10}")
+TEN_Q_ITEM = re.compile(r"Item (1A|[1-4])")
+
+
+def section_filter(section: str | None, form: str | None, period: str | None) -> str | None:
+    """The section label as indexed. 10-Q sections are stored with their part ("Part I, Item 1"),
+    and the index holds only Part I Items 1-4 and Part II Item 1A, so a bare "Item 2" in a 10-Q
+    search means "Part I, Item 2" and "Item 1A" means "Part II, Item 1A". A 10-Q search is one
+    with form "10-Q" or a quarter period ("Q2 FY2023"). Anything else is passed on unchanged."""
+    if section is None or not (form == "10-Q" or (period or "").startswith("Q")):
+        return section
+    if not TEN_Q_ITEM.fullmatch(section.strip()):
+        return section
+    item = section.strip()
+    return f"Part II, {item}" if item == "Item 1A" else f"Part I, {item}"
 
 
 class FetchFiling(BaseModel):
@@ -95,7 +116,10 @@ class FetchFiling(BaseModel):
 
 class Calculate(BaseModel):
     expression: str = Field(description='arithmetic over the variables, e.g. "(b - a) / a * 100"')
-    variables: dict[str, float] = Field(default_factory=dict, description="name -> number")
+    variables: dict[str, float] = Field(
+        default_factory=dict,
+        description='name -> number; names start with a letter, e.g. {"rev22": 86392}',
+    )
 
 
 TOOLS: dict[str, tuple[type[BaseModel], str]] = {
@@ -343,10 +367,17 @@ class AgentGenerator:
     def _search(
         self, a: SearchFilings, company_name: str
     ) -> tuple[str, list[Chunk], dict[str, str] | None]:
+        if not CIK.fullmatch(a.cik):
+            return (
+                f"Error: {a.cik!r} is not a CIK. Pass the 10-digit CIK that resolve_company "
+                'returned, e.g. "0000066740".',
+                [],
+                None,
+            )
         hits = self.search.search_filings(
             a.cik,
             a.fiscal_year,
-            a.section,
+            section_filter(a.section, a.form, a.period),
             a.query,
             form=a.form,
             period=a.period,
