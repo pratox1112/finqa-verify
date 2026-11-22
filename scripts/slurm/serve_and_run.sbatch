@@ -32,7 +32,17 @@ PATH="$VLLM_ENV/bin:$PATH" HF_HUB_OFFLINE=1 "$VLLM_ENV/bin/vllm" serve "$MODEL" 
     --enable-auto-tool-choice --tool-call-parser qwen3_coder \
     --host 127.0.0.1 --port "$PORT" >"$SERVER_LOG" 2>&1 &
 SERVER_PID=$!
-trap 'log "stopping vLLM"; kill "$SERVER_PID" 2>/dev/null || true; wait "$SERVER_PID" 2>/dev/null || true' EXIT
+LOCAL_INDEX="${TMPDIR:-/tmp}/finqa-chroma-${SLURM_JOB_ID:-local}"
+trap 'log "stopping vLLM"; kill "$SERVER_PID" 2>/dev/null || true; wait "$SERVER_PID" 2>/dev/null || true; rm -rf "$LOCAL_INDEX"' EXIT
+
+# Search the index from the node's local disk: on /scratch (a network filesystem) a filtered
+# search took 50-190 s, on local disk 0.1-3.5 s (2026-11-21). The copy takes seconds, while the
+# server loads. A filing the agent fetches during the job is added to this copy only.
+if [[ -d "$FINQA_REPO/data/chroma" ]]; then
+    cp -r "$FINQA_REPO/data/chroma" "$LOCAL_INDEX"
+    export FINQA_INDEX_DIR="$LOCAL_INDEX"
+    log "index copied to $LOCAL_INDEX ($(du -sh "$LOCAL_INDEX" | cut -f1))"
+fi
 
 for _ in $(seq 1 180); do                     # up to 30 minutes to load the weights
     if ! kill -0 "$SERVER_PID" 2>/dev/null; then
