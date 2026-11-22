@@ -22,12 +22,14 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from string import Template
+from typing import Any
 
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, messages_to_dict
 from pydantic import BaseModel, Field, ValidationError
 
 from finqa.llm import LLM, StructuredOutputError, is_retryable
 from finqa.schemas import Chunk, Claim, Draft
+from finqa.tools.calculate import calculate
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +46,62 @@ class Answer(BaseModel):
         description='claim_id of the claim that answers the question, e.g. "c3"; null only if '
         "the answer is not a single number",
     )
+
+
+class Calculate(BaseModel):
+    """The calculator tool's arguments (R1 and R0+calc)."""
+
+    expression: str = Field(description='arithmetic over the variables, e.g. "(b - a) / a * 100"')
+    variables: dict[str, float] = Field(
+        default_factory=dict,
+        description='name -> number; names start with a letter, e.g. {"rev22": 86392}',
+    )
+
+
+CALCULATE_DESCRIPTION = "Evaluate arithmetic over named numbers (+ - * / ** and parentheses only)."
+FINALIZE_PROMPT = "r1_finalize.txt"  # the forced last answer, for every arm that uses tools
+TRACES_DIR = "agent_traces"
+
+
+def function_spec(name: str, model: type[BaseModel], description: str) -> dict[str, Any]:
+    """The OpenAI-style function definition the model is given for one tool."""
+    parameters = model.model_json_schema()
+    parameters.pop("title", None)
+    return {
+        "type": "function",
+        "function": {"name": name, "description": description, "parameters": parameters},
+    }
+
+
+def run_calculate(a: Calculate) -> str:
+    """The calculator's reply to the model (raises CalculationError on a bad expression)."""
+    c = calculate(a.expression, a.variables)
+    return f"{c.expression} = {c.result!r}"
+
+
+def save_trace(
+    root: Path | None,
+    run_id: str,
+    question_id: str,
+    *,
+    steps_used: int,
+    max_steps: int,
+    error: str | None,
+    conversation: list[BaseMessage],
+) -> None:
+    """Write one question's conversation to runs/<run_id>/agent_traces/<question_id>.json."""
+    if root is None:
+        return
+    path = root / run_id / TRACES_DIR / f"{question_id}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    trace = {
+        "question_id": question_id,
+        "steps_used": steps_used,
+        "max_steps": max_steps,
+        "error": error,
+        "messages": messages_to_dict(conversation),
+    }
+    path.write_text(json.dumps(trace, indent=1, ensure_ascii=False), encoding="utf-8")
 
 
 def answer_claim_id(a: Answer) -> str | None:

@@ -293,16 +293,11 @@ def test_rag_with_nothing_retrieved_still_drafts(tmp_path: Path) -> None:
     assert d.error is None and d.evidence == {} and d.claims == []
 
 
-def test_rag_rejects_other_arms_and_the_calculator(tmp_path: Path, search: FilingSearch) -> None:
+def test_rag_rejects_other_arms(tmp_path: Path, search: FilingSearch) -> None:
     resolver = CompanyResolver.from_csv()
     s0 = config("baselines/s0_closed_book.yaml")
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="not single-shot RAG"):
         RagGenerator(s0, make_llm(s0, FakeChat(), tmp_path), resolver, search)
-    calc = s0.model_copy(
-        update={"retrieval": s0.retrieval.model_copy(update={"arm": "rag", "calculator": True})}
-    )
-    with pytest.raises(ValueError, match="R0\\+calc"):
-        RagGenerator(calc, make_llm(calc, FakeChat(), tmp_path), resolver, search)
 
 
 def test_rag_takes_top_k_tables_plus_text_chunks(tmp_path: Path) -> None:
