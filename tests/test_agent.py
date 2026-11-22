@@ -13,7 +13,7 @@ from test_llm import FakeChat
 
 from finqa.config import Config
 from finqa.generators import agent
-from finqa.generators.agent import TOOLS, AgentGenerator, tool_names, tool_spec
+from finqa.generators.agent import TOOLS, AgentGenerator, section_filter, tool_names, tool_spec
 from finqa.generators.common import PROMPTS_DIR
 from finqa.ingestion.index import add_chunks, open_collection
 from finqa.llm import LLM
@@ -230,6 +230,8 @@ def test_connection_failure_is_raised_not_scored(tmp_path: Path, search: FilingS
     [
         (("lookup", {"x": 1}), "unknown tool 'lookup'"),
         (("search_filings", {"query": "capex"}), "ValidationError"),
+        (("search_filings", {"cik": "3M", "query": "capex"}), "'3M' is not a CIK"),
+        (("search_filings", {"cik": "66740", "query": "capex"}), "10-digit CIK"),
         (("calculate", {"expression": "__import__('os')", "variables": {}}), "Error"),
         (("calculate", {"expression": "a / 0", "variables": {"a": 1}}), "division by zero"),
     ],
@@ -243,6 +245,43 @@ def test_bad_tool_calls_are_reported_to_the_model(
     assert isinstance(chat, Recording)
     tool_text = next(m.content for m in chat.seen[-1] if isinstance(m, ToolMessage))
     assert expected in tool_text
+
+
+@pytest.mark.parametrize(
+    ("section", "form", "period", "expected"),
+    [
+        ("Item 1", "10-Q", None, "Part I, Item 1"),
+        ("Item 2", None, "Q2 FY2023", "Part I, Item 2"),
+        ("Item 1A", "10-Q", None, "Part II, Item 1A"),
+        ("Part I, Item 1", "10-Q", None, "Part I, Item 1"),
+        ("Item 1", "10-K", None, "Item 1"),
+        ("Item 8", None, "FY2022", "Item 8"),
+        ("Item 8", None, None, "Item 8"),
+        (None, "10-Q", None, None),
+    ],
+)
+def test_10q_sections_get_their_part(
+    section: str | None, form: str | None, period: str | None, expected: str | None
+) -> None:
+    assert section_filter(section, form, period) == expected
+
+
+def test_10q_search_with_a_bare_item_finds_part_i(tmp_path: Path, search: FilingSearch) -> None:
+    args = {"cik": MMM, "query": "capital expenditure", "form": "10-Q", "section": "Item 1"}
+    replies = [ai(("search_filings", args)), ai(("Answer", capex_answer([])))]
+    generator, chat = make(tmp_path, search, *replies)
+    generator(question(), ctx("run1"))
+    assert isinstance(chat, Recording)
+    tool_text = next(m.content for m in chat.seen[-1] if isinstance(m, ToolMessage))
+    assert CHUNKS[3].chunk_id in tool_text
+
+
+def test_r1_prompts_ask_for_the_cik_as_returned_and_named_variables() -> None:
+    for name in ("r1_system.txt", "r1_nocalc_system.txt"):
+        text = (PROMPTS_DIR / name).read_text(encoding="utf-8")
+        assert "10-digit CIK" in text and "Part I, Item 1" in text and "already indexed" in text
+    calc = (PROMPTS_DIR / "r1_system.txt").read_text(encoding="utf-8")
+    assert "starts with a letter" in calc
 
 
 def test_r1_minus_calc_cannot_call_the_calculator(tmp_path: Path, search: FilingSearch) -> None:
