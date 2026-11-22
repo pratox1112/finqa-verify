@@ -44,7 +44,6 @@ from langchain_core.messages import (
     HumanMessage,
     ToolCall,
     ToolMessage,
-    messages_to_dict,
 )
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.memory import MemorySaver
@@ -53,11 +52,23 @@ from pydantic import BaseModel, Field, ValidationError
 
 from finqa.config import Config
 from finqa.generators.base import Question, RunContext
-from finqa.generators.common import Answer, Call, answer, draft, load_prompt, messages
+from finqa.generators.common import (
+    CALCULATE_DESCRIPTION,
+    FINALIZE_PROMPT,
+    Answer,
+    Calculate,
+    Call,
+    answer,
+    draft,
+    function_spec,
+    load_prompt,
+    messages,
+    run_calculate,
+    save_trace,
+)
 from finqa.generators.rag import excerpt
 from finqa.llm import LLM, REPO_ROOT, is_retryable
 from finqa.schemas import Chunk, Draft
-from finqa.tools.calculate import calculate
 from finqa.tools.fetch import FilingFetcher
 from finqa.tools.resolver import CompanyResolver
 from finqa.tools.search import FilingSearch
@@ -66,8 +77,6 @@ logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = {True: "r1_system.txt", False: "r1_nocalc_system.txt"}  # by `calculator`
 USER_PROMPT = "r1_user.txt"
-FINALIZE_PROMPT = "r1_finalize.txt"
-TRACES_DIR = "agent_traces"
 
 
 # --- Tools the model can call -------------------------------------------------------------------
@@ -114,14 +123,6 @@ class FetchFiling(BaseModel):
     quarter: int | None = Field(default=None, description="1, 2 or 3 for a 10-Q")
 
 
-class Calculate(BaseModel):
-    expression: str = Field(description='arithmetic over the variables, e.g. "(b - a) / a * 100"')
-    variables: dict[str, float] = Field(
-        default_factory=dict,
-        description='name -> number; names start with a letter, e.g. {"rev22": 86392}',
-    )
-
-
 TOOLS: dict[str, tuple[type[BaseModel], str]] = {
     "resolve_company": (ResolveCompany, "Find a company's CIK from its name, brand or ticker."),
     "search_filings": (
@@ -132,22 +133,13 @@ TOOLS: dict[str, tuple[type[BaseModel], str]] = {
         FetchFiling,
         "Download and index one 10-K or 10-Q that search_filings cannot find.",
     ),
-    "calculate": (
-        Calculate,
-        "Evaluate arithmetic over named numbers (+ - * / ** and parentheses only).",
-    ),
+    "calculate": (Calculate, CALCULATE_DESCRIPTION),
 }
 
 
 def tool_spec(name: str) -> dict[str, Any]:
     """The OpenAI-style function definition the model is given for one tool."""
-    model, description = TOOLS[name]
-    parameters = model.model_json_schema()
-    parameters.pop("title", None)
-    return {
-        "type": "function",
-        "function": {"name": name, "description": description, "parameters": parameters},
-    }
+    return function_spec(name, *TOOLS[name])
 
 
 def tool_names(calculator: bool) -> list[str]:
@@ -400,8 +392,7 @@ class AgentGenerator:
         return f"{a.form} {r.period} for CIK {a.cik} {notes[r.status]}.", [], None
 
     def _calculate(self, a: Calculate, _: str) -> tuple[str, list[Chunk], dict[str, str] | None]:
-        c = calculate(a.expression, a.variables)
-        return f"{c.expression} = {c.result!r}", [], None
+        return run_calculate(a), [], None
 
     # --- one question ------------------------------------------------------------------------
 
@@ -448,18 +439,15 @@ class AgentGenerator:
         )
 
     def _save_trace(self, run_id: str, qid: str, state: AgentState) -> None:
-        if self.traces_root is None:
-            return
-        path = self.traces_root / run_id / TRACES_DIR / f"{qid}.json"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        trace = {
-            "question_id": qid,
-            "steps_used": state["steps_used"],
-            "max_steps": self.max_steps,
-            "error": state["error"],
-            "messages": messages_to_dict(state["messages"]),
-        }
-        path.write_text(json.dumps(trace, indent=1, ensure_ascii=False), encoding="utf-8")
+        save_trace(
+            self.traces_root,
+            run_id,
+            qid,
+            steps_used=state["steps_used"],
+            max_steps=self.max_steps,
+            error=state["error"],
+            conversation=state["messages"],
+        )
 
 
 @functools.cache

@@ -1,0 +1,7 @@
+# R0+calc: single-shot RAG, then the model's arithmetic through calculate, no verification (ROADMAP P3.9)
+# Up to retrieval.max_agent_steps calculator rounds, the same limit as R1 (docs/DECISIONS.md)
+retrieval:
+  arm: "rag"
+  calculator: true
+verification:
+  arm: "none"
