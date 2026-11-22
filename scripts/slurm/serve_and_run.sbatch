@@ -21,12 +21,12 @@ nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
 
 PORT=$((8000 + ${SLURM_JOB_ID:-0} % 1000))   # avoid clashing with other jobs on the node
 SERVER_LOG="$FINQA_ROOT/logs/vllm-${SLURM_JOB_ID:-local}.log"
-export HF_HUB_OFFLINE=1                       # use only the downloaded snapshot
 
 log "starting vLLM on port $PORT (server log: $SERVER_LOG)"
-# The env's bin goes on PATH for the server only: FlashInfer compiles its sampling kernel at
-# startup and needs the env's `ninja`.
-PATH="$VLLM_ENV/bin:$PATH" "$VLLM_ENV/bin/vllm" serve "$MODEL" \
+# For the server only: the env's bin on PATH (FlashInfer compiles its sampling kernel at
+# startup and needs the env's `ninja`), and offline mode, so it uses only the downloaded
+# snapshot. The command run below may still download (e.g. the embedding model, once).
+PATH="$VLLM_ENV/bin:$PATH" HF_HUB_OFFLINE=1 "$VLLM_ENV/bin/vllm" serve "$MODEL" \
     --revision "$MODEL_REVISION" --tokenizer-revision "$MODEL_REVISION" \
     --dtype bfloat16 --max-model-len "$MAX_MODEL_LEN" \
     --enable-auto-tool-choice --tool-call-parser qwen3_coder \
