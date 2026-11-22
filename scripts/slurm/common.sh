@@ -13,6 +13,9 @@ MODEL_REVISION="37561816e66b5b9153b1b64c10968c18c1e6f4a0"
 VLLM_VERSION="0.32.0"
 TORCH_VERSION="2.13.0"
 TORCH_BACKEND="cu129"
+# PyPI's vllm 0.32.0 is the CUDA 13 build (needs libcudart.so.13); the recorded setup is the
+# CUDA 12.9 build from the release page.
+VLLM_WHEEL="https://github.com/vllm-project/vllm/releases/download/v${VLLM_VERSION}/vllm-${VLLM_VERSION}+${TORCH_BACKEND}-cp38-abi3-manylinux_2_28_x86_64.whl"
 VLLM_PYTHON="3.12"
 MAX_MODEL_LEN=32768
 

@@ -24,7 +24,9 @@ SERVER_LOG="$FINQA_ROOT/logs/vllm-${SLURM_JOB_ID:-local}.log"
 export HF_HUB_OFFLINE=1                       # use only the downloaded snapshot
 
 log "starting vLLM on port $PORT (server log: $SERVER_LOG)"
-"$VLLM_ENV/bin/vllm" serve "$MODEL" \
+# The env's bin goes on PATH for the server only: FlashInfer compiles its sampling kernel at
+# startup and needs the env's `ninja`.
+PATH="$VLLM_ENV/bin:$PATH" "$VLLM_ENV/bin/vllm" serve "$MODEL" \
     --revision "$MODEL_REVISION" --tokenizer-revision "$MODEL_REVISION" \
     --dtype bfloat16 --max-model-len "$MAX_MODEL_LEN" \
     --enable-auto-tool-choice --tool-call-parser qwen3_coder \
