@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from collections.abc import Iterable, Sequence
@@ -38,7 +39,10 @@ from finqa.ingestion.download import MANIFEST_PATH, load_manifest
 from finqa.ingestion.financebench import DATA_DIR
 from finqa.schemas import Chunk
 
-INDEX_DIR = DATA_DIR / "chroma"
+# FINQA_INDEX_DIR points at a copy of the index elsewhere: cluster jobs copy it to the node's
+# local disk, since filtered searches on a network filesystem take minutes instead of seconds
+# (scripts/slurm/serve_and_run.sbatch).
+INDEX_DIR = Path(os.environ.get("FINQA_INDEX_DIR") or DATA_DIR / "chroma")
 COLLECTION = "filings"
 DONE_FILE = "indexed.txt"
 BATCH = 256  # chunks per Chroma upsert

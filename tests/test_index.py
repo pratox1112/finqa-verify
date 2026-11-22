@@ -182,3 +182,18 @@ def test_where_and_metadata() -> None:
     assert where(cik="1") == {"cik": "1"}
     assert where(cik="1", fiscal_year=2018) == {"$and": [{"cik": "1"}, {"fiscal_year": 2018}]}
     assert "unit_scale" not in metadata(CHUNKS[0]) and metadata(CHUNKS[1])["unit_scale"] == 1e6
+
+
+def test_index_dir_can_point_at_a_copy(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    import importlib
+
+    import finqa.ingestion.index as index
+
+    try:
+        monkeypatch.setenv("FINQA_INDEX_DIR", str(tmp_path / "copy"))
+        assert importlib.reload(index).INDEX_DIR == tmp_path / "copy"
+        monkeypatch.delenv("FINQA_INDEX_DIR")
+        assert importlib.reload(index).INDEX_DIR == index.DATA_DIR / "chroma"
+    finally:
+        monkeypatch.delenv("FINQA_INDEX_DIR", raising=False)
+        importlib.reload(index)
