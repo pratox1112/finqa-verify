@@ -25,12 +25,22 @@ company is known and XBRL has a value for that period; otherwise `ok=None`, neve
 (a missing mapping is not evidence of an error). Any reported value (restatements give
 several) within tolerance, ignoring sign, passes. XBRL is evidence for the verifier here; it
 never decides correctness, which is scored against FinanceBench gold (ROADMAP rule 10).
+
+Check 3, recomputation (P4.5): a computed claim's `expression` evaluated on the current values
+of its `derived_from` claims (finqa.eval.error_types.recompute: variables are claim IDs or
+a, b, c... in order; a fraction is read as a percent for a % claim). The result must be within
+tolerance, sign included, since a sign is part of a computation. A quoted claim gets
+`ok=None`. A computed claim that cannot be recomputed (no inputs, an input that is not a
+claim, or an expression that does not evaluate) fails, for the same reason an uncited quoted
+claim fails check 1: V2 accepts only numbers it can trace to the evidence.
 """
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from finqa.eval.citation_check import _HAS_SCALE
-from finqa.eval.error_types import Lookup, xbrl_lookup
+from finqa.eval.error_types import Lookup, recompute, xbrl_lookup
 from finqa.eval.scoring import within_tolerance
 from finqa.ingestion.xbrl import Metric, metric_for
 from finqa.schemas import Chunk, Claim, Draft, Unit, Verdict
@@ -38,6 +48,7 @@ from finqa.verifiers.numbers import extract_numbers
 
 CITED_TEXT = "cited_text"
 XBRL = "xbrl"
+RECOMPUTE = "recompute"
 
 
 def chunk_values(chunk: Chunk, unit: Unit) -> list[float]:
@@ -111,3 +122,23 @@ def _distinct(values: list[float]) -> list[float]:
         if not any(abs(v - w) <= 0.001 * max(abs(w), 1.0) for w in out):
             out.append(v)
     return out
+
+
+def check_recompute(claim: Claim, claims: Sequence[Claim], tolerance: float) -> Verdict:
+    def verdict(ok: bool | None, reason: str) -> Verdict:
+        return Verdict(claim_id=claim.claim_id, ok=ok, check=RECOMPUTE, reason=reason)
+
+    if not claim.expression:
+        return verdict(None, "quoted claim: nothing to recompute")
+    if not claim.derived_from:
+        return verdict(False, f"{claim.expression} names no input claims")
+    ids = {c.claim_id for c in claims}
+    missing = [i for i in claim.derived_from if i not in ids]
+    if missing:
+        return verdict(False, f"inputs {', '.join(missing)} are not claims in the draft")
+    result = recompute(claim, claims)
+    if result is None:
+        return verdict(False, f"{claim.expression} cannot be evaluated on its inputs")
+    if within_tolerance(claim.value, result, tolerance):
+        return verdict(True, f"{claim.expression} = {result:g}")
+    return verdict(False, f"{claim.expression} = {result:g}, not {claim.value:g}")

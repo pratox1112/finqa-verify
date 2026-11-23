@@ -156,7 +156,7 @@ Each runner downloads their own copy of the model and runs their own vLLM server
 | P4.2 | V1: LLM self-check | in-progress | | branch verifiers | 2026-11-22 | `verifiers/self_check.py`: Chain-of-Verification-style check over the draft's claims and cited excerpts (computed claims recomputed from their inputs); corrects value, unit, period; re-checks up to `max_revisions`, last check only flags; claims_before/after saved. Prompts `v1_system.txt`, `v1_user.txt` (draft, awaiting team approval and freeze). 18 tests. Dev run pending (after the Phase 3 test job frees the cluster checkout). |
 | P4.3 | V2 check 1: cited text | review | | branch verifiers | 2026-11-22 | `verifiers/grounded.py` `check_cited_text`: numbers from cited chunks in full units via `unit_scale`, match within tolerance ignoring sign; USD claims must match the scaled value (DECISIONS 2026-11-22), other units also raw; uncited or unretrieved citations fail, computed claims `ok=None`. 13 tests incl. millions table vs billions claim. |
 | P4.4 | V2 check 2: XBRL | review | | branch verifiers | 2026-11-22 | `verifiers/grounded.py` `check_xbrl`: claim metric -> `metric_map.yaml` key via new `aliases:` lists (`xbrl.normalize_metric`, `metric_for`); passes if any reported value for the period is within tolerance (sign ignored); unmapped name, unit mismatch, unknown company or no value -> `ok=None`. Aliases drafted from dev names; need a teammate's review before P4.8 (DECISIONS 2026-11-22). 27 new tests. |
-| P4.5 | V2 check 3: recomputation | todo | | | | |
+| P4.5 | V2 check 3: recomputation | review | | branch verifiers | 2026-11-22 | `verifiers/grounded.py` `check_recompute`: expression re-evaluated on the inputs' current values (shared `error_types.recompute`), within tolerance with sign; no inputs, unknown input or unevaluable expression fails; quoted claims `ok=None` (DECISIONS 2026-11-22). 6 tests. |
 | P4.6 | Revision loop | todo | | | | |
 | P4.7 | Planted-error suite | todo | | | | |
 | P4.8 | Run the grid | todo | | | | |
@@ -306,3 +306,4 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-11-22 · — · P4.2 · V1 self-check built with a draft prompt (not frozen); 18 unit tests with a fake model; dev run on the R0 and R1 dev drafts pending
 - 2026-11-22 · — · P4.3 · V2 cited-text check built; scale rule (USD claims must match a table's stated scale) and uncited-claim rule recorded in DECISIONS; 13 unit tests
 - 2026-11-22 · — · P4.4 · V2 XBRL check built; metric-name aliases added to `metric_map.yaml` (drafted from dev drafts, review pending); unmapped metrics give ok=None
+- 2026-11-22 · — · P4.5 · V2 recomputation check built; computed claims that cannot be recomputed fail (DECISIONS 2026-11-22)

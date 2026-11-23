@@ -4,7 +4,15 @@ import pytest
 
 from finqa.ingestion.xbrl import load_metric_map, metric_for, normalize_metric
 from finqa.schemas import Chunk, Claim, Draft
-from finqa.verifiers.grounded import CITED_TEXT, XBRL, check_cited_text, check_xbrl, chunk_values
+from finqa.verifiers.grounded import (
+    CITED_TEXT,
+    RECOMPUTE,
+    XBRL,
+    check_cited_text,
+    check_recompute,
+    check_xbrl,
+    chunk_values,
+)
 
 TOL = 0.01
 
@@ -238,3 +246,60 @@ def test_every_alias_is_normalised_and_names_one_metric() -> None:
     assert len(aliases) == len(set(aliases))
     assert all(a == normalize_metric(a) for a in aliases)
     assert all(m.aliases for m in METRICS.values())
+
+
+# --- Check 3: recomputation ---------------------------------------------------------------
+
+
+def inputs(capex: float = 1.577e9, prior: float = 1.373e9) -> list[Claim]:
+    return [
+        claim(capex, ["cf"], claim_id="c1"),
+        claim(prior, ["cf"], claim_id="c2").model_copy(update={"period": "FY2017"}),
+    ]
+
+
+def growth(value: float, expression: str = "(c1 - c2) / c2 * 100", **kw: object) -> Claim:
+    update = {"derived_from": ["c1", "c2"], "expression": expression, **kw}
+    return claim(value, [], unit="%", claim_id="c3").model_copy(update=update)
+
+
+def recheck(c: Claim, cs: list[Claim] | None = None) -> tuple[bool | None, str]:
+    v = check_recompute(c, (cs if cs is not None else inputs()) + [c], TOL)
+    assert v.check == RECOMPUTE and v.claim_id == "c3"
+    return v.ok, v.reason
+
+
+def test_a_correct_computation_passes() -> None:
+    assert recheck(growth(14.86)) == (True, "(c1 - c2) / c2 * 100 = 14.858")
+    assert recheck(growth(14.86, "(a - b) / b * 100"))[0] is True  # letters in input order
+    assert recheck(growth(14.86, "(c1 - c2) / c2"))[0] is True  # a fraction for a % claim
+
+
+def test_a_wrong_computation_fails_with_the_recomputed_value() -> None:
+    assert recheck(growth(12.0)) == (False, "(c1 - c2) / c2 * 100 = 14.858, not 12")
+    assert recheck(growth(-14.86))[0] is False  # sign matters in arithmetic
+    usd = claim(2.95e9, [], claim_id="c3").model_copy(
+        update={"derived_from": ["c1", "c2"], "expression": "c1 + c2"}
+    )
+    assert recheck(usd)[0] is True
+    assert recheck(usd.model_copy(update={"value": 2.95e6}))[0] is False
+
+
+def test_recomputation_uses_the_inputs_current_values() -> None:
+    # after a revision fixes c1, the derived claim is checked against the revised value
+    assert recheck(growth(14.86), inputs(capex=1.6e9))[0] is False
+
+
+def test_computed_claims_that_cannot_be_recomputed_fail() -> None:
+    ok, reason = recheck(growth(14.86, derived_from=[]))
+    assert ok is False and "names no input claims" in reason
+    ok, reason = recheck(growth(14.86, derived_from=["c1", "c9"]))
+    assert ok is False and "c9 are not claims in the draft" in reason
+    for bad in ("c1 / (c2 - c2)", "max(c1, c2)", "c1 +"):
+        ok, reason = recheck(growth(14.86, bad))
+        assert ok is False and "cannot be evaluated" in reason
+
+
+def test_quoted_claims_are_not_recomputed() -> None:
+    c = claim(1.577e9, ["cf"], claim_id="c3")
+    assert recheck(c) == (None, "quoted claim: nothing to recompute")
