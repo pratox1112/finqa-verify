@@ -14,7 +14,7 @@ from finqa.ingestion.xbrl import load_metric_map
 from finqa.llm import LLM
 from finqa.schemas import Chunk, Claim, Draft
 from finqa.verifiers import grounded
-from finqa.verifiers.grounded import GroundedVerifier, failed, feedback
+from finqa.verifiers.grounded import GroundedVerifier, failed, feedback, revisable
 
 V2 = load_config(CONFIGS_DIR / "grid" / "r0_v2.yaml")
 MMM = "0000066740"
@@ -288,3 +288,42 @@ def test_real_model_corrects_a_planted_scale_error(tmp_path: Path) -> None:
     assert r.error is None
     assert r.revisions_used == 1 and r.flagged_claim_ids == []
     assert r.claims_after[0].value == pytest.approx(1.577e9, rel=0.01)
+
+
+# --- Uncited claims are flagged, not revised (DECISIONS 2026-11-23) ---------------------------
+
+
+def uncited(value: float, cites: list[str]) -> list[Claim]:
+    cs = claims()
+    cs[0] = cs[0].model_copy(update={"value": value, "chunk_ids": cites})
+    return cs
+
+
+@pytest.mark.parametrize("cites", [[], ["k9"]])
+def test_a_claim_failing_only_for_its_citation_is_flagged_without_a_revision(
+    tmp_path: Path, cites: list[str]
+) -> None:
+    verifier, chat = make(tmp_path)
+    r = verifier(draft(uncited(1.577e9, cites)), V2)  # XBRL agrees; only the citation fails
+    assert chat.calls == 0 and r.revisions_used == 0
+    assert r.flagged_claim_ids == ["c1"] and r.claims_after == r.claims_before
+
+
+def test_an_uncited_claim_that_also_fails_xbrl_is_revised(tmp_path: Path) -> None:
+    verifier, chat = make(tmp_path, revision(fix("c1", 1.577e9)))
+    r = verifier(draft(uncited(2.0e9, [])), V2)
+    sent = str(chat.seen[0][1].content)
+    assert "- c1: cited text: cites no evidence; XBRL: " in sent
+    assert r.revisions_used == 1 and r.claims_after[0].value == 1.577e9
+    assert r.flagged_claim_ids == ["c1"]  # still uncited after the revision
+
+
+def test_feedback_leaves_out_claims_that_only_lack_a_citation() -> None:
+    verifier = GroundedVerifier(
+        V2, LLM(V2, Recording()), context=lambda q: ("", MMM), lookup=lookup
+    )
+    cs = uncited(1.577e9, [])
+    cs[2] = cs[2].model_copy(update={"value": 12.0})
+    verdicts = verifier.check(draft(cs), cs, MMM)
+    assert failed(verdicts) == ["c1", "c3"] and revisable(verdicts) == ["c3"]
+    assert feedback(verdicts).startswith("- c3: recomputation: ")

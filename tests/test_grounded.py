@@ -303,3 +303,30 @@ def test_computed_claims_that_cannot_be_recomputed_fail() -> None:
 def test_quoted_claims_are_not_recomputed() -> None:
     c = claim(1.577e9, ["cf"], claim_id="c3")
     assert recheck(c) == (None, "quoted claim: nothing to recompute")
+
+
+# --- Regressions found on the dev run (2026-11-23) --------------------------------------------
+
+
+def test_a_small_percent_computed_with_times_100_is_not_multiplied_again() -> None:
+    # dev 00563: (c8 - c7) / c7 * 100 = -9.96 was read as a fraction and became -996
+    falling = inputs(capex=1.236e9)  # (1.236 - 1.373) / 1.373 = -9.98%
+    c = growth(-9.98)
+    assert check_recompute(c, falling + [c], TOL).ok is True
+    as_fraction = growth(-9.98, "(c1 - c2) / c2")
+    assert check_recompute(as_fraction, falling + [as_fraction], TOL).ok is True
+    wrong = growth(-8.5)
+    v = check_recompute(wrong, falling + [wrong], TOL)
+    assert v.ok is False and v.reason.endswith("not -8.5") and "-9.97" in v.reason
+
+
+def test_a_table_with_no_stated_scale_allows_any_scale() -> None:
+    # dev 04481: "Operating profit | $ | 11,512" in a table whose scale is not stated
+    unscaled = chunk("u", "| Operating profit | $ | 11,512 | $ | 11,162 |", scale=None)
+    unscaled = unscaled.model_copy(update={"is_table": True})
+    for value in (11512.0, 11.512e6, 11.512e9):
+        assert check(claim(value, ["u"]), unscaled)[0] is True
+    ok, reason = check(claim(11.7e9, ["u"]), unscaled)
+    assert ok is False and "table scale not stated" in reason
+    # prose numbers are read as written
+    assert check(claim(1.6e6, ["text"]), PROSE)[0] is False

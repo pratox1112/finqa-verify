@@ -26,10 +26,15 @@ company is known and XBRL has a value for that period; otherwise `ok=None`, neve
 several) within tolerance, ignoring sign, passes. XBRL is evidence for the verifier here; it
 never decides correctness, which is scored against FinanceBench gold (ROADMAP rule 10).
 
+A table that states no scale (`unit_scale` None) gives no basis for the scale rule, so a bare
+number in it is tried as units, thousands, millions and billions (DECISIONS 2026-11-23);
+prose numbers carry their own scale words and are read as written.
+
 Check 3, recomputation (P4.5): a computed claim's `expression` evaluated on the current values
 of its `derived_from` claims (finqa.eval.error_types.recompute: variables are claim IDs or
-a, b, c... in order; a fraction is read as a percent for a % claim). The result must be within
-tolerance, sign included, since a sign is part of a computation. A quoted claim gets
+a, b, c... in order). A % claim passes if it matches the result either as computed or times
+100, since models write a percent both as "c1 / c2" and as "c1 / c2 * 100". The result must
+be within tolerance, sign included, since a sign is part of a computation. A quoted claim gets
 `ok=None`. A computed claim that cannot be recomputed (no inputs, an input that is not a
 claim, or an expression that does not evaluate) fails, for the same reason an uncited quoted
 claim fails check 1: V2 accepts only numbers it can trace to the evidence.
@@ -40,8 +45,11 @@ failed check's reason) and the excerpts the claims cite, and it fills in a `Revi
 a corrected value, unit and period per failed claim, the same correction form as V1, so V1 and
 V2 differ only in what finds the errors (the model itself, or the rules). Corrections are
 applied and every claim is checked again, up to `verification.max_revisions` revisions; the
-claims still failing are flagged. Claim IDs, metrics, citations and expressions stay as
-drafted, and the answer text is not rewritten (scoring reads the draft's; scoring.py).
+claims still failing are flagged. A claim whose only failure is that it cites nothing the draft
+retrieved is flagged but not sent for revision: there is no excerpt to correct it against,
+and a revision cannot add citations (DECISIONS 2026-11-23). Claim IDs, metrics, citations
+and expressions stay as drafted, and the answer text is not rewritten (scoring reads the
+draft's; scoring.py).
 Prompts: v2_system.txt, v2_user.txt (to be frozen before any test-split run).
 """
 
@@ -70,6 +78,8 @@ from finqa.verifiers.self_check import ClaimCheck, apply, cited_excerpts, format
 CITED_TEXT = "cited_text"
 XBRL = "xbrl"
 RECOMPUTE = "recompute"
+NO_CITATION = "cites no evidence"
+NOT_RETRIEVED = ", which is not in the retrieved evidence"
 ARM = "grounded"
 SYSTEM_PROMPT = "v2_system.txt"
 USER_PROMPT = "v2_user.txt"
@@ -78,17 +88,22 @@ USER_PROMPT = "v2_user.txt"
 Context = Callable[[str], tuple[str, str | None]]
 
 
+UNSTATED_SCALES = (1.0, 1e3, 1e6, 1e9)  # a table that states no scale could be in any
+
+
 def chunk_values(chunk: Chunk, unit: Unit) -> list[float]:
     """The values `chunk` states, in full units and absolute, as candidates for a claim in
     `unit` (the scale rule above)."""
     values: list[float] = []
     for p in extract_numbers(chunk.text):
         raw = abs(p.value)
-        if not chunk.unit_scale or p.unit == "%" or _HAS_SCALE.search(p.text):
+        if p.unit == "%" or _HAS_SCALE.search(p.text) or not chunk.is_table:
             values.append(raw)
-            continue
-        scaled = raw * chunk.unit_scale
-        values += [scaled] if unit == "USD" else [raw, scaled]
+        elif not chunk.unit_scale:
+            values += [raw * s for s in UNSTATED_SCALES]
+        else:
+            scaled = raw * chunk.unit_scale
+            values += [scaled] if unit == "USD" else [raw, scaled]
     return values
 
 
@@ -99,11 +114,11 @@ def check_cited_text(claim: Claim, draft: Draft, tolerance: float) -> Verdict:
     if claim.expression:
         return verdict(None, "computed claim: checked by recomputation")
     if not claim.chunk_ids:
-        return verdict(False, "cites no evidence")
+        return verdict(False, NO_CITATION)
     cited = [draft.evidence[k] for k in claim.chunk_ids if k in draft.evidence]
     if not cited:
         missing = ", ".join(claim.chunk_ids)
-        return verdict(False, f"cites {missing}, which is not in the retrieved evidence")
+        return verdict(False, f"cites {missing}{NOT_RETRIEVED}")
     target = abs(claim.value)
     for chunk in cited:
         if any(within_tolerance(target, v, tolerance) for v in chunk_values(chunk, claim.unit)):
@@ -111,6 +126,8 @@ def check_cited_text(claim: Claim, draft: Draft, tolerance: float) -> Verdict:
     where = ", ".join(c.chunk_id for c in cited)
     scale = next((c.unit_scale for c in cited if c.unit_scale), None)
     hint = f" (table in units of {scale:g})" if scale else ""
+    if not scale and any(c.is_table for c in cited):
+        hint = " (table scale not stated; tried units, thousands, millions, billions)"
     return verdict(False, f"{claim.value:g} {claim.unit} is not stated in {where}{hint}")
 
 
@@ -163,12 +180,17 @@ def check_recompute(claim: Claim, claims: Sequence[Claim], tolerance: float) -> 
     missing = [i for i in claim.derived_from if i not in ids]
     if missing:
         return verdict(False, f"inputs {', '.join(missing)} are not claims in the draft")
-    result = recompute(claim, claims)
+    # the expression's own result, without error typing's fraction-to-percent guess
+    result = recompute(claim.model_copy(update={"unit": "ratio"}), claims)
     if result is None:
         return verdict(False, f"{claim.expression} cannot be evaluated on its inputs")
-    if within_tolerance(claim.value, result, tolerance):
+    # a % claim may be computed as a fraction ("c1 / c2") or as a percent ("c1 / c2 * 100")
+    candidates = [result, result * 100] if claim.unit == "%" else [result]
+    if any(within_tolerance(claim.value, r, tolerance) for r in candidates):
         return verdict(True, f"{claim.expression} = {result:g}")
-    return verdict(False, f"{claim.expression} = {result:g}, not {claim.value:g}")
+    # report the reading nearest the claim, so the feedback names the figure meant
+    nearest = min(candidates, key=lambda r: abs(r - claim.value))
+    return verdict(False, f"{claim.expression} = {nearest:g}, not {claim.value:g}")
 
 
 # --- The verifier: checks, feedback, revision -----------------------------------------------
@@ -197,13 +219,29 @@ def failed(verdicts: Sequence[Verdict]) -> list[str]:
     return out
 
 
+def uncited(v: Verdict) -> bool:
+    """A cited-text failure because the claim cites nothing it retrieved: no excerpt to
+    correct it against, and a revision cannot add citations."""
+    return v.check == CITED_TEXT and (v.reason == NO_CITATION or v.reason.endswith(NOT_RETRIEVED))
+
+
+def revisable(verdicts: Sequence[Verdict]) -> list[str]:
+    """Failed claims worth a revision: those with a failure other than an uncited one
+    (DECISIONS 2026-11-23). Uncited claims stay failed and are flagged."""
+    out: list[str] = []
+    for v in verdicts:
+        if v.ok is False and not uncited(v) and v.claim_id not in out:
+            out.append(v.claim_id)
+    return out
+
+
 CHECK_NAMES = {CITED_TEXT: "cited text", XBRL: "XBRL", RECOMPUTE: "recomputation"}
 
 
 def feedback(verdicts: Sequence[Verdict]) -> str:
-    """One line per failed claim: what each of its failed checks found."""
+    """One line per claim to revise: what each of its failed checks found."""
     lines = []
-    for claim_id in failed(verdicts):
+    for claim_id in revisable(verdicts):
         reasons = [
             f"{CHECK_NAMES[v.check]}: {v.reason}"
             for v in verdicts
@@ -288,14 +326,15 @@ class GroundedVerifier:
                     for v in round_verdicts
                 ]
                 failing = failed(round_verdicts)
-                if not failing or revisions >= cfg.verification.max_revisions:
-                    break  # all pass, or out of revisions: what still fails is flagged
+                to_revise = revisable(round_verdicts)
+                if not to_revise or revisions >= cfg.verification.max_revisions:
+                    break  # nothing to revise, or out of revisions: what fails is flagged
                 revision, t_in, t_out = self.revise(draft, claims, round_verdicts, question)
                 tokens_in, tokens_out = tokens_in + t_in, tokens_out + t_out
                 fixes = [
                     ClaimCheck(supported=False, **f.model_dump())
                     for f in revision.fixes
-                    if f.claim_id in failing
+                    if f.claim_id in to_revise
                 ]
                 revised, changed = apply(claims, fixes)
                 if not changed:

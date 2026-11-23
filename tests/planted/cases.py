@@ -309,8 +309,8 @@ CASES: list[Case] = [
         37.23,
         NONE,
         "NOT CHECKABLE BY V2: the formula and the value agree (a fraction, 0.3723) and only "
-        "the unit says %; recomputation reads a fraction as a percent only when the claim is "
-        "1 or more, so a sub-1 percent and a fraction look the same",
+        "the unit says %; recomputation accepts a % claim computed either as a fraction or "
+        "times 100, so a fraction labelled % and a sub-1 percent look the same",
     ),
     # --- Wrong period -----------------------------------------------------------------------
     Case(
