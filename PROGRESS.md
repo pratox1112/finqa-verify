@@ -154,7 +154,7 @@ Each runner downloads their own copy of the model and runs their own vLLM server
 |---|---|---|---|---|---|---|
 | P4.1 | Verifier interface and V0 | review | | branch verifiers | 2026-11-22 | `verifiers/base.py` (`Verifier` protocol, `result()` builder: claims_before always the draft's), `verifiers/none.py` (V0: claims unchanged, no checks or model calls); V0 through the runner scores exactly like the drafts; 5 tests. Started before Gate 3 as an exception (DECISIONS 2026-11-22). |
 | P4.2 | V1: LLM self-check | in-progress | | branch verifiers | 2026-11-22 | `verifiers/self_check.py`: Chain-of-Verification-style check over the draft's claims and cited excerpts (computed claims recomputed from their inputs); corrects value, unit, period; re-checks up to `max_revisions`, last check only flags; claims_before/after saved. Prompts `v1_system.txt`, `v1_user.txt` (draft, awaiting team approval and freeze). 18 tests. Dev run pending (after the Phase 3 test job frees the cluster checkout). |
-| P4.3 | V2 check 1: cited text | todo | | | | |
+| P4.3 | V2 check 1: cited text | review | | branch verifiers | 2026-11-22 | `verifiers/grounded.py` `check_cited_text`: numbers from cited chunks in full units via `unit_scale`, match within tolerance ignoring sign; USD claims must match the scaled value (DECISIONS 2026-11-22), other units also raw; uncited or unretrieved citations fail, computed claims `ok=None`. 13 tests incl. millions table vs billions claim. |
 | P4.4 | V2 check 2: XBRL | todo | | | | |
 | P4.5 | V2 check 3: recomputation | todo | | | | |
 | P4.6 | Revision loop | todo | | | | |
@@ -304,3 +304,4 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-11-22 · — · P3.7 · Freeze entry in DECISIONS now names the main commits of the frozen prompts (1b28a08, e1f234a, a6db083; freeze 7309952); the rebase merge changed the hashes, not the files
 - 2026-11-22 · — · P4.1 · Phase 4 started before Gate 3 as a recorded exception (dev and fixtures only, no test-split verification until Gate 3, all Phase 4 work on branch `verifiers`, merged after Phase 3's PRs; DECISIONS 2026-11-22). Verifier interface and V0 built
 - 2026-11-22 · — · P4.2 · V1 self-check built with a draft prompt (not frozen); 18 unit tests with a fake model; dev run on the R0 and R1 dev drafts pending
+- 2026-11-22 · — · P4.3 · V2 cited-text check built; scale rule (USD claims must match a table's stated scale) and uncited-claim rule recorded in DECISIONS; 13 unit tests

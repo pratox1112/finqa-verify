@@ -378,3 +378,8 @@ Most adjacent-year matches are text that is identical across years (geographies,
 
 **Why:** the remaining Phase 3 step is a long GPU job plus scoring, and none of P4.1-P4.7 needs the test drafts. Same reasoning as the earlier exceptions (2026-10-30, Phase 1 before Gate 0; 2026-11-04, S0 and R0 before Gate 2): building in parallel on dev keeps the test set untouched.
 
+## 2026-11-22 · Pratosh Karthikeyan · V2 cited-text check: scale rule and uncited claims
+
+**Decision:** (1) In V2's cited-text check (P4.3), a bare number in a table with a stated `unit_scale` counts **only at that scale for a USD claim**: "1,577" in a table "in millions" supports $1,577,000,000, not $1,577. For other units (per share, %, shares, ratio, days) the raw value is also tried, because tables are "in millions, except per share" and may state shares, ratios or days unscaled. A number with its own scale ("$1.6 billion") or a percentage is never rescaled. (2) Sign is ignored and values match within `verification.tolerance`, as in the citation diagnostic (2026-11-08). (3) A quoted (not computed) claim that cites nothing, or cites only chunks the draft never retrieved, fails the check (`ok=False`); a computed claim is left to recomputation (`ok=None`).
+
+**Why:** the citation diagnostic accepts a table number both raw and scaled, so a scale error (error type `wrong_unit_or_scale`, LABELING_PROTOCOL §4) would always pass. A verifier that cannot catch the most common checkable error would understate what grounded verification can do. Restricting strictness to USD avoids failing correct per-share figures. Uncited claims fail because V2 accepts a number only when it is grounded in the evidence. The diagnostic itself is unchanged.
