@@ -324,7 +324,15 @@ def report_command(
     locate: Locate | None = None,
     lookup: error_types.Lookup | None = error_types.xbrl_lookup,
 ) -> int:
-    """`finqa report`: regenerate every table and figure for a milestone (ROADMAP M1.9)."""
+    """`finqa report`: regenerate every table and figure for a milestone (ROADMAP M1.9; p3 is
+    the Phase 3 2 x 2, finqa.eval.report_p3)."""
+    if milestone == "p3":
+        if scope != "full":
+            raise RunRefused("the p3 report covers the full test split only")
+        from finqa.eval.report_p3 import report_p3
+
+        questions = questions or {q.question_id: q for q in load_questions("test")}
+        return report_p3(runs_dir, docs_dir, questions, gold, make_judge)
     if milestone != "m1":
         raise RunRefused(f"no report for milestone {milestone!r} yet")
     if scope not in SCOPES:

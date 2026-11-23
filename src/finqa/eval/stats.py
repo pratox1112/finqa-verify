@@ -30,6 +30,26 @@ def bootstrap_ci(
     return lo, hi
 
 
+def paired_diff_ci(
+    a: Sequence[bool], b: Sequence[bool], n_boot: int = 10_000, level: float = 0.95, seed: int = 0
+) -> tuple[float, float] | None:
+    """Percentile bootstrap CI for accuracy(b) - accuracy(a) on the same questions, resampling
+    questions (so each resample keeps the pairs together). None for no questions."""
+    if len(a) != len(b):
+        raise ValueError("paired outcomes must have the same length")
+    n = len(a)
+    if n == 0:
+        return None
+    rng = random.Random(seed)
+    diffs = [int(y) - int(x) for x, y in zip(a, b, strict=True)]
+    means = sorted(sum(rng.choices(diffs, k=n)) / n for _ in range(n_boot))
+    tail = (1 - level) / 2
+    return (
+        means[int(math.floor(tail * (n_boot - 1)))],
+        means[int(math.ceil((1 - tail) * (n_boot - 1)))],
+    )
+
+
 @dataclass(frozen=True)
 class McNemar:
     n: int  # questions both systems answered

@@ -33,12 +33,17 @@ def build_parser() -> argparse.ArgumentParser:
     verify.add_argument("--config", required=True, help="experiment YAML under configs/")
 
     report = sub.add_parser("report", help="regenerate a milestone's tables and figures")
-    report.add_argument("--milestone", required=True, choices=["m1"])
+    report.add_argument(
+        "--milestone",
+        required=True,
+        choices=["m1", "p3"],
+        help="m1: midterm tables; p3: the retrieval x calculator 2 x 2",
+    )
     report.add_argument(
         "--scope",
         choices=["full", "subset"],
         default="full",
-        help="full test split (default) or the frozen midterm subset",
+        help="full test split (default) or the frozen midterm subset (m1 only)",
     )
     return parser
 
