@@ -11,10 +11,31 @@
 #   unit:   the shared schema's Unit; "%" values are stored by XBRL as fractions (0.21)
 #           and converted to percent numbers (21.0)
 #   period: duration (income and cash-flow items) or instant (balance-sheet items)
+#   aliases: the names a draft's claim may give the metric, after normalisation (lowercase;
+#            "&" -> "and"; parentheses, punctuation and an "attributable to ..." tail
+#            removed; see finqa.ingestion.xbrl.normalize_metric). Drafted from the dev
+#            drafts' metric names plus standard synonyms, reviewed by a person. A name on
+#            no list is unmapped: the verifier's XBRL check does not run (ok=None).
+#            Segment and company-specific names ("Data Center net revenue") are not aliases.
 
 revenue:
   unit: USD
   period: duration
+  aliases:
+    - revenue
+    - revenues
+    - total revenue
+    - total revenues
+    - net revenue
+    - net revenues
+    - total net revenue
+    - total net revenues
+    - total consolidated net revenues
+    - net sales
+    - total net sales
+    - sales
+    - total revenues net of interest expense
+    - revenues net of interest expense
   concepts:
     - Revenues
     - RevenueFromContractWithCustomerExcludingAssessedTax
@@ -26,6 +47,15 @@ revenue:
 cost_of_revenue:
   unit: USD
   period: duration
+  aliases:
+    - cost of revenue
+    - cost of revenues
+    - total cost of revenue
+    - cost of sales
+    - total cost of sales
+    - cost of goods sold
+    - cogs
+    - cost of products sold
   concepts:
     - CostOfRevenue
     - CostOfGoodsAndServicesSold
@@ -35,31 +65,56 @@ cost_of_revenue:
 gross_profit:
   unit: USD
   period: duration
+  aliases:
+    - gross profit
+    - total gross profit
   concepts: [GrossProfit]
 
 operating_income:
   unit: USD
   period: duration
+  aliases:
+    - operating income
+    - operating profit
+    - income from operations
+    - operating income loss
+    - unadjusted operating income
+    - unadjusted operating profit
   concepts: [OperatingIncomeLoss]
 
 net_income:  # attributable to the company's shareholders
   unit: USD
   period: duration
+  aliases:
+    - net income
+    - net earnings
   concepts: [NetIncomeLoss]
 
 income_tax_expense:
   unit: USD
   period: duration
+  aliases:
+    - income tax expense
+    - provision for income taxes
+    - income tax provision
+    - income taxes
   concepts: [IncomeTaxExpenseBenefit]
 
 effective_tax_rate:
   unit: "%"
   period: duration
+  aliases:
+    - effective tax rate
+    - effective income tax rate
   concepts: [EffectiveIncomeTaxRateContinuingOperations]
 
 restructuring_costs:
   unit: USD
   period: duration
+  aliases:
+    - restructuring costs
+    - restructuring charges
+    - restructuring expenses
   concepts:
     - RestructuringCharges
     - RestructuringSettlementAndImpairmentProvisions
@@ -67,11 +122,21 @@ restructuring_costs:
 eps_diluted:
   unit: USD/share
   period: duration
+  aliases:
+    - diluted eps
+    - diluted earnings per share
+    - earnings per share diluted
+    - diluted net income per share
+    - diluted net earnings per share
   concepts: [EarningsPerShareDiluted]
 
 depreciation_and_amortization:
   unit: USD
   period: duration
+  aliases:
+    - depreciation and amortization
+    - d and a
+    - depreciation amortization
   concepts:
     - DepreciationDepletionAndAmortization
     - DepreciationAndAmortization
@@ -81,6 +146,14 @@ depreciation_and_amortization:
 operating_cash_flow:
   unit: USD
   period: duration
+  aliases:
+    - operating cash flow
+    - net cash provided by operating activities
+    - net cash from operating activities
+    - cash provided by operating activities
+    - cash flow from operations
+    - cash flows from operating activities
+    - cash from operations
   concepts:
     - NetCashProvidedByUsedInOperatingActivities
     - NetCashProvidedByUsedInOperatingActivitiesContinuingOperations
@@ -88,6 +161,15 @@ operating_cash_flow:
 capital_expenditure:
   unit: USD
   period: duration
+  aliases:
+    - capital expenditures
+    - capital expenditure
+    - capex
+    - purchases of property and equipment
+    - purchases of property plant and equipment
+    - payments for property plant and equipment
+    - additions to property and equipment
+    - additions to property plant and equipment
   concepts:
     - PaymentsToAcquirePropertyPlantAndEquipment
     - PaymentsToAcquireProductiveAssets
@@ -96,6 +178,11 @@ capital_expenditure:
 dividends_paid:
   unit: USD
   period: duration
+  aliases:
+    - dividends paid
+    - cash dividends paid
+    - dividends paid to shareholders
+    - common stock dividends paid
   concepts:
     - PaymentsOfDividendsCommonStock
     - PaymentsOfDividends
@@ -104,41 +191,68 @@ dividends_paid:
 total_assets:
   unit: USD
   period: instant
+  aliases:
+    - total assets
   concepts: [Assets]
 
 current_assets:
   unit: USD
   period: instant
+  aliases:
+    - current assets
+    - total current assets
   concepts: [AssetsCurrent]
 
 current_liabilities:
   unit: USD
   period: instant
+  aliases:
+    - current liabilities
+    - total current liabilities
   concepts: [LiabilitiesCurrent]
 
 total_liabilities:
   unit: USD
   period: instant
+  aliases:
+    - total liabilities
   concepts: [Liabilities]
 
 shareholders_equity:  # attributable to the company's shareholders
   unit: USD
   period: instant
+  aliases:
+    - stockholders equity
+    - total stockholders equity
+    - shareholders equity
+    - total shareholders equity
+    - shareowners equity
+    - total shareowners equity
   concepts: [StockholdersEquity]
 
 total_equity:  # including noncontrolling interests
   unit: USD
   period: instant
+  aliases:
+    - total equity
   concepts: [StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest]
 
 cash_and_equivalents:
   unit: USD
   period: instant
+  aliases:
+    - cash and cash equivalents
+    - cash and equivalents
   concepts: [CashAndCashEquivalentsAtCarryingValue]
 
 accounts_receivable:
   unit: USD
   period: instant
+  aliases:
+    - accounts receivable
+    - accounts receivable net
+    - trade receivables
+    - trade accounts receivable
   concepts:
     - AccountsReceivableNetCurrent
     - ReceivablesNetCurrent
@@ -147,6 +261,13 @@ accounts_receivable:
 inventory:
   unit: USD
   period: instant
+  aliases:
+    - inventory
+    - inventories
+    - total inventory
+    - total inventories
+    - inventories net
+    - merchandise inventories
   concepts:
     - InventoryNet
     - InventoryFinishedGoodsNetOfReserves  # Nike
@@ -156,6 +277,10 @@ inventory:
 accounts_payable:
   unit: USD
   period: instant
+  aliases:
+    - accounts payable
+    - trade accounts payable
+    - accounts payable trade
   concepts:
     - AccountsPayableCurrent
     - AccountsPayableTradeCurrent
@@ -163,6 +288,15 @@ accounts_payable:
 ppe_net:
   unit: USD
   period: instant
+  aliases:
+    - property plant and equipment net
+    - net property plant and equipment
+    - property and equipment net
+    - net property and equipment
+    - pp and e net
+    - net pp and e
+    - ppe net
+    - net ppe
   concepts:
     - PropertyPlantAndEquipmentNet
     - PropertyPlantAndEquipmentAndFinanceLeaseRightOfUseAssetAfterAccumulatedDepreciationAndAmortization
@@ -170,6 +304,11 @@ ppe_net:
 long_term_debt:
   unit: USD
   period: instant
+  aliases:
+    - long term debt
+    - long term debt net of current portion
+    - long term debt excluding current portion
+    - long term debt noncurrent
   concepts:
     - LongTermDebtNoncurrent
     - LongTermDebt

@@ -18,6 +18,7 @@ from __future__ import annotations
 import csv
 import datetime as dt
 import json
+import re
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
@@ -60,6 +61,7 @@ class Metric:
     unit: str
     period: str  # "duration" or "instant"
     concepts: tuple[str, ...]
+    aliases: tuple[str, ...] = ()  # names a claim may use, normalised (normalize_metric)
 
 
 # --- Loading --------------------------------------------------------------------------------
@@ -68,9 +70,34 @@ class Metric:
 def load_metric_map(path: Path = METRIC_MAP_PATH) -> dict[str, Metric]:
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     return {
-        name: Metric(name, spec["unit"], spec["period"], tuple(spec["concepts"]))
+        name: Metric(
+            name,
+            spec["unit"],
+            spec["period"],
+            tuple(spec["concepts"]),
+            tuple(normalize_metric(a) for a in spec.get("aliases", [])),
+        )
         for name, spec in data.items()
     }
+
+
+def normalize_metric(name: str) -> str:
+    """A claim's metric name in the form the aliases use: lowercase, "&" as "and", without
+    parenthesised asides, punctuation or an "attributable to ..." tail (unless it names
+    noncontrolling interests, which is a different line item)."""
+    s = name.lower().replace("&", " and ")
+    s = re.sub(r"\([^)]*\)", " ", s)
+    if "noncontrolling" not in s:
+        s = re.sub(r"\s+attributable to\b.*", "", s)
+    s = re.sub(r"[-–—/]", " ", s)
+    s = re.sub(r"[^a-z0-9 ]", "", s)
+    return " ".join(s.split())
+
+
+def metric_for(name: str, metric_map: dict[str, Metric]) -> str | None:
+    """The metric_map key whose aliases include the claim's metric name, else None."""
+    key = normalize_metric(name)
+    return next((m.name for m in metric_map.values() if key in m.aliases), None)
 
 
 @cache

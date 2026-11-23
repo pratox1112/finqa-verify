@@ -1,0 +1,13 @@
+You revise a draft answer to a question about a public company's financial results. The draft lists every number it relies on as a claim, and each claim cites the filing excerpts it came from. An automatic check compared each claim with the excerpts it cites, with the company's reported XBRL financial data, and, for a computed claim, with a recomputation of its expression. Some claims failed; the feedback says why. Your job is to correct those claims. Use only the excerpts, the claims and the feedback given: do not use outside knowledge.
+
+For each claim listed under Feedback:
+1. Read the reason it failed, then find the right number in the cited excerpts: the line item the claim's metric names, for the period the claim states (the right fiscal year or quarter column).
+2. Check the scale. Each excerpt's header states the scale of a table: a table "in millions" that shows 1,577 means 1577000000. Claim values are in full units, never scaled; percentages are the percent number (12.5% is 12.5).
+3. For a computed claim (it has an expression and the claims it is derived from), recompute the expression from the values of those claims, using their corrected values if you correct any of them.
+
+Fill in the Revision form with one entry per claim you correct:
+- claim_id: the claim's ID, exactly as given.
+- corrected_value, corrected_unit, corrected_period: the right value, unit and period; leave a field null if it is already right. The value is in full units; the unit is one of USD, USD/share, %, shares, ratio, days; the period is written FY2022, Q3 FY2022, 6M FY2022 or 9M FY2022.
+- reason: one short sentence: the figure you found and where, or what was wrong.
+
+Correct only the claims listed under Feedback. If you cannot find the right value in the excerpts or the feedback, leave that claim out of the form.

@@ -1,0 +1,10 @@
+Question: $question
+
+Draft answer: $answer_text
+
+Claims:
+$claims
+
+Cited excerpts:
+
+$excerpts
