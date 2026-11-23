@@ -2,8 +2,9 @@
 
 import pytest
 
+from finqa.ingestion.xbrl import load_metric_map, metric_for, normalize_metric
 from finqa.schemas import Chunk, Claim, Draft
-from finqa.verifiers.grounded import CITED_TEXT, check_cited_text, chunk_values
+from finqa.verifiers.grounded import CITED_TEXT, XBRL, check_cited_text, check_xbrl, chunk_values
 
 TOL = 0.01
 
@@ -144,3 +145,96 @@ def test_uncited_and_unretrieved_citations_fail() -> None:
 def test_computed_claims_are_left_to_recomputation() -> None:
     growth = claim(14.86, [], unit="%", derived_from=["c1", "c2"], expression="(c1-c2)/c2*100")
     assert check(growth, CASH_FLOW) == (None, "computed claim: checked by recomputation")
+
+
+# --- Check 2: XBRL -------------------------------------------------------------------------
+
+METRICS = load_metric_map()
+XBRL_FACTS = {
+    ("0000066740", "capital_expenditure", "FY2018"): [1.577e9],
+    ("0000066740", "revenue", "FY2018"): [3.2765e10, 3.2348e10],  # restated in a later 10-K
+    ("0000066740", "eps_diluted", "FY2018"): [8.89],
+}
+
+
+def fake_lookup(cik: str, metric: str, period: str) -> list[float]:
+    return XBRL_FACTS.get((cik, metric, period), [])
+
+
+def xbrl(c: Claim, cik: str | None = "0000066740") -> tuple[bool | None, str]:
+    v = check_xbrl(c, cik, TOL, METRICS, fake_lookup)
+    assert v.check == XBRL and v.claim_id == c.claim_id
+    return v.ok, v.reason
+
+
+def named(metric: str, value: float, unit: str = "USD", period: str = "FY2018") -> Claim:
+    return claim(value, ["cf"], unit=unit).model_copy(update={"metric": metric, "period": period})
+
+
+def test_xbrl_match_ignoring_sign() -> None:
+    assert xbrl(named("Capital expenditures", 1.577e9)) == (
+        True,
+        "matches XBRL capital_expenditure FY2018",
+    )
+    assert xbrl(named("Purchases of property, plant & equipment (PP&E)", -1.58e9))[0] is True
+    assert xbrl(named("Diluted EPS", 8.89, unit="USD/share"))[0] is True
+
+
+def test_xbrl_mismatch_reports_the_filed_values() -> None:
+    assert xbrl(named("capex", 1.373e9)) == (
+        False,
+        "XBRL capital_expenditure FY2018 is 1.577e+09 USD, not 1.373e+09",
+    )
+    assert xbrl(named("capex", 1577.0))[0] is False  # a scale error
+
+
+def test_any_restated_value_passes() -> None:
+    assert xbrl(named("Total revenues", 3.2348e10))[0] is True
+    assert xbrl(named("Total revenues", 3.2765e10))[0] is True
+    ok, reason = xbrl(named("Total revenues", 3.0e10))
+    assert ok is False and "3.2765e+10, 3.2348e+10" in reason
+
+
+@pytest.mark.parametrize(
+    "c, cik, reason",
+    [
+        (named("Data Center net revenue", 6.0e9), "0000066740", "has no XBRL mapping"),
+        (named("gross margin", 45.0, unit="%"), "0000066740", "has no XBRL mapping"),
+        (named("capex", 12.0, unit="%"), "0000066740", "is in USD, the claim in %"),
+        (named("capex", 1.577e9), None, "company not known"),
+        (named("capex", 1.577e9, period="FY2017"), "0000066740", "no XBRL value"),
+        (named("total assets", 3.7e10), "0000066740", "no XBRL value"),
+    ],
+)
+def test_xbrl_does_not_run_without_a_mapping_unit_company_or_value(
+    c: Claim, cik: str | None, reason: str
+) -> None:
+    ok, why = xbrl(c, cik)
+    assert ok is None and reason in why  # unverifiable, never a failure
+
+
+@pytest.mark.parametrize(
+    "name, metric",
+    [
+        ("Capital expenditures (purchases of property and equipment)", "capital_expenditure"),
+        ("Net income attributable to Pfizer Inc.", "net_income"),
+        ("net income attributable to noncontrolling interests", None),
+        ("Accounts receivable — net", "accounts_receivable"),
+        ("Total stockholders’ equity", "shareholders_equity"),
+        ("Long-term debt", "long_term_debt"),
+        ("PP&E, net", "ppe_net"),
+        ("Unadjusted (GAAP) operating profit", "operating_income"),
+        ("Data Center net revenue", None),
+        ("Walmart U.S. operating income", None),
+        ("dividends declared per share", None),
+    ],
+)
+def test_metric_names_map_through_aliases(name: str, metric: str | None) -> None:
+    assert metric_for(name, METRICS) == metric
+
+
+def test_every_alias_is_normalised_and_names_one_metric() -> None:
+    aliases = [a for m in METRICS.values() for a in m.aliases]
+    assert len(aliases) == len(set(aliases))
+    assert all(a == normalize_metric(a) for a in aliases)
+    assert all(m.aliases for m in METRICS.values())
