@@ -372,6 +372,28 @@ Most adjacent-year matches are text that is identical across years (geographies,
 
 **Why:** Gate 3 requires the agent prompt frozen before its test run. Freezing all five prompts together, before any of the new arms touches the test split, keeps every test number from prompts fixed in advance. Re-running R0 at the same commit removes any doubt that a difference between arms comes from code changes since the midterm (the R0 code path is unchanged, so its answers should largely replay from the LLM cache). Keeping fetched filings per job means one question's fetch cannot change the index another arm or run searches.
 
+## 2026-11-22 · Pratosh Karthikeyan · Gold errata check: two AI agents as the two annotators, a person signs off (deviation from the 2026-11-08 entry, point 2)
+
+**Decision:** for the 8 gold errata candidates (test: `financebench_id_00585`, `05718`, `04672`, `04980`, `04103`, `06272`; dev: `00080`, `00283`), both independent annotators are AI agents (Claude, in Claude Code, run as two separate sessions) instead of people, because the team has no time for the check. Each works from its own sheet (`runs/labels/errata/errata_agent.csv` and `errata_human.csv`; the second name is historical), the filing Markdown in `data/raw/` and FinanceBench's own evidence and justification only. Each is told not to open `docs/`, `PROGRESS.md`, the other sheet or other sessions' files, is not told why items were flagged, and does not use the web; the second agent was started after the first had finished and was told not to open its sheet. The comparison rule is unchanged (`errata-compare`: both find the gold contradicts the filing, with the same value). **A gold is corrected only after a person has checked that item against the filing and signed off, recorded in a new entry here with their name**; items the agents disagree on, or mark unclear, keep the original gold unless a person decides otherwise. The report states that the errata check was done by two AI agents with human sign-off.
+
+**Why:** the team ran out of time for human annotators. Corrected golds only enter the errata sensitivity scoring; strict scoring against the original golds stays primary (2026-11-08), so the effect of this deviation is confined to a sensitivity table and is disclosed. Known weaknesses: two sessions of the same model are not independent annotators (they tend to share mistakes), and several candidates were first flagged by AI (the R1 trace review, drafted by an agent). The human sign-off per corrected item is what carries the decision.
+
+## 2026-11-22 · Pratosh Karthikeyan · Gold errata: three golds corrected for the errata sensitivity scoring (signed off by Pratosh Karthikeyan)
+
+**Decision:** under the errata rule (2026-11-08, point 2) as carried out by two AI agent annotators with human sign-off (entry above), three golds are corrected. Pratosh Karthikeyan checked each against the filing PDF on 2026-11-22 and signed off.
+
+| Question | Split | Original gold | Corrected gold | Filing evidence |
+|---|---|---|---|---|
+| `financebench_id_00585` Boeing, effective tax rate FY2022 vs FY2021 | test | "Effective tax rate in FY2022 was 0.62%, compared to  -14.76% in FY2021." | "Effective tax rate in FY2022 was -0.62%, compared to 14.76% in FY2021." | 10-K FY2022, p. 54: income tax expense 31 on a pre-tax loss of 5,022; benefit 743 on a loss of 5,033; the filing reports (0.6)% and 14.8% |
+| `financebench_id_00080` PayPal, working capital FY2022 | dev | "Yes. Paypal has a positive working capital of $ 1.6Bn as of FY2022 end." | "Yes. Paypal has a positive working capital of $ 12.4Bn as of FY2022 end." | 10-K FY2022, p. 60: total current assets 57,517, total current liabilities 45,101 |
+| `financebench_id_00283` Pfizer, remaining Upjohn separation cost (USD million) | dev | 77.78 | 70 | 10-Q Q2 2023, p. 40: "approximately $700 million ... of which approximately 90% has been incurred" |
+
+The other five candidates keep their golds (both annotators: `matches`): `05718`, `04672`, `04980` (billions golds rounded to one decimal) and `04103`, `06272` (one decimal where the question asks for two). With no rounding rule (2026-11-08), these golds stand and may stay hard to match within the 1% tolerance for every system; the report notes this.
+
+**How it is used:** strict scoring against the original FinanceBench golds stays primary for every headline number. The corrections enter only the errata sensitivity scoring, applied to every system alike, and are listed in the report's appendix together with the note that the check was done by two AI agents with human sign-off. Only `00585` affects test-split results; `00080` and `00283` affect dev numbers only. Sheets and comparison: `runs/labels/errata/` (not committed).
+
+**Why:** both annotators found each of the three golds contradicts the filing's own figures, with the same corrected value, and a person confirmed the figures in the filing.
+
 ## 2026-11-22 · Pratosh Karthikeyan · Start Phase 4 (verifiers) before Gate 3, on one branch (exception, team agreement confirmed 2026-11-22)
 
 **Decision:** Phase 4 work (P4.1-P4.7: the verifier interface, V0, V1 self-check, V2's three checks, the revision loop and the planted-error suite) starts now, while the Phase 3 test runs finish, under these conditions: (1) Phase 4 code is developed and debugged on the 20 dev questions and on fixtures only; (2) no verification runs on the test split (P4.8) until Gate 3 is `done` in PROGRESS.md; (3) Gate 3 stays `todo` until the four test-split arms and the 2 × 2 table are complete; (4) all Phase 4 work stays on one branch, `verifiers`, which is merged only after every Phase 3 pull request is merged to main.

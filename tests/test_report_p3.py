@@ -186,3 +186,28 @@ def test_paired_diff_ci_known_cases() -> None:
     assert stats.paired_diff_ci([False] * 5 + [True] * 5, [True] * 10) == (lo, hi)  # seeded
     with pytest.raises(ValueError):
         stats.paired_diff_ci([True], [True, False])
+
+
+# --- Errata sensitivity ------------------------------------------------------------------------
+
+
+def test_errata_table_rescores_only_corrected_questions(setup) -> None:
+    runs, docs, questions, _ = setup
+    # wrong answers are 7.0: correcting fb_synth_003's gold to 7 flips every arm on that question
+    errata = {"fb_synth_003": {"answer": "$7", "gold_value": "7.0", "gold_unit": "USD"}}
+    assert report_p3.report_p3(runs, docs, questions, GOLD, lambda c, r: judge_says_no, errata) == 0
+    results = (docs / "RESULTS_P3.md").read_text(encoding="utf-8")
+    errata_part = results[results.index("## Table P3-E") :]
+    assert "Corrected golds in these questions: `fb_synth_003`" in errata_part
+    assert "Outcomes that change, per arm: R0 1, R0+calc 1, R1−calc 1, R1 1." in errata_part
+    assert "| Single-shot | R0: 1/3, 33.3% [" in errata_part  # R0 now correct on 003
+    assert "| Agent | R1−calc: 1/3, 33.3% [" in errata_part  # R1−calc now wrong on 003
+    strict = results[: results.index("## Table P3-E")]
+    assert "| Single-shot | R0: 0/3, 0.0% [" in strict  # strict scoring unchanged
+
+
+def test_errata_table_says_when_no_corrected_gold_applies(setup) -> None:
+    runs, docs, questions, _ = setup
+    assert make_report(runs, docs, questions) == 0  # the real errata are not in these questions
+    results = (docs / "RESULTS_P3.md").read_text(encoding="utf-8")
+    assert "No corrected gold (`data/gold_errata.csv`) falls in these questions." in results

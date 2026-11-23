@@ -22,7 +22,7 @@ from __future__ import annotations
 import csv
 import re
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Literal
 
@@ -31,6 +31,7 @@ from pydantic import BaseModel, Field
 from finqa.schemas import Claim, Draft, VerifiedResult
 
 AUDIT_PATH = Path(__file__).resolve().parents[3] / "data" / "financebench_audit.csv"
+ERRATA_PATH = AUDIT_PATH.with_name("gold_errata.csv")
 JUDGE_PROMPT_PATH = Path(__file__).resolve().parents[1] / "prompts" / "judge_v1.txt"
 
 Outcome = Literal["correct", "incorrect", "refused"]
@@ -132,6 +133,28 @@ def matches_gold(value: float, gold: float, tolerance: float, decimals: int | No
     if within_tolerance(value, gold, tolerance):
         return True
     return decimals is not None and abs(value - gold) <= 0.5 * 10**-decimals * (1 + 1e-9)
+
+
+def load_errata(path: Path = ERRATA_PATH) -> dict[str, dict[str, str]]:
+    """Corrected golds for the errata sensitivity scoring (data/gold_errata.csv; DECISIONS
+    2026-11-08 point 2, 2026-11-22): financebench_id -> answer, gold_value, gold_unit."""
+    with path.open(encoding="utf-8") as f:
+        return {r["financebench_id"]: r for r in csv.DictReader(f)}
+
+
+def with_errata(gold: dict[str, Gold], errata: dict[str, dict[str, str]]) -> dict[str, Gold]:
+    """`gold` with each corrected gold replaced; the answer kind never changes. Strict scoring
+    against the original golds stays primary; this is for the sensitivity table only."""
+    out = dict(gold)
+    for qid, e in errata.items():
+        if qid not in gold:
+            raise ValueError(f"errata for unknown question {qid}")
+        g = gold[qid]
+        value = float(e["gold_value"]) if e["gold_value"] else None
+        if (g.answer_kind == "number") != (value is not None):
+            raise ValueError(f"{qid}: a corrected gold keeps its kind ({g.answer_kind})")
+        out[qid] = replace(g, answer=e["answer"], value=value, unit=e["gold_unit"])
+    return out
 
 
 def is_refusal(claims: Sequence[Claim], answer_text: str) -> bool:
