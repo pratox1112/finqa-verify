@@ -67,6 +67,8 @@ Used for the double-coded error sample (mid-term) and the full annotation (Phase
 3. **Agreement:** Cohen's κ on the error type, reported with the number of items. Aim for κ ≥ 0.7.
 4. **Adjudication:** disagreements are discussed; a third person decides any that remain. The adjudicated label is final.
 
+**Tooling:** `scripts/labels.py` makes the blind, shuffled sheets for judge-human agreement (`judge-sheets`: text-gold answers the judge scored, optionally double-coded), computes agreement, Cohen's kappa and the rows to adjudicate (`judge-agreement`), and makes and compares the two-annotator gold errata sheets (`errata-sheets`, `errata-compare`). Output stays in `runs/labels/` (not committed).
+
 ## 6. Edge cases
 
 | Case | Rule |
