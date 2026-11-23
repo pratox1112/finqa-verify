@@ -439,3 +439,9 @@ The other five candidates keep their golds (both annotators: `matches`): `05718`
 **Evidence (dev and synthetic only):** jobs 12075270 and 12082410 on the R0 and R1 dev drafts (20 questions each) and the 23 planted cases. Planted errors: V1 caught 14/18 (11/15 of those V2 is designed to catch), V2 15/18 (15/15); no false alarms on the 5 controls. Dev accuracy against gold: R0 V0 9/20, V1 9/20, V2 9/20; R1 V0 12/20, V1 12/20, V2 13/20 (one wrong to right, none right to wrong). V1 revised no dev claim (its flags were claims whose numbers are not in the cited excerpts) but corrected 12 of 18 planted errors, so it is a working self-check, not a strawman. `docs/PLANTED_ERRORS.md` is the report.
 
 **Why:** the test-split grid (P4.8) must run with fixed prompts. The verifiers were tuned on the 20 dev questions and the synthetic cases only.
+
+## 2026-11-23 · Pratosh Karthikeyan · Start Phase 5 (annotation) before Gate 4 (exception)
+
+**Decision:** Phase 5 work starts while the test-split verification grid (P4.8, job 12083578) runs, under these conditions: (1) the guidelines (P5.1) and the export tooling (P5.2) are written and tested on fixtures, synthetic cases and dev runs only; (2) no claims from the test-split cells are exported or shown to annotators until Gate 4 is `done` in PROGRESS.md; (3) Phase 5 work is on branch `annotation` and merged after the P4.8 results are recorded; (4) P5.1 is drafted by an AI assistant from LABELING_PROTOCOL.md and these decisions, with every rule not yet decided left as a marked open question, and the team edits, decides and approves it before the pilot.
+
+**Why:** P4.8 is a GPU job of about an hour that changes no code; neither P5.1 nor P5.2 depends on its results. Same reasoning as the earlier exceptions (2026-10-30, 2026-11-04, 2026-11-22).

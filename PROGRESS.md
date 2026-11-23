@@ -167,7 +167,7 @@ Each runner downloads their own copy of the model and runs their own vLLM server
 
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
-| P5.1 | Guidelines | todo | | | | |
+| P5.1 | Guidelines | in-progress | | branch annotation | 2026-11-23 | `annotation/guidelines.md` drafted (by an AI assistant, for the team to edit and approve): what a claim row shows, number conventions, correctness for answer claims (gold only), error types with synthetic examples, decided edge cases, note tags, process. Six OPEN QUESTIONS for the team before the pilot (what a non-answer claim is correct against; wrong inputs with right arithmetic; right value with wrong citation, period label or unit label; irrelevant claims). Started before Gate 4 as an exception (DECISIONS 2026-11-23). |
 | P5.2 | Export tooling | todo | | | | |
 | P5.3 | Pilot | todo | | | | |
 | P5.4 | Main round | todo | | | | |
@@ -317,3 +317,4 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-11-23 · — · P4.6, P4.7 · Dev job 12075270 (17 min, 0 failed verifications, real-model V2 test passed). Planted errors: V1 caught 14/18 (11/15 checkable), V2 15/18 (15/15), no false alarms on the 5 controls for either. Dev accuracy unchanged by V1 (R0 9/20, R1 12/20; V1 revised no claim); V2 R0 9/20, R1 13/20 (1 wrong to right). V2 fixes from the dev flags (unstated table scales, percent recomputation, uncited claims flagged not revised; DECISIONS 2026-11-23); V2 dev and planted runs to be repeated
 - 2026-11-23 · — · P4.2, P4.6, P4.7 · V2 re-run after the fixes (job 12082410, 11 min, 0 failed): R0 V2 9/20 (2 revised, 2 flagged), R1 V2 13/20 (4 revised, 3 flagged; 1 wrong to right, 0 right to wrong); remaining flags all genuine. V1 and V2 prompts frozen; V2 design rules and metric aliases approved (DECISIONS 2026-11-23)
 - 2026-11-23 · — · P4.1–P4.7 · Verifiers merged to main in #33 (squash merge: the branch's two merges from main could not be rebased); V1 and V2 prompts frozen. Next: the test-split grid (P4.8)
+- 2026-11-23 · — · P5.1 · Phase 5 started before Gate 4 as a recorded exception (fixtures, synthetic and dev only; no test claims exported until Gate 4; branch `annotation`). Annotation guidelines drafted with six open questions for the team
