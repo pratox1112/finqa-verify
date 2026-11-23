@@ -152,7 +152,7 @@ Each runner downloads their own copy of the model and runs their own vLLM server
 
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
-| P4.1 | Verifier interface and V0 | todo | | | | |
+| P4.1 | Verifier interface and V0 | review | | branch verifiers | 2026-11-22 | `verifiers/base.py` (`Verifier` protocol, `result()` builder: claims_before always the draft's), `verifiers/none.py` (V0: claims unchanged, no checks or model calls); V0 through the runner scores exactly like the drafts; 5 tests. Started before Gate 3 as an exception (DECISIONS 2026-11-22). |
 | P4.2 | V1: LLM self-check | todo | | | | |
 | P4.3 | V2 check 1: cited text | todo | | | | |
 | P4.4 | V2 check 2: XBRL | todo | | | | |
@@ -302,3 +302,4 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-11-22 · — · P3.9 · `finqa report --milestone p3` writes `docs/RESULTS_P3.md` from the four newest full test runs (refuses runs from different commits, not from clean main, or incomplete): the 2 × 2 with counts and bootstrap CIs, five paired effects (difference with paired bootstrap CI, McNemar), accuracy by question type and efficiency per arm; 10 new tests. Test job 12070741 (four arms, main 7309952) queued
 - 2026-11-22 · — · P3.9 · Labelling tools for the team (`scripts/labels.py`, `finqa.eval.labels`): blind shuffled judge-human sheets per labeller with a separate key and optional double coding, agreement per system with counts, CIs and Cohen's kappa, adjudication file, `Annotation` output; gold errata sheets for two annotators (question, gold and FinanceBench's own source only) and the errata-rule comparison; 18 new tests. Candidates: 00585, 05718, 04672, 04980, 04103, 06272 (test), 00080, 00283 (dev)
 - 2026-11-22 · — · P3.7 · Freeze entry in DECISIONS now names the main commits of the frozen prompts (1b28a08, e1f234a, a6db083; freeze 7309952); the rebase merge changed the hashes, not the files
+- 2026-11-22 · — · P4.1 · Phase 4 started before Gate 3 as a recorded exception (dev and fixtures only, no test-split verification until Gate 3, all Phase 4 work on branch `verifiers`, merged after Phase 3's PRs; DECISIONS 2026-11-22). Verifier interface and V0 built
