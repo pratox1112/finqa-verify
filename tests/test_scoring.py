@@ -192,3 +192,42 @@ def test_negative_ratio_rounds():
 )
 def test_rounding_decimals(question: str, n: int | None):
     assert scoring.rounding_decimals(question) == n
+
+
+# --- Gold errata (sensitivity scoring only) ---------------------------------------------------
+
+
+def test_real_errata_keep_each_golds_kind() -> None:
+    gold = scoring.load_gold()
+    errata = scoring.load_errata()
+    assert set(errata) == {
+        "financebench_id_00585",
+        "financebench_id_00080",
+        "financebench_id_00283",
+    }
+    corrected = scoring.with_errata(gold, errata)
+    assert corrected["financebench_id_00283"].value == 70_000_000.0
+    assert corrected["financebench_id_00283"].unit == "USD"
+    assert corrected["financebench_id_00585"].answer.startswith(
+        "Effective tax rate in FY2022 was -0.62%"
+    )
+    assert (
+        corrected["financebench_id_00585"].answer_kind == gold["financebench_id_00585"].answer_kind
+    )
+    assert gold["financebench_id_00283"].value == 77_780_000.0  # the original is untouched
+    assert all(corrected[q] == gold[q] for q in gold if q not in errata)
+
+
+def test_errata_must_name_known_questions_and_keep_the_kind() -> None:
+    gold = {"q1": NUMBER_GOLD, "q2": TEXT_GOLD}
+    row = {"answer": "x", "gold_value": "", "gold_unit": ""}
+    with pytest.raises(ValueError, match="unknown question"):
+        scoring.with_errata(gold, {"q9": row})
+    with pytest.raises(ValueError, match="keeps its kind"):
+        scoring.with_errata(gold, {"q1": row})  # a number gold needs a value
+    with pytest.raises(ValueError, match="keeps its kind"):
+        scoring.with_errata(gold, {"q2": {**row, "gold_value": "5"}})
+    fixed = scoring.with_errata(
+        gold, {"q1": {"answer": "$1,600", "gold_value": "1.6e9", "gold_unit": "USD"}}
+    )
+    assert fixed["q1"].value == 1.6e9 and fixed["q1"].answer_kind == "number"
