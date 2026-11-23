@@ -33,22 +33,49 @@ tolerance, sign included, since a sign is part of a computation. A quoted claim 
 `ok=None`. A computed claim that cannot be recomputed (no inputs, an input that is not a
 claim, or an expression that does not evaluate) fails, for the same reason an uncited quoted
 claim fails check 1: V2 accepts only numbers it can trace to the evidence.
+
+Revision loop (P4.6, guide §4.4; DECISIONS 2026-11-23): every claim gets all three checks. The
+claims that fail go back to the same model with one feedback line per failed claim (each
+failed check's reason) and the excerpts the claims cite, and it fills in a `Revision` form:
+a corrected value, unit and period per failed claim, the same correction form as V1, so V1 and
+V2 differ only in what finds the errors (the model itself, or the rules). Corrections are
+applied and every claim is checked again, up to `verification.max_revisions` revisions; the
+claims still failing are flagged. Claim IDs, metrics, citations and expressions stay as
+drafted, and the answer text is not rewritten (scoring reads the draft's; scoring.py).
+Prompts: v2_system.txt, v2_user.txt (to be frozen before any test-split run).
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+import functools
+import time
+from collections.abc import Callable, Sequence
+from string import Template
 
+from langchain_core.messages import HumanMessage, SystemMessage
+from pydantic import BaseModel, Field, ValidationError
+
+from finqa.config import Config
 from finqa.eval.citation_check import _HAS_SCALE
 from finqa.eval.error_types import Lookup, recompute, xbrl_lookup
 from finqa.eval.scoring import within_tolerance
-from finqa.ingestion.xbrl import Metric, metric_for
-from finqa.schemas import Chunk, Claim, Draft, Unit, Verdict
+from finqa.generators.common import load_prompt
+from finqa.ingestion.xbrl import Metric, load_metric_map, metric_for
+from finqa.llm import LLM
+from finqa.schemas import Chunk, Claim, Draft, Period, Unit, Verdict, VerifiedResult
+from finqa.verifiers.base import result
 from finqa.verifiers.numbers import extract_numbers
+from finqa.verifiers.self_check import ClaimCheck, apply, cited_excerpts, format_claims
 
 CITED_TEXT = "cited_text"
 XBRL = "xbrl"
 RECOMPUTE = "recompute"
+ARM = "grounded"
+SYSTEM_PROMPT = "v2_system.txt"
+USER_PROMPT = "v2_user.txt"
+
+# question_id -> (question text, the CIK of the question's company or None)
+Context = Callable[[str], tuple[str, str | None]]
 
 
 def chunk_values(chunk: Chunk, unit: Unit) -> list[float]:
@@ -142,3 +169,184 @@ def check_recompute(claim: Claim, claims: Sequence[Claim], tolerance: float) -> 
     if within_tolerance(claim.value, result, tolerance):
         return verdict(True, f"{claim.expression} = {result:g}")
     return verdict(False, f"{claim.expression} = {result:g}, not {claim.value:g}")
+
+
+# --- The verifier: checks, feedback, revision -----------------------------------------------
+
+
+class ClaimFix(BaseModel):
+    claim_id: str
+    corrected_value: float | None = Field(default=None, description="full units; null if right")
+    corrected_unit: Unit | None = None
+    corrected_period: Period | None = None
+    reason: str = Field(description="one short sentence")
+
+
+class Revision(BaseModel):
+    """Your corrections to the claims that failed the check."""
+
+    fixes: list[ClaimFix]
+
+
+def failed(verdicts: Sequence[Verdict]) -> list[str]:
+    """IDs of the claims with at least one check that ran and failed, in verdict order."""
+    out: list[str] = []
+    for v in verdicts:
+        if v.ok is False and v.claim_id not in out:
+            out.append(v.claim_id)
+    return out
+
+
+CHECK_NAMES = {CITED_TEXT: "cited text", XBRL: "XBRL", RECOMPUTE: "recomputation"}
+
+
+def feedback(verdicts: Sequence[Verdict]) -> str:
+    """One line per failed claim: what each of its failed checks found."""
+    lines = []
+    for claim_id in failed(verdicts):
+        reasons = [
+            f"{CHECK_NAMES[v.check]}: {v.reason}"
+            for v in verdicts
+            if v.claim_id == claim_id and v.ok is False
+        ]
+        lines.append(f"- {claim_id}: " + "; ".join(reasons))
+    return "\n".join(lines)
+
+
+class GroundedVerifier:
+    def __init__(
+        self,
+        cfg: Config,
+        llm: LLM,
+        context: Context | None = None,
+        metric_map: dict[str, Metric] | None = None,
+        lookup: Lookup = xbrl_lookup,
+    ) -> None:
+        if cfg.verification.arm != ARM:
+            raise ValueError(f"config {cfg.name!r} is not V2: {cfg.verification.arm!r}")
+        self.cfg = cfg
+        self.llm = llm
+        self._context = context
+        self.metric_map = metric_map if metric_map is not None else load_metric_map()
+        self.lookup = lookup
+
+    def context(self, question_id: str) -> tuple[str, str | None]:
+        if self._context is None:
+            self._context = _financebench_context()
+        return self._context(question_id)
+
+    def check(self, draft: Draft, claims: list[Claim], cik: str | None) -> list[Verdict]:
+        """All three checks on every claim, claim by claim."""
+        tol = self.cfg.verification.tolerance
+        out: list[Verdict] = []
+        for c in claims:
+            out += [
+                check_cited_text(c, draft, tol),
+                check_xbrl(c, cik, tol, self.metric_map, self.lookup),
+                check_recompute(c, claims, tol),
+            ]
+        return out
+
+    def revise(
+        self, draft: Draft, claims: list[Claim], verdicts: list[Verdict], question: str
+    ) -> tuple[Revision, int, int]:
+        prompt = [
+            SystemMessage(load_prompt(SYSTEM_PROMPT)),
+            HumanMessage(
+                Template(load_prompt(USER_PROMPT)).substitute(
+                    question=question,
+                    answer_text=draft.answer_text,
+                    claims=format_claims(claims),
+                    feedback=feedback(verdicts),
+                    excerpts=cited_excerpts(draft, claims),
+                )
+            ),
+        ]
+        response = self.llm.invoke(
+            prompt, tools=[Revision], tool_choice="Revision", question_id=draft.question_id
+        )
+        usage = response.usage_metadata
+        tokens = (usage["input_tokens"], usage["output_tokens"]) if usage else (0, 0)
+        if not response.tool_calls:
+            raise ValueError("no Revision tool call in response")
+        return Revision.model_validate(response.tool_calls[0]["args"]), *tokens
+
+    def __call__(self, draft: Draft, cfg: Config) -> VerifiedResult:
+        started = time.monotonic()
+        if draft.error is not None or not draft.claims:
+            return result(draft, cfg)
+        question, cik = self.context(draft.question_id)
+        claims = list(draft.claims)
+        verdicts: list[Verdict] = []
+        failing: list[str] = []
+        revisions, tokens_in, tokens_out = 0, 0, 0
+        try:
+            while True:
+                round_verdicts = self.check(draft, claims, cik)
+                verdicts += [
+                    v.model_copy(update={"reason": f"round {revisions + 1}: {v.reason}"})
+                    for v in round_verdicts
+                ]
+                failing = failed(round_verdicts)
+                if not failing or revisions >= cfg.verification.max_revisions:
+                    break  # all pass, or out of revisions: what still fails is flagged
+                revision, t_in, t_out = self.revise(draft, claims, round_verdicts, question)
+                tokens_in, tokens_out = tokens_in + t_in, tokens_out + t_out
+                fixes = [
+                    ClaimCheck(supported=False, **f.model_dump())
+                    for f in revision.fixes
+                    if f.claim_id in failing
+                ]
+                revised, changed = apply(claims, fixes)
+                if not changed:
+                    break  # the model kept its claims: they stay flagged
+                claims, revisions = revised, revisions + 1
+        except (ValidationError, ValueError) as e:
+            return result(
+                draft,
+                cfg,
+                latency_s=round(time.monotonic() - started, 3),
+                tokens_in=tokens_in,
+                tokens_out=tokens_out,
+                error=f"{type(e).__name__}: {e}",
+            )
+        return result(
+            draft,
+            cfg,
+            claims_after=claims,
+            verdicts=verdicts,
+            revisions_used=revisions,
+            flagged_claim_ids=failing,
+            latency_s=round(time.monotonic() - started, 3),
+            tokens_in=tokens_in,
+            tokens_out=tokens_out,
+        )
+
+
+def _financebench_context() -> Context:
+    """question_id -> (question text, CIK of the question's company), from FinanceBench and the
+    company resolver (offline: companies.csv)."""
+    from finqa.ingestion import financebench
+    from finqa.tools.resolver import CompanyResolver
+
+    records = {r["financebench_id"]: r for r in financebench.load()}
+    resolver = CompanyResolver.from_csv()
+
+    def context(question_id: str) -> tuple[str, str | None]:
+        r = records.get(question_id)
+        if r is None:
+            return "(question text not available)", None
+        company = resolver.resolve(r["company"]).company
+        return r["question"], company.cik if company else None
+
+    return context
+
+
+@functools.cache
+def _verifier(cfg: Config) -> GroundedVerifier:
+    return GroundedVerifier(cfg, LLM(cfg))
+
+
+def verify(draft: Draft, cfg: Config) -> VerifiedResult:
+    """The runner's entry point for the "grounded" arm (finqa.eval.runner.VERIFIERS)."""
+    return _verifier(cfg)(draft, cfg)
