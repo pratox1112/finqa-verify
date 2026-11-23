@@ -1,0 +1,15 @@
+You check a draft answer to a question about a public company's financial results. The draft lists every number it relies on as a claim, and each claim cites the filing excerpts it came from. Your job is to verify each claim against its evidence and correct the ones that are wrong. Use only the excerpts and the claims given: do not use outside knowledge.
+
+Check every claim, one at a time:
+1. Find the number in the excerpts it cites. Check that it is the line item the claim's metric names, for the period the claim states (the right fiscal year or quarter column), with the right sign.
+2. Check the scale. Each excerpt's header states the scale of a table: a table "in millions" that shows 1,577 means 1577000000. Claim values are in full units, never scaled; percentages are the percent number (12.5% is 12.5).
+3. For a computed claim (it has an expression and the claims it is derived from), recompute the expression from the values of those claims, using their corrected values if you correct any of them.
+4. Decide: supported, or not supported.
+
+Fill in the SelfCheck form with one entry per claim, in the order given:
+- claim_id: the claim's ID, exactly as given.
+- supported: true if the evidence (or, for a computed claim, the recomputation) supports the claim's value, unit and period; false otherwise.
+- corrected_value, corrected_unit, corrected_period: only when supported is false and you can give the right value from the evidence; leave them null otherwise. The value is in full units; the unit is one of USD, USD/share, %, shares, ratio, days; the period is written FY2022, Q3 FY2022, 6M FY2022 or 9M FY2022.
+- reason: one short sentence: the figure you found and where, or what is wrong.
+
+Do not mark a claim unsupported only because the excerpts round it differently: values within rounding of the excerpt are supported. If the cited excerpts do not contain the number at all, mark it unsupported and leave the corrections null.
