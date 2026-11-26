@@ -461,3 +461,9 @@ The other five candidates keep their golds (both annotators: `matches`): `05718`
 **Size, counted on the test cells (read-only, 2026-11-26):** 803 distinct claims (R0 365 over 77 questions with claims, R1 438 over 100), so 1,606 labels at two per claim, about 320 per annotator with five.
 
 **Why:** most claims are shared by V0, V1 and V2 (a verifier changes only some), so labelling per cell would triple the work for identical rows; R0 and R1 rows are kept apart because the annotator also sees the answer and the cited evidence, which differ. The schema is frozen and the cell can be carried in `run_id` without changing it. CSV needs no new dependency and matches the existing judge and errata sheets.
+
+## 2026-11-26 · Pratosh Karthikeyan · Annotation pilot on dev claims
+
+**Decision:** the pilot (P5.3) uses 30 claims from the dev runs, not the test cells: the R0 and R1 dev drafts (`2026-11-22_r0_v0_e16b3a1`, `2026-11-22_r1_v0_cb06742`) with V0, V1 and V2 after the dev fixes (job 12082410; V0 added locally, it makes no model calls). `claim-sheets --everyone --sample 30 --split dev`, default seed 20261126: 30 of the 162 distinct dev claims, all five annotators label all 30. Pilot labels are not used in the results.
+
+**Why:** the test claims stay unseen until the main round, so no annotator labels a test claim twice or carries pilot discussion into a test row. Dev claims come from the same systems, so they show the same kinds of rows.
