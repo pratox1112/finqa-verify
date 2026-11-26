@@ -83,6 +83,22 @@ def mcnemar(a_correct: Sequence[bool], b_correct: Sequence[bool]) -> McNemar:
     )
 
 
+def holm(p_values: Sequence[float]) -> list[float]:
+    """Holm step-down adjusted p-values, in the input order (ROADMAP P9.3).
+
+    The i-th smallest p (from 0) is multiplied by (m - i), then the running maximum is taken so
+    the adjusted values keep the order of the raw ones; capped at 1. Reject at level alpha where
+    the adjusted p <= alpha (family-wise error rate alpha)."""
+    m = len(p_values)
+    order = sorted(range(m), key=lambda i: p_values[i])
+    adjusted = [0.0] * m
+    running = 0.0
+    for rank, i in enumerate(order):
+        running = max(running, min(1.0, (m - rank) * p_values[i]))
+        adjusted[i] = running
+    return adjusted
+
+
 def cohen_kappa(a: Sequence[bool], b: Sequence[bool]) -> float | None:
     """Cohen's kappa for two raters' yes/no labels on the same items. None when there are no
     items or chance agreement is 1 (both raters gave one label to everything)."""

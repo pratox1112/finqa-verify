@@ -58,7 +58,7 @@ Each runner downloads their own copy of the model and runs their own vLLM server
 | Phase 4: V1, V2 revision loop, grid runs and scoring | *TBD* | |
 | Phase 6: restatement runs and scoring | *TBD* | |
 | Phase 7: injection and closed-book runs, scoring | *TBD* | |
-| Phase 9: variance re-runs | *TBD* | |
+| Phase 9: variance re-runs | Rahul Vishnuvardhana | yes: Explorer setup, model download and server-only test passed (jobs 12139905, 12141696, 12141785; vLLM 0.32.0, revision 37561816) |
 
 ---
 
@@ -204,7 +204,7 @@ Each runner downloads their own copy of the model and runs their own vLLM server
 
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
-| P8.1 | Coverage analysis | todo | | | | |
+| P8.1 | Coverage analysis | in-progress | Rahul Vishnuvardhana | results-statistics | 2026-11-25 | `eval/grid.py` `coverage_section`: per-check coverage from V2 round-1 verdicts, claims with no check, answer-level accuracy (V0 and V2) for checkable vs not, top reasons a check could not run (DECISIONS 2026-11-25). Unit-tested on hand-made results; runs on the grid after P4.8. |
 | G8 | **GATE 8** | todo | | | | |
 
 
@@ -212,13 +212,13 @@ Each runner downloads their own copy of the model and runs their own vLLM server
 
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
-| P9.1 | Variance | todo | | | | |
-| P9.2 | Error-type figure | todo | | | | |
-| P9.3 | Paired tests | todo | | | | |
-| P9.4 | Confidence intervals | todo | | | | |
-| P9.5 | Flip matrices | todo | | | | |
-| P9.6 | Cost and latency | todo | | | | |
-| P9.7 | Examples | todo | | | | |
+| P9.1 | Variance | todo | Rahul Vishnuvardhana | | 2026-11-25 | Waiting on P4.8/Gate 4 and the open questions in DECISIONS 2026-11-25 (cache-off option, run-ID repeat suffix, which 40 questions). |
+| P9.2 | Error-type figure | todo | Rahul Vishnuvardhana | | 2026-11-25 | Waiting on the error-type source (rule-based P2.5 or Phase 5 labels; DECISIONS 2026-11-25). |
+| P9.3 | Paired tests | in-progress | Rahul Vishnuvardhana | results-statistics | 2026-11-25 | `stats.holm` + `grid.paired_tests_table`: McNemar exact over the 9 planned pairs, one Holm family, paired bootstrap CI of the difference (DECISIONS 2026-11-25). |
+| P9.4 | Confidence intervals | in-progress | Rahul Vishnuvardhana | results-statistics | 2026-11-25 | Every rate in the grid, coverage and paired tables carries a bootstrap 95% CI (`stats.rate`, `stats.paired_diff_ci`). |
+| P9.5 | Flip matrices | in-progress | Rahul Vishnuvardhana | results-statistics | 2026-11-25 | `grid.flip_table`: 3 x 3 correct / incorrect / refused, V0 vs V1 or V2, with fixed and broken counts. |
+| P9.6 | Cost and latency | in-progress | Rahul Vishnuvardhana | results-statistics | 2026-11-25 | `grid.cost_table`: latency and token p50/p95 and estimated cost per cell (draft plus verification). |
+| P9.7 | Examples | todo | Rahul Vishnuvardhana | | 2026-11-25 | [HUMAN] after the grid and the error-type source decision. |
 | G9 | **GATE 9** | todo | | | | |
 
 
@@ -317,3 +317,4 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-11-23 · — · P4.6, P4.7 · Dev job 12075270 (17 min, 0 failed verifications, real-model V2 test passed). Planted errors: V1 caught 14/18 (11/15 checkable), V2 15/18 (15/15), no false alarms on the 5 controls for either. Dev accuracy unchanged by V1 (R0 9/20, R1 12/20; V1 revised no claim); V2 R0 9/20, R1 13/20 (1 wrong to right). V2 fixes from the dev flags (unstated table scales, percent recomputation, uncited claims flagged not revised; DECISIONS 2026-11-23); V2 dev and planted runs to be repeated
 - 2026-11-23 · — · P4.2, P4.6, P4.7 · V2 re-run after the fixes (job 12082410, 11 min, 0 failed): R0 V2 9/20 (2 revised, 2 flagged), R1 V2 13/20 (4 revised, 3 flagged; 1 wrong to right, 0 right to wrong); remaining flags all genuine. V1 and V2 prompts frozen; V2 design rules and metric aliases approved (DECISIONS 2026-11-23)
 - 2026-11-23 · — · P4.1–P4.7 · Verifiers merged to main in #33 (squash merge: the branch's two merges from main could not be rebased); V1 and V2 prompts frozen. Next: the test-split grid (P4.8)
+- 2026-11-25 · Rahul Vishnuvardhana · P8.1, P9.3–P9.6 · Grid analysis code before the grid lands (`eval/grid.py`, `stats.holm`, 16 unit tests on hand-made rows); design of pairs, coverage and flip matrices in DECISIONS 2026-11-25. Explorer setup for P9.1 tested (server-only job 12141785: A100 80GB, Qwen3.8-27B served, startup 11.5 min)
