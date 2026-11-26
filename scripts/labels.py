@@ -14,6 +14,14 @@ Gold errata, two annotators, blind to every system's answers:
     # fill in runs/labels/errata/errata_<name>.csv (verdict: matches/contradicts/unclear)
     uv run python scripts/labels.py errata-compare --name errata
 
+Claim annotation (Phase 5; annotation/guidelines.md): every distinct claim of the grid cells,
+two annotators per claim in rotating pairs (or --everyone for the pilot, with --sample N):
+
+    uv run python scripts/labels.py claim-sheets --name main --runs <R0 run> <R1 run> \\
+        --annotators alice bob carol dan eve
+    # fill in runs/labels/main/sheet_<name>.csv (correct: yes/no; error_type; note: tags)
+    uv run python scripts/labels.py claim-labels --name main
+
 Output goes to runs/labels/<name>/ (gitignored, like all run output); share the sheets through
 the shared artifact location. Use first names or initials as labeller names: they appear in
 file names and in annotations.jsonl. Never change a prompt or code because of what a test
@@ -26,7 +34,8 @@ import argparse
 import sys
 from pathlib import Path
 
-from finqa.eval import labels
+from finqa.config import BASE_CONFIG, load_config
+from finqa.eval import annotation, labels
 from finqa.eval.questions import load_questions
 from finqa.eval.runner import RUNS_DIR, RunRefused
 from finqa.eval.scoring import load_gold
@@ -50,6 +59,17 @@ def build_parser() -> argparse.ArgumentParser:
     errata.add_argument("--annotators", nargs=2, required=True)
     compare = sub.add_parser("errata-compare", help="outcome per errata candidate")
     compare.add_argument("--name", required=True)
+    claims = sub.add_parser("claim-sheets", help="blind claim sheets from the grid cells")
+    claims.add_argument("--name", required=True, help="folder under runs/labels/")
+    claims.add_argument("--runs", nargs="+", required=True, help="draft run IDs under runs/")
+    claims.add_argument("--annotators", nargs="+", required=True)
+    claims.add_argument("--arms", nargs="+", default=list(annotation.ARMS))
+    claims.add_argument("--everyone", action="store_true", help="every annotator, every row")
+    claims.add_argument("--sample", type=int, help="keep only N shuffled claims (pilot)")
+    claims.add_argument("--split", default="test", choices=["dev", "test"])
+    claims.add_argument("--seed", type=int, default=20261126)
+    collect = sub.add_parser("claim-labels", help="check filled claim sheets -> labels.jsonl")
+    collect.add_argument("--name", required=True)
     return parser
 
 
@@ -69,6 +89,28 @@ def main(argv: list[str] | None = None, runs_dir: Path = RUNS_DIR) -> int:
         elif args.command == "judge-agreement":
             report, annotations = labels.judge_agreement(out_dir, runs_dir)
             print(f"-> {report}\n-> {annotations}")
+        elif args.command == "claim-sheets":
+            questions = {q.question_id: q for q in load_questions(args.split)}
+            tolerance = load_config(BASE_CONFIG, BASE_CONFIG).verification.tolerance
+            rows = annotation.collect_rows(
+                runs_dir, args.runs, questions, load_gold(), tolerance, args.arms
+            )
+            counts = annotation.write_claim_sheets(
+                rows, args.annotators, out_dir, args.seed, args.everyone, args.sample
+            )
+            print(f"{len(rows)} distinct claims -> {out_dir}")
+            for name, n in counts.items():
+                print(f"  sheet_{name}.csv: {n} rows")
+            for row in annotation.too_long(rows):
+                print(f"  warning: {row} has a cell longer than Excel shows", file=sys.stderr)
+        elif args.command == "claim-labels":
+            path, n, blank, problems = annotation.collect_claim_labels(out_dir)
+            if problems:
+                for p in problems:
+                    print(f"  {p}", file=sys.stderr)
+                print(f"refused: {len(problems)} problem(s); nothing written", file=sys.stderr)
+                return 2
+            print(f"{n} labels ({blank} still blank) -> {path}")
         elif args.command == "errata-sheets":
             records = financebench.by_id(financebench.load())
             for path in labels.write_errata_sheets(records, args.annotators, out_dir):

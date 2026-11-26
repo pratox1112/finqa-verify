@@ -168,7 +168,7 @@ Each runner downloads their own copy of the model and runs their own vLLM server
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
 | P5.1 | Guidelines | in-progress | | branch annotation | 2026-11-26 | `annotation/guidelines.md` drafted (by an AI assistant, for the team to edit and approve): what a claim row shows, number conventions, correctness, error types with synthetic examples, edge cases, note tags, process. Started before Gate 4 as an exception (DECISIONS 2026-11-23). The six open questions decided (DECISIONS 2026-11-26): non-answer claims against the filing; tags `unsupported`, `from-input`, `label-error`, `irrelevant`. Waiting: team approval. |
-| P5.2 | Export tooling | todo | | | | |
+| P5.2 | Export tooling | review | | branch annotation | 2026-11-26 | `src/finqa/eval/annotation.py`, `scripts/labels.py claim-sheets` / `claim-labels`: claims of all cells, de-duplicated within each draft run, blind shuffled CSV sheets (question, gold, answer, claim, inputs, cited text with headers, pre-label; no cell, verdicts or error types), two annotators per claim in rotating pairs or everyone for the pilot (`--everyone --sample N`); filled sheets checked and written as `Annotation`s, cell in `run_id` (DECISIONS 2026-11-26). 12 tests. Test cells: 803 distinct claims (1,606 labels at two per claim). |
 | P5.3 | Pilot | todo | | | | |
 | P5.4 | Main round | todo | | | | |
 | P5.5 | Agreement | todo | | | | |
@@ -319,3 +319,4 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-11-23 · — · P4.1–P4.7 · Verifiers merged to main in #33 (squash merge: the branch's two merges from main could not be rebased); V1 and V2 prompts frozen. Next: the test-split grid (P4.8)
 - 2026-11-23 · — · P5.1 · Phase 5 started before Gate 4 as a recorded exception (fixtures, synthetic and dev only; no test claims exported until Gate 4; branch `annotation`). Annotation guidelines drafted with six open questions for the team
 - 2026-11-26 · — · P5.1 · Annotation guidelines: the six open questions decided (non-answer claims checked against the filing; four new note tags); waiting for team approval before the pilot
+- 2026-11-26 · — · P5.2 · Claim export tooling (claim-sheets, claim-labels); the six test cells hold 803 distinct claims to label. Next: decide the pilot sample, then the pilot (P5.3)
