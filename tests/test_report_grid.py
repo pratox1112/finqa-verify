@@ -103,14 +103,17 @@ def setup(tmp_path: Path):
     return runs, tmp_path / "docs", questions, splits, run_ids
 
 
-def make_report(runs: Path, docs: Path, questions) -> int:
+def make_report(runs: Path, docs: Path, questions, milestone: str = "grid", labels=None) -> int:
     return report.report_command(
-        "grid",
+        milestone,
         runs_dir=runs,
         docs_dir=docs,
         questions=questions,
         gold=GOLD,
         make_judge=lambda cfg, run_id: judge_says_no,
+        locate=lambda q: (None, None),
+        lookup=None,
+        labels=labels,
     )
 
 
@@ -242,3 +245,264 @@ def test_report_refuses_a_subset_scope(setup) -> None:
 def test_cli_accepts_the_grid_milestone() -> None:
     args = build_parser().parse_args(["report", "--milestone", "grid"])
     assert args.milestone == "grid"
+
+
+# ---------------------------------------------------------------- P9.2 error types, Gate 9
+
+
+def cell_row(out: str, label: str, after: str) -> str:
+    """The first line starting with "| {label} |" after the heading `after`."""
+    section = out.split(after, 1)[1]
+    return next(line for line in section.splitlines() if line.startswith(f"| {label} |"))
+
+
+def test_rule_based_error_types_per_cell(setup) -> None:
+    runs, docs, questions, _, run_ids = setup
+    assert make_report(runs, docs, questions) == 0
+    out = (docs / report_grid.RESULTS_FILE).read_text(encoding="utf-8")
+    assert "## Figure G-1: error types per cell" in out
+    # wrong answers: R0 3 (V2 fixes fb_synth_001 -> 2); R1 1 (the text-gold question)
+    for label, wrong in (("R0-V0", 3), ("R0-V1", 3), ("R0-V2", 2), ("R1-V0", 1), ("R1-V2", 1)):
+        assert cell_row(out, label, "(a) Rule-based").endswith(f"| {wrong} |")
+    assert "Pending: no Phase 5 final labels" in out
+    fig = (docs / "figures" / report_grid.RULE_FIGURE).read_text(encoding="utf-8")
+    assert fig.count(r"\node[anchor=east") == 6
+    assert "rule-based" in fig
+    assert not (docs / "figures" / report_grid.HUMAN_FIGURE).exists()
+    rows = (runs / run_ids["r0_v0"] / report_grid.CANDIDATES_FILE).read_text().splitlines()
+    assert rows[0] == "cell,question_id,error_type,detail"
+    assert len(rows) == 1 + 3 + 3 + 2  # header + R0's three cells
+
+
+def test_human_label_error_types(setup, tmp_path: Path) -> None:
+    from finqa.eval.annotation import cell_run_id
+    from finqa.schemas import Annotation
+
+    runs, docs, questions, _, run_ids = setup
+    r1 = run_ids["r1_v0"]
+    labels = [
+        Annotation(
+            question_id="fb_synth_001",
+            claim_id="c1",
+            run_id=cell_run_id(r1, "grounded"),
+            annotator="a+b",
+            correct=True,
+            error_type=None,
+        ),
+        Annotation(
+            question_id="fb_synth_002",
+            claim_id="c1",
+            run_id=cell_run_id(r1, "grounded"),
+            annotator="a+b",
+            correct=False,
+            error_type="wrong_period",
+        ),
+        Annotation(
+            question_id="fb_synth_003",
+            claim_id="c1",
+            run_id=cell_run_id(r1, "none"),
+            annotator="adjudicated",
+            correct=False,
+            error_type="arithmetic",
+        ),
+    ]
+    path = tmp_path / "final_labels.jsonl"
+    path.write_text("".join(a.model_dump_json() + "\n" for a in labels), encoding="utf-8")
+    assert make_report(runs, docs, questions, labels=path) == 0
+    out = (docs / report_grid.RESULTS_FILE).read_text(encoding="utf-8")
+    assert "| R1-V2 | 2 | 1/2, 50.0% [" in out
+    assert "| R1-V0 | 1 | 1/1, 100.0% [" in out
+    assert "| R0-V0 | 0 | 0/0, n/a |" in out
+    human = out.split("(b) Human labels", 1)[1]
+    row = cell_row(human, "R1-V2", "incorrect claims |")
+    assert row == "| R1-V2 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 1 |"  # wrong_period first
+    fig = (docs / "figures" / report_grid.HUMAN_FIGURE).read_text(encoding="utf-8")
+    assert "{1 of 2 labelled}" in fig and "{0 of 0 labelled}" in fig
+
+
+def write_labels(path: Path, labels) -> Path:
+    path.write_text("".join(a.model_dump_json() + "\n" for a in labels), encoding="utf-8")
+    return path
+
+
+def label(run_id: str, arm: str, qid: str = "fb_synth_001", correct: bool = True, et=None):
+    from finqa.eval.annotation import cell_run_id
+    from finqa.schemas import Annotation
+
+    return Annotation(
+        question_id=qid,
+        claim_id="c1",
+        run_id=cell_run_id(run_id, arm),
+        annotator="a+b",
+        correct=correct,
+        error_type=et,
+    )
+
+
+def test_labels_twice_in_a_cell_are_refused(setup, tmp_path: Path) -> None:
+    runs, docs, questions, _, run_ids = setup
+    one = label(run_ids["r1_v0"], "grounded")
+    path = write_labels(tmp_path / "labels.jsonl", [one, one])
+    with pytest.raises(runner.RunRefused, match="labelled twice"):
+        make_report(runs, docs, questions, labels=path)
+
+
+def test_bad_labels_are_refused_before_any_write(setup, tmp_path: Path) -> None:
+    runs, docs, questions, _, run_ids = setup
+    one = label(run_ids["r1_v0"], "grounded")
+    path = write_labels(tmp_path / "labels.jsonl", [one, one])
+    with pytest.raises(runner.RunRefused, match="labelled twice"):
+        make_report(runs, docs, questions, labels=path)
+    assert not list(runs.glob("*/scores_*.jsonl"))
+    assert not list(runs.glob(f"*/{report_grid.CANDIDATES_FILE}"))
+
+
+def test_an_unreadable_label_line_is_refused_and_the_file_kept(setup, tmp_path: Path) -> None:
+    runs, docs, questions, _, run_ids = setup
+    good = label(run_ids["r1_v0"], "grounded").model_dump_json()
+    path = tmp_path / "final_labels.jsonl"
+    text = good + "\n{not json\n" + good.replace("fb_synth_001", "fb_synth_003")  # no newline
+    path.write_text(text, encoding="utf-8")
+    with pytest.raises(runner.RunRefused, match="line 2 is not a valid label"):
+        make_report(runs, docs, questions, labels=path)
+    assert path.read_text(encoding="utf-8") == text
+
+
+def test_labels_of_another_run_are_refused(setup, tmp_path: Path) -> None:
+    runs, docs, questions, _, _ = setup
+    path = write_labels(tmp_path / "f.jsonl", [label("2026-01-01_r1_v0_dev0000", "none")])
+    with pytest.raises(runner.RunRefused, match="not one of the six grid cells"):
+        make_report(runs, docs, questions, labels=path)
+
+
+def test_incorrect_label_without_error_type_is_refused(setup, tmp_path: Path) -> None:
+    runs, docs, questions, _, run_ids = setup
+    path = write_labels(tmp_path / "f.jsonl", [label(run_ids["r0_v0"], "none", correct=False)])
+    with pytest.raises(runner.RunRefused, match="no error type"):
+        make_report(runs, docs, questions, labels=path)
+
+
+def test_missing_labels_are_refused_before_anything_is_written(setup, tmp_path: Path) -> None:
+    runs, docs, questions, _, run_ids = setup
+    with pytest.raises(runner.RunRefused, match="no final labels"):
+        make_report(runs, docs, questions, labels=tmp_path / "missing.jsonl")
+    assert not list(runs.glob("*/scores_*.jsonl"))
+    assert not (docs / report_grid.RESULTS_FILE).exists()
+
+
+def test_failed_generations_are_not_classified(setup) -> None:
+    from finqa.schemas import Claim, Draft, VerifiedResult
+
+    def d(qid: str, error: str | None) -> Draft:
+        claims = (
+            []
+            if error
+            else [
+                Claim(
+                    claim_id="c1", metric="m", value=7.0, unit="USD", period="FY2022", chunk_ids=[]
+                )
+            ]
+        )
+        return Draft(
+            question_id=qid,
+            retrieval_arm="rag",
+            answer_text="7",
+            claims=claims,
+            answer_claim_id=None if error else "c1",
+            evidence={},
+            trace_id="t",
+            latency_s=0.0,
+            tokens_in=0,
+            tokens_out=0,
+            error=error,
+        )
+
+    def v(draft: Draft) -> VerifiedResult:
+        return VerifiedResult(
+            question_id=draft.question_id,
+            retrieval_arm="rag",
+            verification_arm="none",
+            claims_before=draft.claims,
+            claims_after=draft.claims,
+            verdicts=[],
+            revisions_used=0,
+            flagged_claim_ids=[],
+            latency_s=0.0,
+            tokens_in=0,
+            tokens_out=0,
+        )
+
+    drafts = [d("fb_synth_001", None), d("fb_synth_003", "model error")]
+    rows = [tables_row("fb_synth_001"), tables_row("fb_synth_003")]
+    questions = setup[2]
+    out = report_grid.rule_diagnoses(
+        drafts,
+        [v(x) for x in drafts],
+        questions,
+        GOLD,
+        rows,
+        {},
+        0.01,
+        lambda q: (None, None),
+        [],
+        [],
+        None,
+    )
+    assert [x.question_id for x in out] == ["fb_synth_001"]
+
+
+def test_stacked_tikz_scales_the_longest_bar_to_8cm() -> None:
+    from collections import Counter
+
+    from finqa.schemas import ErrorType
+
+    counts = {label: Counter() for label in grid.CELLS}
+    counts["R0-V0"] = Counter({ErrorType.WRONG_PERIOD: 3, ErrorType.ARITHMETIC: 1})  # total 4
+    counts["R1-V2"] = Counter({ErrorType.OTHER: 2})
+    tex = report_grid.stacked_tikz(counts, "test")
+    # R0-V0 (row 0): 3/4 of 8 cm, then 1/4; R1-V2 (row 5): 2/4 of 8 cm
+    assert r"\fill[et0] (0.000,-0.30) rectangle (6.000,0.30);" in tex
+    assert r"\fill[et3] (6.000,-0.30) rectangle (8.000,0.30);" in tex
+    assert r"\fill[et6] (0.000,-5.30) rectangle (4.000,-4.70);" in tex
+    for t in ErrorType:
+        assert t.value.replace("_", r"\_") in tex
+    assert tex.rstrip().endswith(r"\end{tikzpicture}")
+
+
+def test_report_all_runs_every_report_and_lists_refusals(setup, capsys) -> None:
+    runs, docs, questions, _, _ = setup
+    assert make_report(runs, docs, questions, milestone="all") == 2  # no m1 or p3 runs here
+    printed = capsys.readouterr().err
+    assert "refused: m1:" in printed and "refused: p3:" in printed
+    assert "refused: grid" not in printed
+    assert (docs / report_grid.RESULTS_FILE).exists()
+    assert not (docs / "RESULTS.md").exists() and not (docs / "RESULTS_P3.md").exists()
+
+
+def test_report_all_refuses_a_subset_scope(setup) -> None:
+    runs, docs, questions, _, _ = setup
+    with pytest.raises(runner.RunRefused, match="for --milestone m1 only"):
+        report.report_command("all", "subset", runs_dir=runs, docs_dir=docs, questions=questions)
+
+
+def test_cli_report_defaults_to_all_and_takes_labels() -> None:
+    args = build_parser().parse_args(["report"])
+    assert args.milestone == "all" and args.labels is None
+    args = build_parser().parse_args(["report", "--milestone", "grid", "--labels", "x.jsonl"])
+    assert args.labels == Path("x.jsonl")
+
+
+def tables_row(qid: str):
+    from finqa.eval import tables
+
+    return tables.Row(
+        question_id=qid,
+        question_type="single_fact",
+        outcome="incorrect",
+        method="numeric",
+        reason="",
+        latency_s=0.0,
+        tokens_in=0,
+        tokens_out=0,
+        failed=False,
+    )

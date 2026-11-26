@@ -204,7 +204,7 @@ Each runner downloads their own copy of the model and runs their own vLLM server
 
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
-| P8.1 | Coverage analysis | in-progress | Rahul Vishnuvardhana | results-statistics | 2026-11-25 | `eval/grid.py` `coverage_section`: per-check coverage from V2 round-1 verdicts over the claims each check applies to, claims not checkable (no check compared them against evidence; definition revised 2026-11-26), answer-level accuracy (V0 and V2) for checkable vs not, top reasons a check could not run (DECISIONS 2026-11-25). Unit-tested on hand-made results. `uv run finqa report --milestone grid` (`eval/report_grid.py`) writes it with the other grid tables to `docs/RESULTS_GRID.md` (Gate 8 names `docs/RESULTS.md`: to be merged there at Gate 9). Runs once P4.8 is complete. |
+| P8.1 | Coverage analysis | in-progress | Rahul Vishnuvardhana | results-statistics, [#35](https://github.com/pratox1112/finqa-verify/pull/35) | 2026-11-25 | `eval/grid.py` `coverage_section`: per-check coverage from V2 round-1 verdicts over the claims each check applies to, claims not checkable (no check compared them against evidence; definition revised 2026-11-26), answer-level accuracy (V0 and V2) for checkable vs not, top reasons a check could not run (DECISIONS 2026-11-25). Unit-tested on hand-made results. `uv run finqa report --milestone grid` (`eval/report_grid.py`) writes it with the other grid tables to `docs/RESULTS_GRID.md` (Gate 8 names `docs/RESULTS.md`: to be merged there at Gate 9). Runs once P4.8 is complete. |
 | G8 | **GATE 8** | todo | | | | |
 
 
@@ -213,12 +213,12 @@ Each runner downloads their own copy of the model and runs their own vLLM server
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
 | P9.1 | Variance | todo | Rahul Vishnuvardhana | | 2026-11-25 | Gate 4 is done; waiting on the open questions in DECISIONS 2026-11-25 (a cache-off option and a run-ID repeat suffix now need a freeze exception; which 40 questions). |
-| P9.2 | Error-type figure | todo | Rahul Vishnuvardhana | | 2026-11-25 | Waiting on the error-type source (rule-based P2.5, all claims; or Phase 5 labels, a 200-claim sample per DECISIONS 2026-11-26; open in DECISIONS 2026-11-25). |
-| P9.3 | Paired tests | in-progress | Rahul Vishnuvardhana | results-statistics | 2026-11-25 | `stats.holm` + `grid.paired_tests_table`: McNemar exact over the 9 planned pairs, one Holm family, paired bootstrap CI of the difference (DECISIONS 2026-11-25). |
-| P9.4 | Confidence intervals | in-progress | Rahul Vishnuvardhana | results-statistics | 2026-11-25 | Every rate in the grid, coverage and paired tables carries a bootstrap 95% CI (`stats.rate`, `stats.paired_diff_ci`). |
-| P9.5 | Flip matrices | in-progress | Rahul Vishnuvardhana | results-statistics | 2026-11-25 | `grid.flip_table`: 3 x 3 correct / incorrect / refused, V0 vs V1 or V2, with fixed and broken counts. |
-| P9.6 | Cost and latency | in-progress | Rahul Vishnuvardhana | results-statistics | 2026-11-25 | `grid.cost_table`: latency and token p50/p95 and estimated cost per cell (draft plus verification). |
-| P9.7 | Examples | todo | Rahul Vishnuvardhana | | 2026-11-25 | [HUMAN] after the grid and the error-type source decision. |
+| P9.2 | Error-type figure | in-progress | Rahul Vishnuvardhana | results-statistics, [#35](https://github.com/pratox1112/finqa-verify/pull/35) | 2026-11-26 | Figure G-1 in the grid report: (a) rule-based on every wrong answer per cell, (b) Phase 5 final labels on the sampled claims via `--labels`; TikZ stacked bars in `docs/figures/` (DECISIONS 2026-11-25, P9.2 decided 2026-11-26). (b) waits for Gate 5. |
+| P9.3 | Paired tests | in-progress | Rahul Vishnuvardhana | results-statistics, [#35](https://github.com/pratox1112/finqa-verify/pull/35) | 2026-11-25 | `stats.holm` + `grid.paired_tests_table`: McNemar exact over the 9 planned pairs, one Holm family, paired bootstrap CI of the difference (DECISIONS 2026-11-25). |
+| P9.4 | Confidence intervals | in-progress | Rahul Vishnuvardhana | results-statistics, [#35](https://github.com/pratox1112/finqa-verify/pull/35) | 2026-11-25 | Every rate in the grid, coverage and paired tables carries a bootstrap 95% CI (`stats.rate`, `stats.paired_diff_ci`). |
+| P9.5 | Flip matrices | in-progress | Rahul Vishnuvardhana | results-statistics, [#35](https://github.com/pratox1112/finqa-verify/pull/35) | 2026-11-25 | `grid.flip_table`: 3 x 3 correct / incorrect / refused, V0 vs V1 or V2, with fixed and broken counts. |
+| P9.6 | Cost and latency | in-progress | Rahul Vishnuvardhana | results-statistics, [#35](https://github.com/pratox1112/finqa-verify/pull/35) | 2026-11-25 | `grid.cost_table`: latency and token p50/p95 and estimated cost per cell (draft plus verification). |
+| P9.7 | Examples | todo | Rahul Vishnuvardhana | | 2026-11-26 | [HUMAN] pick 2–3 per error type from `runs/<draft run>/grid_error_types.csv` (written by the grid report). |
 | G9 | **GATE 9** | todo | | | | |
 
 
@@ -327,3 +327,5 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-11-26 · — · P5.5 · Claim agreement and adjudication tooling built (kappa definitions proposed in DECISIONS, to confirm with the team)
 - 2026-11-26 · — · P5.3, P5.4 · For time: pilot reduced to 15 dev claims; main round a random sample of 200 test claims (two labels each)
 - 2026-11-26 · Rahul Vishnuvardhana · P8.1, P9.3–P9.6 · After review: coverage redefined (a check could not run when it had nothing to compare; by-design skips not applicable), per-cell outcomes table (refusals, selective accuracy, failure counts), newest run chosen by start time, repeated questions refused, verify-stage provenance limitation stated (DECISIONS 2026-11-25, revised); 17 unit and 11 end-to-end tests
+- 2026-11-26 · Rahul Vishnuvardhana · P8.1, P9.x · Team agreed the early Phase 8/9 start; the work stays in #35 and merges phase by phase (DECISIONS 2026-11-25, updated)
+- 2026-11-26 · Rahul Vishnuvardhana · P9.2, P9.7, Gate 9 · Error types per cell (rule-based on all wrong answers; human labels on the sample with `--labels`), TikZ figures, P9.7 candidate lists; `uv run finqa report` runs every report; final-label files checked (one label per claim and cell, grid cells only, read strictly and before any write); 24 end-to-end tests

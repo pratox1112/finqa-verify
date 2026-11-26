@@ -35,16 +35,23 @@ def build_parser() -> argparse.ArgumentParser:
     report = sub.add_parser("report", help="regenerate a milestone's tables and figures")
     report.add_argument(
         "--milestone",
-        required=True,
-        choices=["m1", "p3", "grid"],
-        help="m1: midterm tables; p3: the retrieval x calculator 2 x 2; "
-        "grid: the retrieval x verification 2 x 3 (coverage, paired tests, flips, cost)",
+        default="all",
+        choices=["all", "m1", "p3", "grid"],
+        help="all (default): every report; m1: midterm tables; p3: the retrieval x calculator "
+        "2 x 2; grid: the retrieval x verification 2 x 3 (coverage, paired tests, flips, cost, "
+        "error types)",
     )
     report.add_argument(
         "--scope",
         choices=["full", "subset"],
         default="full",
         help="full test split (default) or the frozen midterm subset (m1 only)",
+    )
+    report.add_argument(
+        "--labels",
+        type=Path,
+        default=None,
+        help="Phase 5 final_labels.jsonl, for the grid report's human-label error-type figure",
     )
     return parser
 
@@ -61,7 +68,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "report":
             from finqa.eval import report
 
-            return report.report_command(args.milestone, args.scope)
+            return report.report_command(args.milestone, args.scope, labels=args.labels)
         return runner.verify_command(args.run, args.config)
     except runner.RunRefused as e:
         print(f"refused: {e}", file=sys.stderr)

@@ -26,6 +26,7 @@ import csv
 import io
 import json
 import re
+import sys
 from collections import Counter
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -312,6 +313,44 @@ def default_locate() -> Locate:
     return locate
 
 
+MILESTONES = ("m1", "p3", "grid")
+
+
+def report_all(
+    runs_dir: Path,
+    docs_dir: Path,
+    data_dir: Path,
+    questions: dict[str, Question] | None,
+    gold: dict[str, Gold] | None,
+    make_judge: Callable[[Config, str], Judge],
+    locate: Locate | None,
+    lookup: error_types.Lookup | None,
+    labels: Path | None,
+) -> int:
+    """Every report in turn (m1 on the full split). One that refuses (its runs are missing or
+    unfinished) does not stop the others; the refusals are listed and the exit code is 2."""
+    refused: list[str] = []
+    for name in MILESTONES:
+        try:
+            report_command(
+                name,
+                runs_dir=runs_dir,
+                docs_dir=docs_dir,
+                data_dir=data_dir,
+                questions=questions,
+                gold=gold,
+                make_judge=make_judge,
+                locate=locate,
+                lookup=lookup,
+                labels=labels,
+            )
+        except RunRefused as e:
+            refused.append(f"{name}: {e}")
+    for line in refused:
+        print(f"refused: {line}", file=sys.stderr)
+    return 2 if refused else 0
+
+
 def report_command(
     milestone: str,
     scope: str = "full",
@@ -323,9 +362,17 @@ def report_command(
     make_judge: Callable[[Config, str], Judge] = default_judge,
     locate: Locate | None = None,
     lookup: error_types.Lookup | None = error_types.xbrl_lookup,
+    labels: Path | None = None,
 ) -> int:
     """`finqa report`: regenerate every table and figure for a milestone (ROADMAP M1.9; p3 is
-    the Phase 3 2 x 2, finqa.eval.report_p3)."""
+    the Phase 3 2 x 2, finqa.eval.report_p3; grid the retrieval x verification 2 x 3,
+    finqa.eval.report_grid). Milestone "all" runs every report (Gate 9)."""
+    if milestone == "all":
+        if scope != "full":
+            raise RunRefused("--scope subset is for --milestone m1 only")
+        return report_all(
+            runs_dir, docs_dir, data_dir, questions, gold, make_judge, locate, lookup, labels
+        )
     if milestone == "p3":
         if scope != "full":
             raise RunRefused("the p3 report covers the full test split only")
@@ -339,7 +386,17 @@ def report_command(
         from finqa.eval.report_grid import report_grid
 
         questions = questions or {q.question_id: q for q in load_questions("test")}
-        return report_grid(runs_dir, docs_dir, questions, gold, make_judge)
+        return report_grid(
+            runs_dir,
+            docs_dir,
+            questions,
+            gold,
+            make_judge,
+            locate=locate,
+            lookup=lookup,
+            data_dir=data_dir,
+            labels=labels,
+        )
     if milestone != "m1":
         raise RunRefused(f"no report for milestone {milestone!r} yet")
     if scope not in SCOPES:
