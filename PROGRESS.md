@@ -167,7 +167,7 @@ Each runner downloads their own copy of the model and runs their own vLLM server
 
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
-| P5.1 | Guidelines | in-progress | | branch annotation | 2026-11-23 | `annotation/guidelines.md` drafted (by an AI assistant, for the team to edit and approve): what a claim row shows, number conventions, correctness for answer claims (gold only), error types with synthetic examples, decided edge cases, note tags, process. Six OPEN QUESTIONS for the team before the pilot (what a non-answer claim is correct against; wrong inputs with right arithmetic; right value with wrong citation, period label or unit label; irrelevant claims). Started before Gate 4 as an exception (DECISIONS 2026-11-23). |
+| P5.1 | Guidelines | in-progress | | branch annotation | 2026-11-26 | `annotation/guidelines.md` drafted (by an AI assistant, for the team to edit and approve): what a claim row shows, number conventions, correctness, error types with synthetic examples, edge cases, note tags, process. Started before Gate 4 as an exception (DECISIONS 2026-11-23). The six open questions decided (DECISIONS 2026-11-26): non-answer claims against the filing; tags `unsupported`, `from-input`, `label-error`, `irrelevant`. Waiting: team approval. |
 | P5.2 | Export tooling | todo | | | | |
 | P5.3 | Pilot | todo | | | | |
 | P5.4 | Main round | todo | | | | |
@@ -318,3 +318,4 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-11-23 · — · P4.2, P4.6, P4.7 · V2 re-run after the fixes (job 12082410, 11 min, 0 failed): R0 V2 9/20 (2 revised, 2 flagged), R1 V2 13/20 (4 revised, 3 flagged; 1 wrong to right, 0 right to wrong); remaining flags all genuine. V1 and V2 prompts frozen; V2 design rules and metric aliases approved (DECISIONS 2026-11-23)
 - 2026-11-23 · — · P4.1–P4.7 · Verifiers merged to main in #33 (squash merge: the branch's two merges from main could not be rebased); V1 and V2 prompts frozen. Next: the test-split grid (P4.8)
 - 2026-11-23 · — · P5.1 · Phase 5 started before Gate 4 as a recorded exception (fixtures, synthetic and dev only; no test claims exported until Gate 4; branch `annotation`). Annotation guidelines drafted with six open questions for the team
+- 2026-11-26 · — · P5.1 · Annotation guidelines: the six open questions decided (non-answer claims checked against the filing; four new note tags); waiting for team approval before the pilot

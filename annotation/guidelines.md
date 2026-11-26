@@ -1,6 +1,6 @@
 # Annotation guidelines
 
-**Status: DRAFT for team review (P5.1).** Sections marked **OPEN QUESTION** need a team decision before the pilot (P5.3); record each decision in `docs/DECISIONS.md` and replace the question here with the rule. Everything else restates rules already decided in `docs/LABELING_PROTOCOL.md` and `docs/DECISIONS.md`; if this file and those disagree, those win and this file is fixed.
+**Status: for team approval before the pilot (P5.3).** The six open questions of the first draft are decided (`docs/DECISIONS.md`, 2026-11-26). Everything else restates rules already decided in `docs/LABELING_PROTOCOL.md` and `docs/DECISIONS.md`; if this file and those disagree, those win and this file is fixed. The pilot may still change these rules; every change is recorded in `docs/DECISIONS.md`.
 
 ## 1. What you are labelling
 
@@ -11,6 +11,7 @@ Each row of your sheet is one **claim**: one number a system's answer relies on.
 - the **system's answer text**;
 - the **claim**: its metric (what the number is), value, unit, period, and, for a computed claim, its expression and the claims it is computed from;
 - the **cited text**: the filing excerpts the claim cites, each with its header (company, form, period, section, and for a table the scale it is stated in);
+- the **filing** the question is about (company, form, fiscal year), so you can look up a figure the cited text doesn't show (§3.2);
 - an **automatic pre-label** (whether the claim's value matches the gold answer, where that can be checked by rule).
 
 You do **not** see which system or verifier produced the claim, and rows are shuffled. Don't try to work it out. Label each row on its own.
@@ -40,20 +41,17 @@ These are the conventions every claim is written in (LABELING_PROTOCOL §2):
 
 ## 3. When is a claim correct?
 
-**3.1 The answer claim** (the claim that answers the question; it is marked on your sheet). It is correct when it matches the **gold answer** within 1%, in the right unit and scale (LABELING_PROTOCOL §3). Gold is the only reference for the answer: a verifier's verdict, the XBRL data and your own reading of the filing never override it. If you believe the gold is wrong, label against the gold anyway and add the `gold-ambiguous` tag (§6).
+**3.1 The answer claim** (the claim that answers the question; it is marked on your sheet). It is correct when it matches the **gold answer** within 1%, in the right unit and scale (LABELING_PROTOCOL §3). Gold is the only reference for the answer: a verifier's verdict, the XBRL data and your own reading of the filing never override it. If you believe the gold is wrong, label against the gold anyway and add the `gold-ambiguous` tag (§6). When the gold is text, compare the answer claim with the figure the gold states for it; if the gold states no figure the claim can be compared with, label the claim as in 3.2 and add a short `note`.
 
-**3.2 Other claims** (inputs and intermediate results).
+**3.2 Other claims** (inputs and intermediate results). The gold answer usually states only the final figure, so an input claim (e.g. FY2017 revenue used for a growth rate) has no gold value. Such a claim is correct when its value is **what the company's filing reports** for that metric, company and period, within 1%. Check the cited text first; if it doesn't show the value, look in the filing itself (the sheet gives the filing). XBRL may help you find a figure but never decides correctness.
 
-> **OPEN QUESTION 1: what is a non-answer claim correct against?** The gold answer usually states only the final figure, so an input claim (e.g. FY2017 revenue used for a growth rate) has no gold value. Options:
-> - (a) **The filing**: correct if the value is what the company's filing reports for that metric, company and period (checked in the cited text, or in the filing itself when the cited text doesn't show it).
-> - (b) **The cited text only**: correct if the cited excerpt states that value for that metric and period; otherwise incorrect, even if the filing has it elsewhere.
-> - (c) **Answer claims only**: label only the answer claim of each answer, and skip the other claims.
->
-> (a) measures whether the number is true, (b) whether it is supported by its evidence. (c) is the least work but gives the verifiers' per-claim results (P9) no human reference for inputs.
+A claim whose value is true but **not in its cited text** (it cites the wrong excerpt, or nothing) is still correct; add the `unsupported` tag (§6). The label records whether the number is true; the tag records whether its evidence supports it.
 
 **3.3 Computed claims.** A computed claim is correct when its value is the right result for the question's calculation **and** its inputs are correct. Recompute it from its inputs (a calculator is fine).
 
-> **OPEN QUESTION 2: right arithmetic on wrong inputs.** If the expression is computed correctly but an input is wrong, the computed claim's value is wrong too. Is the computed claim labelled incorrect with the input's error type (e.g. `wrong_period` if an input is from the wrong year), or with `arithmetic`, or with a separate tag? The automatic rules (§4) only look at the claim itself, so they would type it `arithmetic` only if the recomputation disagrees.
+- **Wrong arithmetic** (the value doesn't follow from its inputs and expression): incorrect, `arithmetic`.
+- **Right arithmetic on a wrong input:** incorrect, with the **wrong input's error type** (e.g. `wrong_period` if an input is from the wrong year), and the `from-input` tag (§6). If several inputs are wrong, use the type that comes first in the §4 order. The wrong input claim gets its own label as well; the tag lets the analysis count each root error once.
+- **Both** (a wrong input and wrong arithmetic): `arithmetic`, with a `note` naming the wrong input.
 
 ## 4. Error types
 
@@ -70,7 +68,7 @@ For an incorrect claim, pick **one** type, checking in this order; the first tha
 | 7 | `other` | Anything else, e.g. the right number with the wrong sign | Net income −$1,348M for a profit of $1,348M |
 
 Notes:
-- For types 2–4, check the cited text (and the filing, if OPEN QUESTION 1 is decided as (a)) to see what the value actually is. XBRL may help you find it but never decides correctness.
+- For types 2–4, check the cited text and, where it doesn't show the value, the filing, to see what the value actually is. XBRL may help you find it but never decides correctness.
 - An answer may be wrong for a reason no single claim shows (e.g. the system answered a different question). Label the claims as they are, and add a short `note`.
 
 ## 5. Edge cases
@@ -85,13 +83,15 @@ Decided (LABELING_PROTOCOL §6, DECISIONS):
 | The right number with the wrong sign | Incorrect; `other` unless another type fits. A cash outflow written as a negative number is **not** a sign error (filings print outflows in parentheses) |
 | An answer that hedges between several numbers, or says it cannot answer and then lists figures | Incorrect for a text-gold answer (DECISIONS 2026-11-22, `financebench_id_02119`) |
 
-> **OPEN QUESTION 3: right value, wrong citation.** The value is correct, but the cited excerpt doesn't contain it, or the claim cites nothing. Correct (the number is true) or incorrect (it isn't supported)? This follows from OPEN QUESTION 1: under (a) it is correct with a `note`; under (b) it is incorrect.
+Decided for annotation (DECISIONS 2026-11-26):
 
-> **OPEN QUESTION 4: right value, wrong period label.** The value is right for the question, but the claim's `period` field names the wrong year (e.g. FY2022 revenue labelled FY2021). Correct, or `wrong_period`?
-
-> **OPEN QUESTION 5: claims irrelevant to the question.** A claim that is true but plays no part in answering the question (e.g. an extra figure the system mentioned). Label it like any other claim, mark it with a tag such as `irrelevant`, or skip it?
-
-> **OPEN QUESTION 6: right value, wrong unit label.** The value is right but the `unit` field is wrong (e.g. diluted EPS $4.12 labelled USD instead of USD/share). Correct, or `wrong_unit_or_scale`?
+| Case | Rule |
+|---|---|
+| Right value, wrong citation: the cited excerpt doesn't contain the value, or the claim cites nothing | Correct if the value is true (§3.2), with the `unsupported` tag |
+| Right value, wrong period label: the value is right, but the claim's `period` field names another period (FY2022 revenue labelled FY2021) | Correct, with the `label-error` tag. A value that **is** another period's figure is `wrong_period` (§4) |
+| Right value, wrong unit label: the value is right in size and meaning, but the `unit` field is wrong (diluted EPS $4.12 labelled USD instead of USD/share) | Correct, with the `label-error` tag. A value off by a scale (1,000, a million…) or a fraction given for a percent is still `wrong_unit_or_scale` |
+| A claim that is true but plays no part in answering the question (an extra figure the system mentioned) | Labelled like any other claim (§3.2), with the `irrelevant` tag. Don't skip it |
+| Right arithmetic on a wrong input | §3.3: the input's error type, with the `from-input` tag |
 
 ## 6. Tags for the `note` field
 
@@ -99,8 +99,12 @@ Decided (LABELING_PROTOCOL §6, DECISIONS):
 |---|---|
 | `gold-ambiguous` | The gold answer itself is unclear, disputable, contradicts the filing, or is one of several defensible answers |
 | `technical-failure` | The problem is a pipeline failure (parsing, an API error, a malformed claim), not model behaviour |
+| `unsupported` | The value is true, but the claim's cited text doesn't contain it, or the claim cites nothing (§3.2) |
+| `from-input` | A computed claim is wrong only because one of its inputs is wrong; its error type is the input's (§3.3) |
+| `label-error` | The value is right, but the claim's `period` or `unit` field is wrong (§5) |
+| `irrelevant` | The claim plays no part in answering the question (§5) |
 
-Add free text after the tag if it helps adjudication. Further tags (e.g. for OPEN QUESTION 5) are added here when decided.
+Several tags can apply; separate them with spaces (e.g. `unsupported irrelevant`). Add free text after the tags if it helps adjudication.
 
 ## 7. Process
 
