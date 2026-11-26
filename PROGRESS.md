@@ -8,11 +8,11 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 
 | | |
 |---|---|
-| **Current phase** | Phase 0 |
+| **Current phase** | Phase 5 (Phase 4 complete) |
 | **Next milestone** | M1: Midterm report — due *[date]* |
-| **Gates passed** | none |
+| **Gates passed** | Gate 3, Gate 4 (Gates 0–2: see their rows) |
 | **Open blockers** | 0 |
-| **Last updated** | *[YYYY-MM-DD] by [name]* |
+| **Last updated** | 2026-11-26 by — |
 
 ---
 
@@ -159,19 +159,19 @@ Each runner downloads their own copy of the model and runs their own vLLM server
 | P4.5 | V2 check 3: recomputation | done | | [#33](https://github.com/pratox1112/finqa-verify/pull/33) | 2026-11-22 | `verifiers/grounded.py` `check_recompute`: expression re-evaluated on the inputs' current values (shared `error_types.recompute`), within tolerance with sign; no inputs, unknown input or unevaluable expression fails; quoted claims `ok=None` (DECISIONS 2026-11-22). 6 tests. |
 | P4.6 | Revision loop | done | | [#33](https://github.com/pratox1112/finqa-verify/pull/33) | 2026-11-23 | `verifiers/grounded.py` `GroundedVerifier`: three checks per claim; failed claims + per-check feedback -> same model fills a `Revision` form (value, unit, period; same as V1) -> re-check, up to `max_revisions`; remaining failures flagged; company from the question (resolver). Prompts `v2_system.txt`, `v2_user.txt` (draft, to freeze with V1's). 15 tests with a fake model incl. a planted scale error fixed in one round; the same case as an integration test against the served model (runs on the cluster). DECISIONS 2026-11-23. |
 | P4.7 | Planted-error suite | done | | [#33](https://github.com/pratox1112/finqa-verify/pull/33) | 2026-11-23 | `tests/planted/cases.py`: 23 synthetic cases (fictional companies), 18 planted errors covering every error type + 5 controls; each states the V2 checks that should fail. `tests/test_planted.py`: V2's checks catch all 15 checkable errors with exactly the expected checks and flag no control; 3 errors V2 cannot see by design are listed (sign of a quoted value, wrong period of an unmapped metric, a fraction labelled %). `scripts/planted_errors.py` runs V1 and V2 with the model -> `docs/PLANTED_ERRORS.md`; to run on the cluster with the V1 dev run. Run with the model (job 12082410): V1 caught 14/18 planted errors (11/15 checkable), V2 15/18 (15/15), no false alarms on 5 controls; `docs/PLANTED_ERRORS.md`. |
-| P4.8 | Run the grid | todo | | | | |
-| G4 | **GATE 4 (feature freeze)** | todo | | | | |
+| P4.8 | Run the grid | done | | [#36](https://github.com/pratox1112/finqa-verify/pull/36) | 2026-11-23 | Job 12083578 (43:42) on main at 90cc1e1, clean tree: V0, V1, V2 applied to the R0 and R1 test drafts (runs `2026-11-22_r0_v0_7309952`, `2026-11-22_r1_v0_7309952`). Six `verified_*.jsonl` files, each covering all 107 test questions, 0 failed verifications. Questions revised / flagged: R0 V1 4 / 19, R0 V2 24 / 29, R1 V1 0 / 4, R1 V2 7 / 21 (V0 0 / 0). Not yet scored against gold (analysis). |
+| G4 | **GATE 4 (feature freeze)** | done | | [#36](https://github.com/pratox1112/finqa-verify/pull/36) | 2026-11-26 | All six cells complete (P4.8). Feature freeze from here: only bug fixes, analysis and writing. Test claims may now be exported for annotation (DECISIONS 2026-11-23). |
 
 
 ## Phase 5: Annotation
 
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
-| P5.1 | Guidelines | todo | | | | |
-| P5.2 | Export tooling | todo | | | | |
-| P5.3 | Pilot | todo | | | | |
-| P5.4 | Main round | todo | | | | |
-| P5.5 | Agreement | todo | | | | |
+| P5.1 | Guidelines | in-progress | | branch annotation | 2026-11-26 | `annotation/guidelines.md` drafted (by an AI assistant, for the team to edit and approve): what a claim row shows, number conventions, correctness, error types with synthetic examples, edge cases, note tags, process. Started before Gate 4 as an exception (DECISIONS 2026-11-23). The six open questions decided (DECISIONS 2026-11-26): non-answer claims against the filing; tags `unsupported`, `from-input`, `label-error`, `irrelevant`. Waiting: team approval. |
+| P5.2 | Export tooling | review | | branch annotation | 2026-11-26 | `src/finqa/eval/annotation.py`, `scripts/labels.py claim-sheets` / `claim-labels`: claims of all cells, de-duplicated within each draft run, blind shuffled CSV sheets (question, gold, answer, claim, inputs, cited text with headers, pre-label; no cell, verdicts or error types), two annotators per claim in rotating pairs or everyone for the pilot (`--everyone --sample N`); filled sheets checked and written as `Annotation`s, cell in `run_id` (DECISIONS 2026-11-26). 12 tests. Test cells: 803 distinct claims (1,606 labels at two per claim). |
+| P5.3 | Pilot | in-progress | | branch annotation | 2026-11-26 | Pilot sheets from dev claims: 15 of 162 distinct dev claims, all five annotators (`runs/labels/pilot15/`; reduced from 30 for time, DECISIONS 2026-11-26; the earlier `pilot/` folder is not used). Waiting: the five sheets filled in, then the team discussion and guideline revisions. |
+| P5.4 | Main round | todo | | | 2026-11-26 | Planned: random sample of 200 of the 803 distinct test claims, two annotators each (400 labels; DECISIONS 2026-11-26). Sheets made on main after the annotation branch merges. |
+| P5.5 | Agreement | in-progress | | branch annotation | 2026-11-26 | Tooling built: `scripts/labels.py claim-agreement` -> `agreement.md` (Cohen's kappa for correct and for error type (a) combined label, (b) among both-incorrect; pooled and per pair), `disagreements.csv`, and `final_labels.jsonl` from a filled `adjudication.csv` (DECISIONS 2026-11-26, proposed). `stats.cohen_kappa` now takes any categories. 13 tests. Waiting: the main-round labels (P5.4). |
 | P5.6 | Adjudication | todo | | | | |
 | G5 | **GATE 5** | todo | | | | |
 
@@ -212,8 +212,8 @@ Each runner downloads their own copy of the model and runs their own vLLM server
 
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
-| P9.1 | Variance | todo | Rahul Vishnuvardhana | | 2026-11-25 | Waiting on P4.8/Gate 4 and the open questions in DECISIONS 2026-11-25 (cache-off option, run-ID repeat suffix, which 40 questions). |
-| P9.2 | Error-type figure | todo | Rahul Vishnuvardhana | | 2026-11-25 | Waiting on the error-type source (rule-based P2.5 or Phase 5 labels; DECISIONS 2026-11-25). |
+| P9.1 | Variance | todo | Rahul Vishnuvardhana | | 2026-11-25 | Gate 4 is done; waiting on the open questions in DECISIONS 2026-11-25 (a cache-off option and a run-ID repeat suffix now need a freeze exception; which 40 questions). |
+| P9.2 | Error-type figure | todo | Rahul Vishnuvardhana | | 2026-11-25 | Waiting on the error-type source (rule-based P2.5, all claims; or Phase 5 labels, a 200-claim sample per DECISIONS 2026-11-26; open in DECISIONS 2026-11-25). |
 | P9.3 | Paired tests | in-progress | Rahul Vishnuvardhana | results-statistics | 2026-11-25 | `stats.holm` + `grid.paired_tests_table`: McNemar exact over the 9 planned pairs, one Holm family, paired bootstrap CI of the difference (DECISIONS 2026-11-25). |
 | P9.4 | Confidence intervals | in-progress | Rahul Vishnuvardhana | results-statistics | 2026-11-25 | Every rate in the grid, coverage and paired tables carries a bootstrap 95% CI (`stats.rate`, `stats.paired_diff_ci`). |
 | P9.5 | Flip matrices | in-progress | Rahul Vishnuvardhana | results-statistics | 2026-11-25 | `grid.flip_table`: 3 x 3 correct / incorrect / refused, V0 vs V1 or V2, with fixed and broken counts. |
@@ -317,6 +317,13 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-11-23 · — · P4.6, P4.7 · Dev job 12075270 (17 min, 0 failed verifications, real-model V2 test passed). Planted errors: V1 caught 14/18 (11/15 checkable), V2 15/18 (15/15), no false alarms on the 5 controls for either. Dev accuracy unchanged by V1 (R0 9/20, R1 12/20; V1 revised no claim); V2 R0 9/20, R1 13/20 (1 wrong to right). V2 fixes from the dev flags (unstated table scales, percent recomputation, uncited claims flagged not revised; DECISIONS 2026-11-23); V2 dev and planted runs to be repeated
 - 2026-11-23 · — · P4.2, P4.6, P4.7 · V2 re-run after the fixes (job 12082410, 11 min, 0 failed): R0 V2 9/20 (2 revised, 2 flagged), R1 V2 13/20 (4 revised, 3 flagged; 1 wrong to right, 0 right to wrong); remaining flags all genuine. V1 and V2 prompts frozen; V2 design rules and metric aliases approved (DECISIONS 2026-11-23)
 - 2026-11-23 · — · P4.1–P4.7 · Verifiers merged to main in #33 (squash merge: the branch's two merges from main could not be rebased); V1 and V2 prompts frozen. Next: the test-split grid (P4.8)
+- 2026-11-23 · — · P5.1 · Phase 5 started before Gate 4 as a recorded exception (fixtures, synthetic and dev only; no test claims exported until Gate 4; branch `annotation`). Annotation guidelines drafted with six open questions for the team
 - 2026-11-25 · Rahul Vishnuvardhana · P8.1, P9.3–P9.6 · Grid analysis code before the grid lands (`eval/grid.py`, `stats.holm`, 16 unit tests on hand-made rows); design of pairs, coverage and flip matrices in DECISIONS 2026-11-25. Explorer setup for P9.1 tested (server-only job 12141785: A100 80GB, Qwen3.8-27B served, startup 11.5 min)
 - 2026-11-25 · Rahul Vishnuvardhana · P8.1, P9.3–P9.6 · `finqa report --milestone grid`: reads the R0 and R1 test draft runs and their six verified files, refuses mixed commits, a dirty or non-main run and unfinished cells, scores against gold and writes `docs/RESULTS_GRID.md` (Tables G-A to G-E); 7 end-to-end tests on fake runs
+- 2026-11-26 · — · P4.8, G4 · Test-split grid done (job 12083578, main at 90cc1e1): six verified cells, 107/107 questions each, 0 failed verifications. Gate 4 met; feature freeze. Next: score the cells against gold (analysis) and annotation (Phase 5)
+- 2026-11-26 · — · P5.1 · Annotation guidelines: the six open questions decided (non-answer claims checked against the filing; four new note tags); waiting for team approval before the pilot
+- 2026-11-26 · — · P5.2 · Claim export tooling (claim-sheets, claim-labels); the six test cells hold 803 distinct claims to label. Next: decide the pilot sample, then the pilot (P5.3)
+- 2026-11-26 · — · P5.3 · Pilot sheets made: 30 dev claims for all five annotators
+- 2026-11-26 · — · P5.5 · Claim agreement and adjudication tooling built (kappa definitions proposed in DECISIONS, to confirm with the team)
+- 2026-11-26 · — · P5.3, P5.4 · For time: pilot reduced to 15 dev claims; main round a random sample of 200 test claims (two labels each)
 - 2026-11-26 · Rahul Vishnuvardhana · P8.1, P9.3–P9.6 · After review: coverage redefined (a check could not run when it had nothing to compare; by-design skips not applicable), per-cell outcomes table (refusals, selective accuracy, failure counts), newest run chosen by start time, repeated questions refused, verify-stage provenance limitation stated (DECISIONS 2026-11-25, revised); 17 unit and 11 end-to-end tests
