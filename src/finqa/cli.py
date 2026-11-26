@@ -36,8 +36,9 @@ def build_parser() -> argparse.ArgumentParser:
     report.add_argument(
         "--milestone",
         required=True,
-        choices=["m1", "p3"],
-        help="m1: midterm tables; p3: the retrieval x calculator 2 x 2",
+        choices=["m1", "p3", "grid"],
+        help="m1: midterm tables; p3: the retrieval x calculator 2 x 2; "
+        "grid: the retrieval x verification 2 x 3 (coverage, paired tests, flips, cost)",
     )
     report.add_argument(
         "--scope",

@@ -333,6 +333,13 @@ def report_command(
 
         questions = questions or {q.question_id: q for q in load_questions("test")}
         return report_p3(runs_dir, docs_dir, questions, gold, make_judge)
+    if milestone == "grid":
+        if scope != "full":
+            raise RunRefused("the grid report covers the full test split only")
+        from finqa.eval.report_grid import report_grid
+
+        questions = questions or {q.question_id: q for q in load_questions("test")}
+        return report_grid(runs_dir, docs_dir, questions, gold, make_judge)
     if milestone != "m1":
         raise RunRefused(f"no report for milestone {milestone!r} yet")
     if scope not in SCOPES:

@@ -153,13 +153,37 @@ def result(qid: str, cids: list[str], verdicts: list[Verdict], error: str | None
 
 NO_MAP = "metric 'widgets' has no XBRL mapping"
 QUOTED = "quoted claim: nothing to recompute"
+COMPUTED = "computed claim: checked by recomputation"
+
+
+def computed_claim(cid: str) -> Claim:
+    return Claim(
+        claim_id=cid,
+        metric="margin",
+        value=10.0,
+        unit="%",
+        period="FY2022",
+        chunk_ids=[],
+        derived_from=["c1"],
+        expression="c1 / 2",
+    )
 
 
 @pytest.fixture
 def coverage_case():
-    drafts = [draft("q0", ["c1"], "c1"), draft("q1", ["c1", "c2"], "c2"), draft("q2", ["c1"], None)]
+    """Verdict sets grounded.py can emit: each quoted claim gets cited_text True/False and
+    recompute not applicable; each computed claim the reverse."""
+    drafts = [
+        draft("q0", ["c1"], "c1"),
+        draft("q1", ["c1", "c2"], "c2"),
+        draft("q2", ["c1"], "c1"),
+        draft("q3", [], None),
+    ]
+    drafts[1] = drafts[1].model_copy(update={"claims": [claim("c1"), computed_claim("c2")]})
+    failed = draft("q4", [], None).model_copy(update={"error": "model error"})
+    drafts.append(failed)
     verified = [
-        # q0: answer claim checked by cited_text (pass); the xbrl and recompute checks cannot run
+        # q0: quoted answer claim compared by cited text (pass); XBRL has no mapping
         result(
             "q0",
             ["c1"],
@@ -167,25 +191,29 @@ def coverage_case():
                 v("c1", "cited_text", True, "1 USD is stated in k1"),
                 v("c1", "xbrl", None, NO_MAP),
                 v("c1", "recompute", None, QUOTED),
-                # a later round must not count
-                v("c1", "cited_text", False, "changed", rnd=2),
+                v("c1", "cited_text", False, "changed", rnd=2),  # a later round must not count
             ],
         ),
-        # q1: c1 checkable (fails), answer claim c2 has no check that ran
+        # q1: c1 quoted, cites nothing retrieved (could not run); answer c2 computed with no
+        # inputs in the draft (could not run): the answer claim is not checkable
         result(
             "q1",
             ["c1", "c2"],
             [
-                v("c1", "cited_text", False, "1 USD is not stated in k1"),
+                v("c1", "cited_text", False, "cites k9, which is not in the retrieved evidence"),
                 v("c1", "xbrl", None, "no XBRL value for revenue FY2022"),
                 v("c1", "recompute", None, QUOTED),
-                v("c2", "cited_text", None, "computed claim: checked by recomputation"),
+                v("c2", "cited_text", None, COMPUTED),
                 v("c2", "xbrl", None, "company not known"),
-                v("c2", "recompute", None, QUOTED),
+                v("c2", "recompute", False, "inputs c7 are not claims in the draft"),
             ],
         ),
         # q2: verification failed, no verdicts
         result("q2", ["c1"], [], error="boom"),
+        # q3: qualitative answer, no claims
+        result("q3", [], []),
+        # q4: generation failed (V2 returns the empty draft unverified)
+        result("q4", [], []),
     ]
     return drafts, verified
 
@@ -197,51 +225,109 @@ def test_round_one_drops_later_rounds_and_prefix(coverage_case):
     assert first[0].reason == "1 USD is stated in k1"
 
 
-def test_claim_checks_and_checkable(coverage_case):
-    _, verified = coverage_case
-    checks = grid.claim_checks(verified[1])
-    assert checks["c1"] == {"cited_text": False, "xbrl": None, "recompute": None}
-    assert not any(ok is not None for ok in checks["c2"].values())
+def test_check_status_follows_v2_reason_strings():
+    def status(check, ok, reason):
+        return grid.check_status(Verdict(claim_id="c", ok=ok, check=check, reason=reason))
 
-
-def test_reason_categories():
-    assert grid.reason_category(NO_MAP) == "metric not in the XBRL map"
-    assert grid.reason_category("revenue is in USD, the claim in %") == (
+    assert status("cited_text", True, "1 USD is stated in k1") == (grid.COMPARED, None)
+    assert status("cited_text", False, "1 USD is not stated in k1") == (grid.COMPARED, None)
+    assert status("cited_text", None, COMPUTED) == (grid.NOT_APPLICABLE, None)
+    assert status("recompute", None, QUOTED) == (grid.NOT_APPLICABLE, None)
+    assert status("cited_text", False, "cites no evidence") == (grid.NOT_RUN, "no citation")
+    assert status("cited_text", False, "cites k1, k2, which is not in the retrieved evidence")[
+        1
+    ] == ("citation not in the retrieved evidence")
+    assert status("xbrl", None, NO_MAP) == (grid.NOT_RUN, "metric not in the XBRL map")
+    assert status("xbrl", None, "revenue is in USD, the claim in %")[1] == (
         "unit differs from the XBRL metric"
     )
-    assert grid.reason_category("no XBRL value for revenue FY2021") == (
+    assert status("xbrl", None, "company not known")[1] == "company not known"
+    assert status("xbrl", None, "no XBRL value for revenue FY2021")[1] == (
         "no XBRL value for the period"
     )
-    assert grid.reason_category("company not known") == "company not known"
-    assert grid.reason_category("something new 12.5") == "something new #"
+    assert status("xbrl", False, "XBRL revenue FY2021 is 5, not 7") == (grid.COMPARED, None)
+    assert status("recompute", False, "c1 / c2 names no input claims")[1] == (
+        "expression names no inputs"
+    )
+    assert status("recompute", False, "inputs c9 are not claims in the draft")[1] == (
+        "inputs are not claims in the draft"
+    )
+    assert status("recompute", False, "c1 / c2 cannot be evaluated on its inputs")[1] == (
+        "expression cannot be evaluated"
+    )
+    assert status("recompute", False, "c1 / c2 = 3, not 4") == (grid.COMPARED, None)
+    assert status("xbrl", None, "something new 12.5") == (grid.NOT_RUN, "something new #")
+
+
+def test_v2_reason_strings_match_the_verifier():
+    """The patterns follow finqa.verifiers.grounded: run its checks and classify the results."""
+    from finqa.verifiers import grounded
+
+    quoted = claim("c1")
+    no_cite = grounded.check_cited_text(quoted, draft("q", ["c1"], "c1"), 0.01)
+    assert grid.check_status(no_cite) == (grid.NOT_RUN, "no citation")
+    unretrieved = quoted.model_copy(update={"chunk_ids": ["k9"]})
+    v_unret = grounded.check_cited_text(unretrieved, draft("q", ["c1"], "c1"), 0.01)
+    assert grid.check_status(v_unret)[1] == "citation not in the retrieved evidence"
+    assert grid.check_status(grounded.check_recompute(quoted, [quoted], 0.01))[0] == (
+        grid.NOT_APPLICABLE
+    )
+    comp = computed_claim("c2").model_copy(update={"derived_from": ["c7"]})
+    assert grid.check_status(grounded.check_recompute(comp, [quoted, comp], 0.01))[1] == (
+        "inputs are not claims in the draft"
+    )
+    assert grid.check_status(grounded.check_cited_text(comp, draft("q", [], None), 0.01))[0] == (
+        grid.NOT_APPLICABLE
+    )
+
+
+def test_claim_checks_and_checkable(coverage_case):
+    _, verified = coverage_case
+    q0 = grid.claim_checks(verified[0])
+    assert grid.checkable(q0["c1"])
+    q1 = grid.claim_checks(verified[1])
+    assert set(q1["c1"]) == {"cited_text", "xbrl", "recompute"}
+    assert not grid.checkable(q1["c1"])
+    assert not grid.checkable(q1["c2"])
 
 
 def test_coverage_section(coverage_case):
     drafts, verified = coverage_case
-    before = rows("iic")  # V0: q0 incorrect, q1 incorrect, q2 correct
-    after = rows("cic")  # V2: q0 fixed
+    # q0 incorrect -> correct; q1 incorrect; q2 correct; q3 refused; q4 incorrect
+    before = rows("iicri")
+    after = rows("cicri")
     out = grid.coverage_section("R1-V2", verified, drafts, before, after)
-    assert "Claims checked: 3" in out
-    assert "failed verification (no verdicts): 1" in out
-    # cited_text ran on 2 of 3 claims, passed 1 of 2
-    assert "| cited_text | 2/3, 66.7% [" in out
-    assert "| 1/2, 50.0% [" in out
-    assert "| xbrl | 0/3, 0.0% [" in out
-    assert "| **any check** | 2/3, 66.7% [" in out
-    assert "| **no check** | 1/3, 33.3% [" in out
-    # q0 answer claim checkable: before 0/1, after 1/1; q1 not checkable
+    assert "Claims: 3 (round 1, the draft's own claims): 2 quoted, 1 computed." in out
+    assert "Claims of failed verifications (no verdicts): 1." in out
+    # cited_text applies to the 2 quoted claims, compared 1, passed 1
+    assert "| cited_text | 2 | 1/2, 50.0% [" in out
+    assert "| 1/1, 100.0% [100.0–100.0] | 0/1, 0.0% [0.0–0.0] |" in out
+    # recompute applies to the 1 computed claim and could not run
+    assert "| recompute | 1 | 0/1, 0.0% [0.0–0.0] | 0/0, n/a | 0/0, n/a |" in out
+    assert "| xbrl | 3 | 0/3, 0.0% [" in out
+    assert "| **checkable** (any check compared) | 3 | 1/3, 33.3% [" in out
+    assert "| **not checkable** | 3 | 2/3, 66.7% [" in out
+    # groups: q0 checkable (0/1 -> 1/1), q1 not checkable, q2 verification failed,
+    # q3 no answer claim, q4 generation failed
     assert "| answer claim checkable | 1 | 0/1, 0.0% [0.0–0.0] | 1/1, 100.0% [100.0–100.0] |" in out
-    assert "| answer claim not checkable | 1 |" in out
-    assert "| verification failed | 1 |" in out
-    # 3 quoted-claim recomputes are the top reason
-    assert "| recompute | quoted claim (nothing to compute) | 3 |" in out
+    assert "| answer claim not checkable | 1 | 0/1, 0.0% [0.0–0.0] | 0/1, 0.0% [0.0–0.0] |" in out
+    assert "| no answer claim | 1 |" in out
+    assert "| generation failed | 1 |" in out
+    assert "| verification failed | 1 | 1/1, 100.0% [100.0–100.0] |" in out
+    # reasons: 5 could-not-run results; not-applicable ones (2 quoted, 1 computed) not counted
+    assert "Top reasons a check could not run (5 check results;" in out
+    assert "| xbrl | metric not in the XBRL map | 1 |" in out
+    assert "| cited_text | citation not in the retrieved evidence | 1 |" in out
+    assert "| recompute | inputs are not claims in the draft | 1 |" in out
+    assert "quoted claim" not in out.split("Top reasons")[1]
+    assert "computed claim" not in out.split("Top reasons")[1]
 
 
 def test_coverage_never_scores_from_verdicts(coverage_case):
     """Rule 10: accuracy comes from the scored rows, not from V2's verdicts. Flip the gold-based
     rows and the accuracy flips; the verdicts stay the same."""
     drafts, verified = coverage_case
-    out = grid.coverage_section("R1-V2", verified, drafts, rows("ccc"), rows("iii"))
+    out = grid.coverage_section("R1-V2", verified, drafts, rows("ccccc"), rows("iiiii"))
     assert "| answer claim checkable | 1 | 1/1, 100.0% [100.0–100.0] | 0/1, 0.0% [0.0–0.0] |" in out
 
 

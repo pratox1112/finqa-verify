@@ -7,7 +7,11 @@ docs/DECISIONS.md, 2026-11-25:
 
   - the planned pairs are the 9 below, one Holm family;
   - coverage uses V2's round-1 verdicts (the checks on the draft's own claims);
-  - a claim is checkable when at least one of V2's checks ran (ok is not None);
+  - a claim is checkable when at least one of V2's checks compared it against evidence; a
+    check "could not run" when it had nothing to compare (no or unretrieved citation, no or
+    unknown inputs, an expression that does not evaluate, XBRL's ok=None cases), and is "not
+    applicable" to the claim type it skips by design (cited text: computed claims;
+    recomputation: quoted claims);
   - accuracy for checkable vs uncheckable is at the answer-claim level (only it has a gold);
   - flip matrices are 3 x 3: correct / incorrect / refused, before vs after verification.
 
@@ -19,7 +23,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
 from finqa.eval import stats, tables
 from finqa.schemas import Draft, Verdict, VerifiedResult
@@ -58,7 +62,7 @@ def _correct(rows: Sequence[tables.Row]) -> dict[str, bool]:
 
 
 def paired_tests_table(
-    rows: dict[str, Sequence[tables.Row]],
+    rows: Mapping[str, Sequence[tables.Row]],
     pairs: Sequence[tuple[str, str]] = PLANNED_PAIRS,
 ) -> str:
     """McNemar's exact test for each planned pair, Holm-adjusted over the family, with the
@@ -90,7 +94,7 @@ def paired_tests_table(
     return "\n".join(lines) + "\n"
 
 
-def grid_table(rows: dict[str, Sequence[tables.Row]]) -> str:
+def grid_table(rows: Mapping[str, Sequence[tables.Row]]) -> str:
     """Accuracy of each cell, with count and bootstrap 95% CI (the RQ1 grid)."""
 
     def cell(label: str) -> str:
@@ -141,6 +145,41 @@ def flip_table(before: Sequence[tables.Row], after: Sequence[tables.Row], title:
 
 # ---------------------------------------------------------------- P8.1 verification coverage
 
+COMPARED, NOT_APPLICABLE, NOT_RUN = "compared", "not applicable", "could not run"
+
+# By design, V2 checks a quoted claim against its cited text and a computed claim by
+# recomputation; the other of the two returns ok=None. That is "not applicable", not a gap.
+_NOT_APPLICABLE = {
+    "cited_text": re.compile(r"^computed claim: checked by recomputation$"),
+    "recompute": re.compile(r"^quoted claim: nothing to recompute$"),
+}
+# Results with nothing to compare against (DECISIONS 2026-11-25): V2 fails these claims
+# (ok=False) or cannot run (ok=None), but either way no evidence was compared. Patterns follow
+# the reason strings of finqa.verifiers.grounded.
+_NOT_RUN: list[tuple[str, re.Pattern[str], str]] = [
+    ("cited_text", re.compile(r"^cites no evidence$"), "no citation"),
+    (
+        "cited_text",
+        re.compile(r", which is not in the retrieved evidence$"),
+        "citation not in the retrieved evidence",
+    ),
+    ("xbrl", re.compile(r"has no XBRL mapping$"), "metric not in the XBRL map"),
+    ("xbrl", re.compile(r"^\S+ is in .+, the claim in .+$"), "unit differs from the XBRL metric"),
+    ("xbrl", re.compile(r"^company not known$"), "company not known"),
+    ("xbrl", re.compile(r"^no XBRL value for "), "no XBRL value for the period"),
+    ("recompute", re.compile(r" names no input claims$"), "expression names no inputs"),
+    (
+        "recompute",
+        re.compile(r" are not claims in the draft$"),
+        "inputs are not claims in the draft",
+    ),
+    (
+        "recompute",
+        re.compile(r" cannot be evaluated on its inputs$"),
+        "expression cannot be evaluated",
+    ),
+]
+
 
 def round_one(verdicts: Sequence[Verdict]) -> list[Verdict]:
     """V2's checks on the draft's own claims, with the "round 1: " prefix removed."""
@@ -151,36 +190,34 @@ def round_one(verdicts: Sequence[Verdict]) -> list[Verdict]:
     ]
 
 
-_REASONS: list[tuple[re.Pattern[str], str]] = [
-    (re.compile(r"^computed claim: checked by recomputation$"), "computed claim (not quoted)"),
-    (re.compile(r"^quoted claim: nothing to recompute$"), "quoted claim (nothing to compute)"),
-    (re.compile(r"has no XBRL mapping$"), "metric not in the XBRL map"),
-    (re.compile(r"^\S+ is in .+, the claim in .+$"), "unit differs from the XBRL metric"),
-    (re.compile(r"^company not known$"), "company not known"),
-    (re.compile(r"^no XBRL value for "), "no XBRL value for the period"),
-]
+def check_status(v: Verdict) -> tuple[str, str | None]:
+    """(status, reason category): compared, not applicable, or could not run with why.
+
+    ok=None with an unknown reason is "could not run", its text kept with numbers masked so it
+    still groups; ok=True/False with no matching reason is "compared"."""
+    na = _NOT_APPLICABLE.get(v.check)
+    if v.ok is None and na is not None and na.search(v.reason):
+        return NOT_APPLICABLE, None
+    for check, pattern, label in _NOT_RUN:
+        if check == v.check and pattern.search(v.reason):
+            return NOT_RUN, label
+    if v.ok is None:
+        return NOT_RUN, re.sub(r"\d+(\.\d+)?", "#", v.reason)
+    return COMPARED, None
 
 
-def reason_category(reason: str) -> str:
-    """A short category for why a check could not run; unknown reasons keep their text with
-    numbers masked, so they still group."""
-    for pattern, label in _REASONS:
-        if pattern.search(reason):
-            return label
-    return re.sub(r"\d+(\.\d+)?", "#", reason)
-
-
-def claim_checks(result: VerifiedResult) -> dict[str, dict[str, bool | None]]:
-    """claim_id -> {check: ok} from round 1, for every claim of the draft."""
-    out: dict[str, dict[str, bool | None]] = {c.claim_id: {} for c in result.claims_before}
+def claim_checks(result: VerifiedResult) -> dict[str, dict[str, Verdict]]:
+    """claim_id -> {check: round-1 verdict}, for every claim of the draft."""
+    out: dict[str, dict[str, Verdict]] = {c.claim_id: {} for c in result.claims_before}
     for v in round_one(result.verdicts):
         if v.check in CHECKS:
-            out.setdefault(v.claim_id, {})[v.check] = v.ok
+            out.setdefault(v.claim_id, {})[v.check] = v
     return out
 
 
-def _checkable(checks: dict[str, bool | None]) -> bool:
-    return any(ok is not None for ok in checks.values())
+def checkable(checks: Mapping[str, Verdict]) -> bool:
+    """At least one check compared the claim against evidence (DECISIONS 2026-11-25)."""
+    return any(check_status(v)[0] == COMPARED for v in checks.values())
 
 
 def coverage_section(
@@ -191,55 +228,69 @@ def coverage_section(
     rows_after: Sequence[tables.Row],
     top: int = 10,
 ) -> str:
-    """P8.1 for one V2 cell: per-check coverage, claims with no check, accuracy (V0 and V2)
-    for questions whose answer claim was checkable or not, and the top reasons a check could
-    not run. Claims of results that failed verification have no verdicts and are counted apart.
-    """
+    """P8.1 for one V2 cell: per-check coverage over the claims each check applies to, claims
+    no check could compare, accuracy against gold (V0 and V2) for questions whose answer claim
+    was checkable or not, and the top reasons a check could not run. Failed generations and
+    failed verifications have no verdicts and are counted apart."""
     by_q = {d.question_id: d for d in drafts}
-    claims: list[dict[str, bool | None]] = []
-    errored = 0
+    claims: list[dict[str, Verdict]] = []
+    failed_claims = 0
     answer_group: dict[str, str] = {}
     reasons: Counter[tuple[str, str]] = Counter()
     for r in verified:
+        d = by_q[r.question_id]
+        if d.error is not None:
+            answer_group[r.question_id] = "generation failed"
+            continue
         if r.error is not None:
-            errored += len(r.claims_before)
+            failed_claims += len(r.claims_before)
             answer_group[r.question_id] = "verification failed"
             continue
         per_claim = claim_checks(r)
         claims += per_claim.values()
-        for v in round_one(r.verdicts):
-            if v.ok is None and v.check in CHECKS:
-                reasons[(v.check, reason_category(v.reason))] += 1
-        answer_id = by_q[r.question_id].answer_claim_id
-        if answer_id is None or answer_id not in per_claim:
+        for checks in per_claim.values():
+            for v in checks.values():
+                status, why = check_status(v)
+                if status == NOT_RUN and why is not None:
+                    reasons[(v.check, why)] += 1
+        if d.answer_claim_id is None or d.answer_claim_id not in per_claim:
             answer_group[r.question_id] = "no answer claim"
-        elif _checkable(per_claim[answer_id]):
+        elif checkable(per_claim[d.answer_claim_id]):
             answer_group[r.question_id] = "answer claim checkable"
         else:
             answer_group[r.question_id] = "answer claim not checkable"
 
     n = len(claims)
+    computed = sum(
+        c.get("cited_text") is not None and check_status(c["cited_text"])[0] == NOT_APPLICABLE
+        for c in claims
+    )
     lines = [
         f"### {label}\n",
-        f"Claims checked: {n} (round 1, the draft's own claims). Claims of results that failed "
-        f"verification (no verdicts): {errored}.\n",
-        "| Check | Could run | Passed (of run) | Failed (of run) |",
-        "|---|---|---|---|",
+        f"Claims: {n} (round 1, the draft's own claims): {n - computed} quoted, {computed} "
+        f"computed. Claims of failed verifications (no verdicts): {failed_claims}. A check "
+        "is not applicable by design to the other claim type (cited text: quoted claims; "
+        "recomputation: computed claims); it could not run when it had nothing to compare.\n",
+        "| Check | Applies to | Compared (of applicable) | Passed (of compared) "
+        "| Failed (of compared) |",
+        "|---|---|---|---|---|",
     ]
     for check in CHECKS:
-        ran = [c.get(check) is not None for c in claims]
-        oks = [c[check] for c in claims if c.get(check) is not None]
-        passed = [ok is True for ok in oks]
-        could_run = stats.rate(sum(ran), n, ran)
-        passed_rate = stats.rate(sum(passed), len(oks), passed)
+        statuses = [check_status(c[check])[0] for c in claims if check in c]
+        applicable = [s for s in statuses if s != NOT_APPLICABLE]
+        ran = [s == COMPARED for s in applicable]
+        oks = [c[check].ok is True for c in claims if check in c and _compared(c[check])]
+        bad = [not ok for ok in oks]
         lines.append(
-            f"| {check} | {could_run} | {passed_rate} | {len(oks) - sum(passed)}/{len(oks)} |"
+            f"| {check} | {len(applicable)} | {stats.rate(sum(ran), len(ran), ran)} "
+            f"| {stats.rate(sum(oks), len(oks), oks)} | {stats.rate(sum(bad), len(bad), bad)} |"
         )
-    any_ran = [_checkable(c) for c in claims]
+    any_ran = [checkable(c) for c in claims]
     none_ran = [not x for x in any_ran]
     lines += [
-        f"| **any check** | {stats.rate(sum(any_ran), n, any_ran)} | | |",
-        f"| **no check** | {stats.rate(sum(none_ran), n, none_ran)} | | |",
+        f"| **checkable** (any check compared) | {n} | {stats.rate(sum(any_ran), n, any_ran)} "
+        "| | |",
+        f"| **not checkable** | {n} | {stats.rate(sum(none_ran), n, none_ran)} | | |",
         "",
         "Accuracy against gold, by whether V2 could check the answer claim:\n",
         "| Questions | n | Accuracy before (V0) | Accuracy after (V2) |",
@@ -251,6 +302,7 @@ def coverage_section(
         "answer claim checkable",
         "answer claim not checkable",
         "no answer claim",
+        "generation failed",
         "verification failed",
     )
     for group in groups:
@@ -265,7 +317,8 @@ def coverage_section(
         )
     lines += [
         "",
-        f"Top reasons a check could not run (of {sum(reasons.values())} check results):\n",
+        f"Top reasons a check could not run ({sum(reasons.values())} check results; "
+        "not-applicable checks are not counted):\n",
         "| Check | Reason | Count |",
         "|---|---|---|",
     ]
@@ -273,9 +326,13 @@ def coverage_section(
     return "\n".join(lines) + "\n"
 
 
+def _compared(v: Verdict) -> bool:
+    return check_status(v)[0] == COMPARED
+
+
 # ---------------------------------------------------------------- P9.6 cost and latency
 
 
-def cost_table(rows: dict[str, Sequence[tables.Row]]) -> str:
+def cost_table(rows: Mapping[str, Sequence[tables.Row]]) -> str:
     """Latency, tokens and estimated cost per cell (draft plus verification)."""
     return tables.efficiency_table([(label, rows[label]) for label in CELLS])
