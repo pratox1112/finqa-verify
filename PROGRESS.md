@@ -167,11 +167,11 @@ Each runner downloads their own copy of the model and runs their own vLLM server
 
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
-| P5.1 | Guidelines | todo | | | | |
-| P5.2 | Export tooling | todo | | | | |
-| P5.3 | Pilot | todo | | | | |
-| P5.4 | Main round | todo | | | | |
-| P5.5 | Agreement | todo | | | | |
+| P5.1 | Guidelines | in-progress | | branch annotation | 2026-11-26 | `annotation/guidelines.md` drafted (by an AI assistant, for the team to edit and approve): what a claim row shows, number conventions, correctness, error types with synthetic examples, edge cases, note tags, process. Started before Gate 4 as an exception (DECISIONS 2026-11-23). The six open questions decided (DECISIONS 2026-11-26): non-answer claims against the filing; tags `unsupported`, `from-input`, `label-error`, `irrelevant`. Waiting: team approval. |
+| P5.2 | Export tooling | review | | branch annotation | 2026-11-26 | `src/finqa/eval/annotation.py`, `scripts/labels.py claim-sheets` / `claim-labels`: claims of all cells, de-duplicated within each draft run, blind shuffled CSV sheets (question, gold, answer, claim, inputs, cited text with headers, pre-label; no cell, verdicts or error types), two annotators per claim in rotating pairs or everyone for the pilot (`--everyone --sample N`); filled sheets checked and written as `Annotation`s, cell in `run_id` (DECISIONS 2026-11-26). 12 tests. Test cells: 803 distinct claims (1,606 labels at two per claim). |
+| P5.3 | Pilot | in-progress | | branch annotation | 2026-11-26 | Pilot sheets from dev claims: 15 of 162 distinct dev claims, all five annotators (`runs/labels/pilot15/`; reduced from 30 for time, DECISIONS 2026-11-26; the earlier `pilot/` folder is not used). Waiting: the five sheets filled in, then the team discussion and guideline revisions. |
+| P5.4 | Main round | todo | | | 2026-11-26 | Planned: random sample of 200 of the 803 distinct test claims, two annotators each (400 labels; DECISIONS 2026-11-26). Sheets made on main after the annotation branch merges. |
+| P5.5 | Agreement | in-progress | | branch annotation | 2026-11-26 | Tooling built: `scripts/labels.py claim-agreement` -> `agreement.md` (Cohen's kappa for correct and for error type (a) combined label, (b) among both-incorrect; pooled and per pair), `disagreements.csv`, and `final_labels.jsonl` from a filled `adjudication.csv` (DECISIONS 2026-11-26, proposed). `stats.cohen_kappa` now takes any categories. 13 tests. Waiting: the main-round labels (P5.4). |
 | P5.6 | Adjudication | todo | | | | |
 | G5 | **GATE 5** | todo | | | | |
 
@@ -317,4 +317,10 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-11-23 · — · P4.6, P4.7 · Dev job 12075270 (17 min, 0 failed verifications, real-model V2 test passed). Planted errors: V1 caught 14/18 (11/15 checkable), V2 15/18 (15/15), no false alarms on the 5 controls for either. Dev accuracy unchanged by V1 (R0 9/20, R1 12/20; V1 revised no claim); V2 R0 9/20, R1 13/20 (1 wrong to right). V2 fixes from the dev flags (unstated table scales, percent recomputation, uncited claims flagged not revised; DECISIONS 2026-11-23); V2 dev and planted runs to be repeated
 - 2026-11-23 · — · P4.2, P4.6, P4.7 · V2 re-run after the fixes (job 12082410, 11 min, 0 failed): R0 V2 9/20 (2 revised, 2 flagged), R1 V2 13/20 (4 revised, 3 flagged; 1 wrong to right, 0 right to wrong); remaining flags all genuine. V1 and V2 prompts frozen; V2 design rules and metric aliases approved (DECISIONS 2026-11-23)
 - 2026-11-23 · — · P4.1–P4.7 · Verifiers merged to main in #33 (squash merge: the branch's two merges from main could not be rebased); V1 and V2 prompts frozen. Next: the test-split grid (P4.8)
+- 2026-11-23 · — · P5.1 · Phase 5 started before Gate 4 as a recorded exception (fixtures, synthetic and dev only; no test claims exported until Gate 4; branch `annotation`). Annotation guidelines drafted with six open questions for the team
 - 2026-11-26 · — · P4.8, G4 · Test-split grid done (job 12083578, main at 90cc1e1): six verified cells, 107/107 questions each, 0 failed verifications. Gate 4 met; feature freeze. Next: score the cells against gold (analysis) and annotation (Phase 5)
+- 2026-11-26 · — · P5.1 · Annotation guidelines: the six open questions decided (non-answer claims checked against the filing; four new note tags); waiting for team approval before the pilot
+- 2026-11-26 · — · P5.2 · Claim export tooling (claim-sheets, claim-labels); the six test cells hold 803 distinct claims to label. Next: decide the pilot sample, then the pilot (P5.3)
+- 2026-11-26 · — · P5.3 · Pilot sheets made: 30 dev claims for all five annotators
+- 2026-11-26 · — · P5.5 · Claim agreement and adjudication tooling built (kappa definitions proposed in DECISIONS, to confirm with the team)
+- 2026-11-26 · — · P5.3, P5.4 · For time: pilot reduced to 15 dev claims; main round a random sample of 200 test claims (two labels each)

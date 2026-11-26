@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import math
 import random
-from collections.abc import Sequence
+from collections import Counter
+from collections.abc import Hashable, Sequence
 from dataclasses import dataclass
 
 
@@ -83,19 +84,23 @@ def mcnemar(a_correct: Sequence[bool], b_correct: Sequence[bool]) -> McNemar:
     )
 
 
-def cohen_kappa(a: Sequence[bool], b: Sequence[bool]) -> float | None:
-    """Cohen's kappa for two raters' yes/no labels on the same items. None when there are no
-    items or chance agreement is 1 (both raters gave one label to everything)."""
+def cohen_kappa(a: Sequence[Hashable], b: Sequence[Hashable]) -> float | None:
+    """Cohen's kappa for two raters' labels on the same items: yes/no or any categories.
+
+    kappa = (p_o - p_e) / (1 - p_e), with p_o the share of items both raters label the same and
+    p_e = sum over labels of (share rater a gives it) * (share rater b gives it). None when
+    there are no items or chance agreement is 1 (both raters gave one label to everything)."""
     if len(a) != len(b):
         raise ValueError("paired labels must have the same length")
     n = len(a)
     if n == 0:
         return None
     observed = sum(x == y for x, y in zip(a, b, strict=True)) / n
-    pa, pb = sum(a) / n, sum(b) / n
-    expected = pa * pb + (1 - pa) * (1 - pb)
-    if expected == 1:
+    count_a, count_b = Counter(a), Counter(b)
+    chance = sum(k * count_b[label] for label, k in count_a.items())
+    if chance == n * n:
         return None
+    expected = chance / (n * n)
     return (observed - expected) / (1 - expected)
 
 
