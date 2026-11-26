@@ -23,8 +23,19 @@ Read-back (`scripts/labels.py claim-labels`): the filled sheets are checked (`co
 `error_type` one of the schema's types for an incorrect claim and empty for a correct one) and
 written as `labels.jsonl`, one frozen `Annotation` per annotator, row and grid cell. The cell
 is stored in `run_id` as "<draft run>:<verifier arm>" (`cell_run_id`; DECISIONS 2026-11-26),
-because a revised claim keeps its claim ID. Agreement and adjudication are later steps
-(P5.5, P5.6).
+because a revised claim keeps its claim ID.
+
+Agreement (`scripts/labels.py claim-agreement`; P5.5): only rows every assigned annotator has
+labelled count. Each counted row gives one comparison per pair of its annotators (one for a
+pair, ten for five pilot annotators), each pair ordered by name. `agreement.md` reports Cohen's
+kappa and percent agreement pooled over all comparisons and per pair, for three labels:
+`correct` (yes/no); error type (a), the combined label ("correct" or the error type) on every
+comparison; and error type (b), the error type on comparisons where both said incorrect.
+`disagreements.csv` lists every row whose annotators differ on `correct` or `error_type`, with
+the claim as the sheets show it, each annotator's label and empty `final_*` columns, never the
+run or the cells. Filled in and saved as `adjudication.csv` (P5.6), it gives the final label of
+those rows: `final_labels.jsonl` holds one `Annotation` per row and cell, annotator
+"a+b" for agreed rows or "adjudicated"; rows still in disagreement are left out and listed.
 
 Correctness comes from people labelling against gold and the filing; nothing here scores.
 """
@@ -40,6 +51,7 @@ from itertools import combinations
 from pathlib import Path
 from typing import Any
 
+from finqa.eval import stats
 from finqa.eval.runner import RunRefused, read_jsonl
 from finqa.eval.scoring import Gold, in_gold_unit, matches_gold, rounding_decimals
 from finqa.generators.base import Question
@@ -413,3 +425,334 @@ def collect_claim_labels(out_dir: Path) -> tuple[Path, int, int, list[str]]:
     annotations = to_annotations(labels, key)
     path.write_text("".join(a.model_dump_json() + "\n" for a in annotations), encoding="utf-8")
     return path, len(labels), expected - len(labels), []
+
+
+# --- Agreement and final labels ------------------------------------------------------------
+
+AGREEMENT_FILE = "agreement.md"
+DISAGREEMENTS_FILE = "disagreements.csv"
+ADJUDICATION_FILE = "adjudication.csv"
+FINAL_LABELS_FILE = "final_labels.jsonl"
+DISCUSS_COLUMNS = [c for c in SHEET_COLUMNS if c not in ("row_id", "correct", "error_type", "note")]
+FINAL_COLUMNS = ["final_correct", "final_error_type", "final_note"]
+ADJUDICATED = "adjudicated"
+KAPPA_AIM = 0.7
+
+
+def combined(label: Label) -> str:
+    """One label for correctness and error type: "correct", or the error type."""
+    if label.correct or label.error_type is None:
+        return "correct"
+    return label.error_type.value
+
+
+def label_text(label: Label) -> str:
+    """'ann: no / wrong_period / from-input' (a correct claim: 'ann: yes / - / unsupported')."""
+    parts = ["yes" if label.correct else "no"]
+    if label.error_type is not None:
+        parts.append(label.error_type.value)
+    if label.note:
+        if label.error_type is None:
+            parts.append("-")
+        parts.append(label.note)
+    return f"{label.annotator}: {' / '.join(parts)}"
+
+
+def complete_rows(
+    key: Sequence[dict[str, str]], labels: Sequence[Label]
+) -> tuple[dict[str, list[Label]], list[str]]:
+    """(row_id -> its labels in annotator-name order, for rows every assigned annotator
+    labelled; the row IDs still missing a label)."""
+    given: dict[str, dict[str, Label]] = {}
+    for lab in labels:
+        given.setdefault(lab.row_id, {})[lab.annotator] = lab
+    complete, incomplete = {}, []
+    for k in key:
+        names = sorted(k["annotators"].split(";"))
+        have = given.get(k["row_id"], {})
+        if all(n in have for n in names):
+            complete[k["row_id"]] = [have[n] for n in names]
+        else:
+            incomplete.append(k["row_id"])
+    return complete, incomplete
+
+
+def pair_comparisons(
+    rows: dict[str, list[Label]],
+) -> dict[tuple[str, str], list[tuple[Label, Label]]]:
+    """(annotator, annotator) in name order -> one (first's, second's) label per shared row."""
+    out: dict[tuple[str, str], list[tuple[Label, Label]]] = {}
+    for labs in rows.values():
+        for x, y in combinations(labs, 2):  # labels are in annotator-name order
+            out.setdefault((x.annotator, y.annotator), []).append((x, y))
+    return out
+
+
+@dataclass(frozen=True)
+class Agreement:
+    """Agreement on n comparisons (two annotators' labels of one row)."""
+
+    n: int
+    agree: int
+    kappa: float | None
+
+
+def agreement(pairs: Sequence[tuple[Any, Any]]) -> Agreement:
+    a, b = [x for x, _ in pairs], [y for _, y in pairs]
+    return Agreement(len(pairs), sum(x == y for x, y in pairs), stats.cohen_kappa(a, b))
+
+
+def on_correct(pairs: Sequence[tuple[Label, Label]]) -> Agreement:
+    return agreement([(x.correct, y.correct) for x, y in pairs])
+
+
+def on_label(pairs: Sequence[tuple[Label, Label]]) -> Agreement:
+    """Error type (a): agreement on the combined label, "correct" or the error type."""
+    return agreement([(combined(x), combined(y)) for x, y in pairs])
+
+
+def on_error_type(pairs: Sequence[tuple[Label, Label]]) -> Agreement:
+    """Error type (b): agreement on the error type where both annotators said incorrect."""
+    return agreement(
+        [(combined(x), combined(y)) for x, y in pairs if not x.correct and not y.correct]
+    )
+
+
+def disagreeing(rows: dict[str, list[Label]]) -> list[str]:
+    """Rows whose annotators differ on `correct` or on `error_type` (notes may differ)."""
+    return [r for r, labs in rows.items() if len({combined(lab) for lab in labs}) > 1]
+
+
+def _sheet_rows(out_dir: Path) -> dict[str, dict[str, str]]:
+    """row_id -> the row as it appears in the first sheet (by annotator name) that has it."""
+    out: dict[str, dict[str, str]] = {}
+    for path in sorted(out_dir.glob("sheet_*.csv")):
+        for r in _read_csv(path):
+            out.setdefault(r["row_id"], r)
+    return out
+
+
+def disagreement_sheet(
+    out_dir: Path, rows: dict[str, list[Label]], disagree: Sequence[str], width: int
+) -> list[dict[str, str]]:
+    """One row per disagreement: the claim as annotators saw it, each label, empty finals.
+    Never the run, the cells or anything else from the key."""
+    sheet = _sheet_rows(out_dir)
+    out = []
+    for row_id in disagree:
+        r = {"row_id": row_id, **{c: sheet[row_id].get(c, "") for c in DISCUSS_COLUMNS}}
+        r.update({f"label_{i}": "" for i in range(1, width + 1)})
+        r.update({f"label_{i}": label_text(lab) for i, lab in enumerate(rows[row_id], start=1)})
+        r.update({c: "" for c in FINAL_COLUMNS})
+        out.append(r)
+    return out
+
+
+def read_adjudication(path: Path, row_ids: set[str]) -> tuple[dict[str, Label], list[str]]:
+    """(row_id -> adjudicated label, problems) from a filled adjudication sheet, checked with
+    the sheets' rules (`parse_label`). Rows with blank finals are not adjudicated yet."""
+    rows = _read_csv(path)
+    if rows and any(c not in rows[0] for c in ("row_id", *FINAL_COLUMNS)):
+        return {}, [f"{path.name}: needs the columns row_id, {', '.join(FINAL_COLUMNS)}"]
+    out: dict[str, Label] = {}
+    problems = []
+    for r in rows:
+        row_id = (r["row_id"] or "").strip()
+        where = f"{path.name}, row {row_id}"
+        if row_id not in row_ids:
+            problems.append(f"{where}: not a row of this folder's key")
+            continue
+        if row_id in out:
+            problems.append(f"{where}: adjudicated twice")
+            continue
+        final = {
+            "row_id": row_id,
+            "correct": r["final_correct"] or "",
+            "error_type": r["final_error_type"] or "",
+            "note": r["final_note"] or "",
+        }
+        try:
+            label = parse_label(final, ADJUDICATED)
+        except ValueError as e:
+            problems.append(f"{where}: {e} (in the final_* columns)")
+            continue
+        if label is not None:
+            out[row_id] = label
+    return out, problems
+
+
+def final_labels(
+    key: Sequence[dict[str, str]], rows: dict[str, list[Label]], adjudicated: dict[str, Label]
+) -> tuple[list[Annotation], list[str]]:
+    """(one Annotation per final label and grid cell, rows still in disagreement).
+
+    An adjudicated row takes the adjudicated label (annotator "adjudicated"); a complete row
+    whose annotators agree takes their label (annotator "a+b", notes joined with "; ").
+    Incomplete rows and rows still in disagreement are left out."""
+    final, unresolved = [], []
+    for k in key:
+        row_id = k["row_id"]
+        if row_id in adjudicated:
+            final.append(adjudicated[row_id])
+            continue
+        labs = rows.get(row_id)
+        if labs is None:
+            continue
+        if len({combined(lab) for lab in labs}) > 1:
+            unresolved.append(row_id)
+            continue
+        final.append(
+            Label(
+                row_id,
+                "+".join(sorted(lab.annotator for lab in labs)),
+                labs[0].correct,
+                labs[0].error_type,
+                "; ".join(lab.note for lab in labs if lab.note),
+            )
+        )
+    return to_annotations(final, key), unresolved
+
+
+def _share(k: int, n: int) -> str:
+    return f"{k}/{n}, {100 * k / n:.0f}%" if n else "0/0, n/a"
+
+
+def _kappa(x: float | None) -> str:
+    return "n/a" if x is None else f"{x:.2f}"
+
+
+def _assigned_pairs(key: Sequence[dict[str, str]]) -> list[tuple[str, str]]:
+    return sorted({p for k in key for p in combinations(sorted(k["annotators"].split(";")), 2)})
+
+
+def agreement_markdown(
+    key: Sequence[dict[str, str]],
+    rows: dict[str, list[Label]],
+    incomplete: Sequence[str],
+    adjudicated: dict[str, Label],
+    unresolved: Sequence[str] | None,
+    n_final: int | None,
+) -> str:
+    """The agreement report; `unresolved` and `n_final` are None when no final labels were
+    written."""
+    pairs = _assigned_pairs(key)
+    by_pair = pair_comparisons(rows)
+    pooled = [c for pair in pairs for c in by_pair.get(pair, [])]
+    disagree = disagreeing(rows)
+    corr, lab, err = on_correct(pooled), on_label(pooled), on_error_type(pooled)
+    lines = [
+        "# Claim annotation agreement\n",
+        "Generated by `scripts/labels.py claim-agreement`; do not edit by hand "
+        "(annotation/guidelines.md §7, docs/LABELING_PROTOCOL.md §5). "
+        f"Aim: Cohen's kappa {KAPPA_AIM} or more.\n",
+        f"Rows: {len(key)}. Labelled by every assigned annotator (counted): {len(rows)}. "
+        f"Incomplete (left out): {len(incomplete)}.\n",
+        "Pooled over annotator pairs: each counted row gives one comparison per pair of its "
+        "annotators (1 for two annotators, 10 for five). Cohen's kappa is computed on all "
+        "comparisons together, each as (first annotator by name, second annotator).\n",
+        f"- **Correct (yes/no):** {corr.n} comparisons on {len(rows)} rows; agreement "
+        f"{_share(corr.agree, corr.n)}; Cohen's kappa {_kappa(corr.kappa)}.",
+        "- **Error type (a), combined label** (`correct` or the error type, all comparisons): "
+        f"{lab.n} comparisons; agreement {_share(lab.agree, lab.n)}; "
+        f"Cohen's kappa {_kappa(lab.kappa)}.",
+        "- **Error type (b), among incorrect** (error type, only comparisons where both "
+        f"annotators said incorrect): {err.n} comparisons; agreement "
+        f"{_share(err.agree, err.n)}; Cohen's kappa {_kappa(err.kappa)}.",
+        "",
+        "## Per pair\n",
+        "| Pair | Rows | Correct: agreement | Correct: kappa | (a) Combined label: agreement "
+        "| (a) Combined label: kappa | (b) Error type, both incorrect: agreement "
+        "| (b) Error type, both incorrect: kappa |",
+        "|---|---|---|---|---|---|---|---|",
+    ]
+    for pair in pairs:
+        cs = by_pair.get(pair, [])
+        c, la, e = on_correct(cs), on_label(cs), on_error_type(cs)
+        lines.append(
+            f"| {pair[0]}–{pair[1]} | {len(cs)} | {_share(c.agree, c.n)} | {_kappa(c.kappa)} "
+            f"| {_share(la.agree, la.n)} | {_kappa(la.kappa)} | {_share(e.agree, e.n)} "
+            f"| {_kappa(e.kappa)} |"
+        )
+    lines += [
+        "",
+        "## Disagreements and final labels\n",
+        "Rows where annotators differ on correct or on error type: "
+        f"{_share(len(disagree), len(rows))} of counted rows, listed in `{DISAGREEMENTS_FILE}`. "
+        f"To adjudicate, copy it to `{ADJUDICATION_FILE}` and fill in final_correct, "
+        "final_error_type and final_note (the pair first, then a third annotator; the "
+        "adjudicated label is final).\n",
+        f"Adjudicated rows: {len(adjudicated)}.\n",
+    ]
+    if unresolved is None or n_final is None:
+        lines.append(f"No `{FINAL_LABELS_FILE}` written: no `{ADJUDICATION_FILE}` yet.\n")
+    else:
+        lines.append(f"`{FINAL_LABELS_FILE}`: {n_final} annotations (one per row and cell).\n")
+        if unresolved:
+            lines.append(
+                "**Still in disagreement, not adjudicated (left out of the final labels):** "
+                + ", ".join(unresolved)
+                + "\n"
+            )
+    if incomplete:
+        lines.append("**Incomplete rows (left out):** " + ", ".join(incomplete) + "\n")
+    return "\n".join(lines)
+
+
+@dataclass(frozen=True)
+class ClaimAgreement:
+    report: Path
+    disagreements: Path
+    final: Path | None  # None when no final labels were written
+    counted: int
+    incomplete: int
+    disagree: int
+    unresolved: int
+    problems: list[str]
+
+
+def claim_agreement(out_dir: Path) -> ClaimAgreement:
+    """Write agreement.md and disagreements.csv, and final_labels.jsonl when adjudication.csv
+    exists or nothing needs adjudicating. Nothing is written if a sheet has a problem."""
+    key = _read_csv(out_dir / KEY_FILE)
+    labels, problems = read_claim_labels(out_dir)
+    adj_path = out_dir / ADJUDICATION_FILE
+    adjudicated: dict[str, Label] = {}
+    if adj_path.exists():
+        adjudicated, adj_problems = read_adjudication(adj_path, {k["row_id"] for k in key})
+        problems += adj_problems
+    report, sheet_path = out_dir / AGREEMENT_FILE, out_dir / DISAGREEMENTS_FILE
+    if problems:
+        return ClaimAgreement(report, sheet_path, None, 0, 0, 0, 0, problems)
+    rows, incomplete = complete_rows(key, labels)
+    disagree = disagreeing(rows)
+    width = max([2, *(len(k["annotators"].split(";")) for k in key)])
+    labels_columns = [f"label_{i}" for i in range(1, width + 1)]
+    _write_csv(
+        sheet_path,
+        ["row_id", *DISCUSS_COLUMNS, *labels_columns, *FINAL_COLUMNS],
+        disagreement_sheet(out_dir, rows, disagree, width),
+    )
+    final_path: Path | None = None
+    unresolved: list[str] | None = None
+    n_final: int | None = None
+    if adj_path.exists() or not disagree:
+        annotations, unresolved = final_labels(key, rows, adjudicated)
+        final_path = out_dir / FINAL_LABELS_FILE
+        final_path.write_text(
+            "".join(a.model_dump_json() + "\n" for a in annotations), encoding="utf-8"
+        )
+        n_final = len(annotations)
+    report.write_text(
+        agreement_markdown(key, rows, incomplete, adjudicated, unresolved, n_final),
+        encoding="utf-8",
+    )
+    return ClaimAgreement(
+        report,
+        sheet_path,
+        final_path,
+        len(rows),
+        len(incomplete),
+        len(disagree),
+        len(disagree) if unresolved is None else len(unresolved),
+        [],
+    )

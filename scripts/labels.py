@@ -21,6 +21,9 @@ two annotators per claim in rotating pairs (or --everyone for the pilot, with --
         --annotators alice bob carol dan eve
     # fill in runs/labels/main/sheet_<name>.csv (correct: yes/no; error_type; note: tags)
     uv run python scripts/labels.py claim-labels --name main
+    uv run python scripts/labels.py claim-agreement --name main
+    # kappa in runs/labels/main/agreement.md; copy disagreements.csv to adjudication.csv, fill
+    # in final_correct, final_error_type, final_note; rerun for final_labels.jsonl
 
 Output goes to runs/labels/<name>/ (gitignored, like all run output); share the sheets through
 the shared artifact location. Use first names or initials as labeller names: they appear in
@@ -70,6 +73,10 @@ def build_parser() -> argparse.ArgumentParser:
     claims.add_argument("--seed", type=int, default=20261126)
     collect = sub.add_parser("claim-labels", help="check filled claim sheets -> labels.jsonl")
     collect.add_argument("--name", required=True)
+    claim_agree = sub.add_parser(
+        "claim-agreement", help="kappa, disagreement sheet and final claim labels"
+    )
+    claim_agree.add_argument("--name", required=True)
     return parser
 
 
@@ -111,6 +118,21 @@ def main(argv: list[str] | None = None, runs_dir: Path = RUNS_DIR) -> int:
                 print(f"refused: {len(problems)} problem(s); nothing written", file=sys.stderr)
                 return 2
             print(f"{n} labels ({blank} still blank) -> {path}")
+        elif args.command == "claim-agreement":
+            result = annotation.claim_agreement(out_dir)
+            if result.problems:
+                for p in result.problems:
+                    print(f"  {p}", file=sys.stderr)
+                n_problems = len(result.problems)
+                print(f"refused: {n_problems} problem(s); nothing written", file=sys.stderr)
+                return 2
+            print(
+                f"{result.counted} rows counted ({result.incomplete} incomplete), "
+                f"{result.disagree} disagreements ({result.unresolved} not adjudicated)"
+            )
+            print(f"-> {result.report}\n-> {result.disagreements}")
+            if result.final is not None:
+                print(f"-> {result.final}")
         elif args.command == "errata-sheets":
             records = financebench.by_id(financebench.load())
             for path in labels.write_errata_sheets(records, args.annotators, out_dir):

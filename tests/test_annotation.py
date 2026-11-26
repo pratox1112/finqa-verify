@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from finqa.eval import annotation
+from finqa.eval import annotation, stats
 from finqa.eval.runner import RunRefused
 from finqa.eval.scoring import Gold
 from finqa.generators.base import Question
@@ -370,3 +370,276 @@ def test_script_claim_sheets_and_labels(runs: Path, monkeypatch: pytest.MonkeyPa
     row = read(out / "sheet_a.csv")[0]["row_id"]
     fill(out / "sheet_a.csv", {row: ("perhaps", "", "")})
     assert script.main(["claim-labels", "--name", "t"], runs_dir=runs) == 2
+
+
+# --- Agreement (P5.5) and final labels --------------------------------------------------------
+
+WP, WS = ErrorType.WRONG_PERIOD, ErrorType.WRONG_UNIT
+
+
+def lab(row: str, who: str, error: ErrorType | None = None, note: str = "") -> annotation.Label:
+    """A synthetic label: correct when error is None."""
+    return annotation.Label(row, who, error is None, error, note)
+
+
+def key_rows(rows_: dict[str, str]) -> list[dict[str, str]]:
+    """row_id -> "a;b" annotators, each row in two cells of run "r"."""
+    return [
+        {
+            "row_id": r,
+            "run_id": "r",
+            "question_id": "q" + r,
+            "claim_id": "c1",
+            "cells": "none;grounded",
+            "annotators": who,
+        }
+        for r, who in rows_.items()
+    ]
+
+
+def test_cohen_kappa_on_categories() -> None:
+    # observed 3/4; a: x2 y1 z1, b: x1 y2 z1 -> chance (2*1 + 1*2 + 1*1)/16 = 5/16
+    # kappa = (12/16 - 5/16) / (11/16) = 7/11
+    assert stats.cohen_kappa(list("xxyz"), list("xyyz")) == pytest.approx(7 / 11)
+    assert stats.cohen_kappa(["x", "x"], ["x", "x"]) is None
+    assert stats.cohen_kappa([True, False], [True, False]) == 1.0
+
+
+def two_annotator_rows() -> tuple[list[dict[str, str]], dict[str, list[annotation.Label]]]:
+    key = key_rows({"r1": "ann;ben", "r2": "ann;ben", "r3": "ben;ann", "r4": "ann;ben"})
+    labels = [
+        lab("r1", "ann"),
+        lab("r1", "ben"),
+        lab("r2", "ann", WP),
+        lab("r2", "ben", WP),
+        lab("r3", "ann", WP),
+        lab("r3", "ben", WS),
+        lab("r4", "ann"),
+        lab("r4", "ben", WS),
+    ]
+    rows_, incomplete = annotation.complete_rows(key, labels)
+    assert incomplete == []
+    return key, rows_
+
+
+def test_kappa_for_two_annotators() -> None:
+    _, rows_ = two_annotator_rows()
+    pairs = annotation.pair_comparisons(rows_)
+    assert list(pairs) == [("ann", "ben")]  # r3's "ben;ann" is ordered by name too
+    cs = pairs[("ann", "ben")]
+    # correct: ann T F F T, ben T F F F -> observed 3/4; chance .5*.25 + .5*.75 = .5
+    # kappa = (.75 - .5) / .5 = .5
+    assert annotation.on_correct(cs) == annotation.Agreement(4, 3, pytest.approx(0.5))
+    # (a) combined: ann c wp wp c, ben c wp ws ws -> observed 2/4
+    # chance: c 2*1 + wp 2*1 = 4/16 -> kappa (.5 - .25) / .75 = 1/3
+    assert annotation.on_label(cs) == annotation.Agreement(4, 2, pytest.approx(1 / 3))
+    # (b) both incorrect (r2, r3): ann wp wp, ben wp ws -> observed 1/2, chance 2*1/4 = .5
+    # kappa = 0
+    assert annotation.on_error_type(cs) == annotation.Agreement(2, 1, pytest.approx(0.0))
+    assert annotation.disagreeing(rows_) == ["r3", "r4"]
+
+
+def test_report_for_two_annotators() -> None:
+    key, rows_ = two_annotator_rows()
+    md = annotation.agreement_markdown(key, rows_, [], {}, None, None)
+    assert "4 comparisons on 4 rows; agreement 3/4, 75%; Cohen's kappa 0.50" in md
+    assert "Error type (a), combined label" in md
+    assert "4 comparisons; agreement 2/4, 50%; Cohen's kappa 0.33" in md
+    assert "Error type (b), among incorrect" in md
+    assert "2 comparisons; agreement 1/2, 50%; Cohen's kappa 0.00" in md
+    assert "| ann–ben | 4 | 3/4, 75% | 0.50 | 2/4, 50% | 0.33 | 1/2, 50% | 0.00 |" in md
+    assert "No `final_labels.jsonl` written" in md
+
+
+def test_pooled_and_per_pair_for_five_annotators() -> None:
+    names = ["a", "b", "c", "d", "e"]
+    key = key_rows({"r1": ";".join(names), "r2": ";".join(names)})
+    labels = [lab("r1", n) for n in names]
+    labels += [lab("r2", n) for n in "abc"] + [lab("r2", n, WS) for n in "de"]
+    rows_, _ = annotation.complete_rows(key, labels)
+    pairs = annotation.pair_comparisons(rows_)
+    assert len(pairs) == 10 and all(len(cs) == 2 for cs in pairs.values())
+    pooled = [c for cs in pairs.values() for c in cs]
+    # 20 comparisons; r2's 6 pairs across {a,b,c} x {d,e} disagree -> observed 14/20 = .7
+    # first rater (by name) says yes 19 times (only (d,e) on r2 is no); second 13 times
+    # chance (19*13 + 1*7) / 400 = .635 -> kappa (.7 - .635) / .365 = 13/73
+    assert annotation.on_correct(pooled) == annotation.Agreement(20, 14, pytest.approx(13 / 73))
+    md = annotation.agreement_markdown(key, rows_, [], {}, None, None)
+    table = [line for line in md.splitlines() if line.startswith("| ") and "–" in line]
+    assert len(table) == 10
+    assert "20 comparisons on 2 rows; agreement 14/20, 70%; Cohen's kappa 0.18" in md
+    # a-b agree on everything, all yes: kappa undefined
+    assert "| a–b | 2 | 2/2, 100% | n/a |" in md
+    # a-d: a T T, d T F -> observed .5, chance 1*.5 + 0*.5 = .5 -> kappa 0
+    assert "| a–d | 2 | 1/2, 50% | 0.00 |" in md
+    # d-e: both T F (r2 wrong_unit_or_scale): chance .5*.5 + .5*.5 = .5 -> kappa 1 on correct
+    # and on the combined label; (b) has one comparison with one label only -> n/a
+    assert "| d–e | 2 | 2/2, 100% | 1.00 | 2/2, 100% | 1.00 | 1/1, 100% | n/a |" in md
+
+
+def test_incomplete_rows_do_not_count() -> None:
+    key = key_rows({"r1": "ann;ben", "r2": "ann;ben", "r3": "ann;ben"})
+    labels = [lab("r1", "ann"), lab("r1", "ben"), lab("r2", "ann", WP)]
+    rows_, incomplete = annotation.complete_rows(key, labels)
+    assert list(rows_) == ["r1"] and incomplete == ["r2", "r3"]
+    md = annotation.agreement_markdown(key, rows_, incomplete, {}, None, None)
+    assert "Incomplete (left out): 2." in md and "r2, r3" in md
+    assert "1 comparisons on 1 rows" in md
+
+
+def test_final_labels_agreed_adjudicated_and_unresolved() -> None:
+    key, rows_ = two_annotator_rows()
+    rows_["r1"] = [lab("r1", "ann", note="unsupported"), lab("r1", "ben", note="irrelevant")]
+    adjudicated = {"r3": annotation.Label("r3", "adjudicated", False, WP, "pair agreed")}
+    anns, unresolved = annotation.final_labels(key, rows_, adjudicated)
+    assert unresolved == ["r4"]
+    # r1, r2 agreed and r3 adjudicated, each in two cells
+    assert len(anns) == 6
+    assert {a.run_id for a in anns} == {"r:none", "r:grounded"}
+    by_q = {a.question_id: a for a in anns}
+    assert by_q["qr1"].annotator == "ann+ben" and by_q["qr1"].note == "unsupported; irrelevant"
+    assert by_q["qr1"].correct and by_q["qr1"].error_type is None
+    assert by_q["qr2"].error_type is WP and not by_q["qr2"].correct
+    assert by_q["qr3"].annotator == "adjudicated" and by_q["qr3"].note == "pair agreed"
+    assert "qr4" not in by_q
+
+
+def test_label_text() -> None:
+    assert annotation.label_text(lab("c1", "ann", WP, "from-input")) == (
+        "ann: no / wrong_period / from-input"
+    )
+    assert annotation.label_text(lab("c1", "ann")) == "ann: yes"
+    assert annotation.label_text(lab("c1", "ann", note="unsupported")) == (
+        "ann: yes / - / unsupported"
+    )
+
+
+def labelled_folder(runs_dir: Path) -> tuple[Path, list[dict[str, str]]]:
+    """Two annotators: row 0 differs on error type, row 1 on correct, the last is half blank."""
+    out = runs_dir / "labels" / "main"
+    annotation.write_claim_sheets(rows(runs_dir), ["ann", "ben"], out, seed=1)
+    key = read(out / annotation.KEY_FILE)
+    ids = [k["row_id"] for k in key]
+    ann = {r: ("yes", "", "") for r in ids}
+    ben = {r: ("yes", "", "") for r in ids[:-1]}
+    ann[ids[0]] = ("no", "wrong_period", "from-input")
+    ben[ids[0]] = ("no", "arithmetic", "")
+    ben[ids[1]] = ("no", "wrong_period", "")
+    fill(out / "sheet_ann.csv", ann)
+    fill(out / "sheet_ben.csv", ben)
+    return out, key
+
+
+def test_disagreement_sheet_has_no_cell_information(runs: Path) -> None:
+    out, key = labelled_folder(runs)
+    res = annotation.claim_agreement(out)
+    assert res.problems == [] and res.final is None
+    assert (res.counted, res.incomplete, res.disagree) == (len(key) - 1, 1, 2)
+    sheet = read(res.disagreements)
+    assert [r["row_id"] for r in sheet] == [key[0]["row_id"], key[1]["row_id"]]
+    columns = list(sheet[0])
+    for forbidden in ("run_id", "cells", "question_id", "claim_id", "annotators"):
+        assert forbidden not in columns
+    for needed in ("question", "gold_answer", "metric", "value", "unit", "period", "cited_text"):
+        assert needed in columns
+    assert columns[-3:] == annotation.FINAL_COLUMNS
+    assert sheet[0]["label_1"] == "ann: no / wrong_period / from-input"
+    assert sheet[0]["label_2"] == "ben: no / arithmetic"
+    assert all(sheet[0][c] == "" for c in annotation.FINAL_COLUMNS)
+    text = res.disagreements.read_text(encoding="utf-8-sig")
+    assert "r1run" not in text and "r0run" not in text
+    assert "grounded" not in text and "self_check" not in text
+    assert res.report.exists() and not (out / annotation.FINAL_LABELS_FILE).exists()
+
+
+def write_adjudication(out: Path, finals: dict[str, tuple[str, str, str]]) -> None:
+    sheet = read(out / annotation.DISAGREEMENTS_FILE)
+    for r in sheet:
+        if r["row_id"] in finals:
+            r["final_correct"], r["final_error_type"], r["final_note"] = finals[r["row_id"]]
+    with (out / annotation.ADJUDICATION_FILE).open("w", encoding="utf-8-sig", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(sheet[0]))
+        w.writeheader()
+        w.writerows(sheet)
+
+
+def test_adjudication_gives_final_labels_per_cell(runs: Path) -> None:
+    out, key = labelled_folder(runs)
+    annotation.claim_agreement(out)
+    write_adjudication(out, {key[0]["row_id"]: ("no", "arithmetic", "third person")})
+    res = annotation.claim_agreement(out)
+    assert res.problems == [] and res.final is not None and res.unresolved == 1
+    anns = [Annotation.model_validate_json(x) for x in res.final.read_text().splitlines()]
+    final_rows = [key[0], *key[2:-1]]  # adjudicated, agreed; row 1 unresolved, last incomplete
+    assert len(anns) == sum(len(k["cells"].split(";")) for k in final_rows)
+    adj = [a for a in anns if a.annotator == "adjudicated"]
+    assert {a.run_id for a in adj} == {
+        annotation.cell_run_id(key[0]["run_id"], arm) for arm in key[0]["cells"].split(";")
+    }
+    assert all(a.error_type is ErrorType.ARITHMETIC and a.note == "third person" for a in adj)
+    assert {a.annotator for a in anns} == {"adjudicated", "ann+ben"}
+    md = res.report.read_text(encoding="utf-8")
+    assert "Adjudicated rows: 1." in md and key[1]["row_id"] in md.split("Still in")[1]
+
+
+def test_invalid_adjudication_writes_nothing(runs: Path) -> None:
+    out, key = labelled_folder(runs)
+    annotation.claim_agreement(out)
+    write_adjudication(out, {key[0]["row_id"]: ("no", "", ""), key[1]["row_id"]: ("maybe", "", "")})
+    (out / annotation.AGREEMENT_FILE).unlink()
+    (out / annotation.DISAGREEMENTS_FILE).unlink()
+    adj = out / annotation.ADJUDICATION_FILE
+    n_columns = len(read(adj)[0])
+    with adj.open("a", encoding="utf-8", newline="") as f:
+        f.write("c99999" + "," * (n_columns - 1) + "\r\n")
+    res = annotation.claim_agreement(out)
+    assert len(res.problems) == 3
+    assert any(key[0]["row_id"] in p and "error_type" in p for p in res.problems)
+    assert any(key[1]["row_id"] in p and "yes or no" in p for p in res.problems)
+    assert any("c99999" in p and "not a row" in p for p in res.problems)
+    assert not (out / annotation.AGREEMENT_FILE).exists()
+    assert not (out / annotation.DISAGREEMENTS_FILE).exists()
+    assert not (out / annotation.FINAL_LABELS_FILE).exists()
+    # missing columns and duplicate rows are refused too
+    adj.write_text("row_id,final_correct\nc00001,yes\n", encoding="utf-8")
+    assert "needs the columns" in annotation.claim_agreement(out).problems[0]
+    row = key[0]["row_id"]
+    adj.write_text(
+        f"row_id,final_correct,final_error_type,final_note\n{row},yes,,\n{row},yes,,\n",
+        encoding="utf-8",
+    )
+    assert "twice" in annotation.claim_agreement(out).problems[0]
+
+
+def test_invalid_sheet_refuses_agreement(runs: Path) -> None:
+    out, key = labelled_folder(runs)
+    fill(out / "sheet_ann.csv", {key[2]["row_id"]: ("yes", "other", "")})
+    res = annotation.claim_agreement(out)
+    assert len(res.problems) == 1 and "sheet_ann.csv" in res.problems[0]
+    assert not (out / annotation.AGREEMENT_FILE).exists()
+
+
+def test_no_disagreements_writes_final_labels(runs: Path) -> None:
+    out = runs / "labels" / "main"
+    annotation.write_claim_sheets(rows(runs), ["ann", "ben"], out, seed=1)
+    key = read(out / annotation.KEY_FILE)
+    for name in ("ann", "ben"):
+        fill(out / f"sheet_{name}.csv", {k["row_id"]: ("yes", "", "") for k in key})
+    res = annotation.claim_agreement(out)
+    assert res.disagree == 0 and res.final is not None
+    n = sum(len(k["cells"].split(";")) for k in key)
+    assert len(res.final.read_text().splitlines()) == n
+    assert read(res.disagreements) == []
+
+
+def test_script_claim_agreement(runs: Path) -> None:
+    script = load_script()
+    out, key = labelled_folder(runs)
+    assert script.main(["claim-agreement", "--name", "main"], runs_dir=runs) == 0
+    assert (out / annotation.AGREEMENT_FILE).exists()
+    assert not (out / annotation.FINAL_LABELS_FILE).exists()
+    write_adjudication(out, {key[0]["row_id"]: ("perhaps", "", "")})
+    assert script.main(["claim-agreement", "--name", "main"], runs_dir=runs) == 2
+    write_adjudication(out, {key[0]["row_id"]: ("yes", "", "")})
+    assert script.main(["claim-agreement", "--name", "main"], runs_dir=runs) == 0
+    assert (out / annotation.FINAL_LABELS_FILE).exists()
