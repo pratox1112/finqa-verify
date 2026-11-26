@@ -8,11 +8,11 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 
 | | |
 |---|---|
-| **Current phase** | Phase 0 |
+| **Current phase** | Phase 5 (Phase 4 complete) |
 | **Next milestone** | M1: Midterm report — due *[date]* |
-| **Gates passed** | none |
+| **Gates passed** | Gate 3, Gate 4 (Gates 0–2: see their rows) |
 | **Open blockers** | 0 |
-| **Last updated** | *[YYYY-MM-DD] by [name]* |
+| **Last updated** | 2026-11-26 by — |
 
 ---
 
@@ -159,8 +159,8 @@ Each runner downloads their own copy of the model and runs their own vLLM server
 | P4.5 | V2 check 3: recomputation | done | | [#33](https://github.com/pratox1112/finqa-verify/pull/33) | 2026-11-22 | `verifiers/grounded.py` `check_recompute`: expression re-evaluated on the inputs' current values (shared `error_types.recompute`), within tolerance with sign; no inputs, unknown input or unevaluable expression fails; quoted claims `ok=None` (DECISIONS 2026-11-22). 6 tests. |
 | P4.6 | Revision loop | done | | [#33](https://github.com/pratox1112/finqa-verify/pull/33) | 2026-11-23 | `verifiers/grounded.py` `GroundedVerifier`: three checks per claim; failed claims + per-check feedback -> same model fills a `Revision` form (value, unit, period; same as V1) -> re-check, up to `max_revisions`; remaining failures flagged; company from the question (resolver). Prompts `v2_system.txt`, `v2_user.txt` (draft, to freeze with V1's). 15 tests with a fake model incl. a planted scale error fixed in one round; the same case as an integration test against the served model (runs on the cluster). DECISIONS 2026-11-23. |
 | P4.7 | Planted-error suite | done | | [#33](https://github.com/pratox1112/finqa-verify/pull/33) | 2026-11-23 | `tests/planted/cases.py`: 23 synthetic cases (fictional companies), 18 planted errors covering every error type + 5 controls; each states the V2 checks that should fail. `tests/test_planted.py`: V2's checks catch all 15 checkable errors with exactly the expected checks and flag no control; 3 errors V2 cannot see by design are listed (sign of a quoted value, wrong period of an unmapped metric, a fraction labelled %). `scripts/planted_errors.py` runs V1 and V2 with the model -> `docs/PLANTED_ERRORS.md`; to run on the cluster with the V1 dev run. Run with the model (job 12082410): V1 caught 14/18 planted errors (11/15 checkable), V2 15/18 (15/15), no false alarms on 5 controls; `docs/PLANTED_ERRORS.md`. |
-| P4.8 | Run the grid | todo | | | | |
-| G4 | **GATE 4 (feature freeze)** | todo | | | | |
+| P4.8 | Run the grid | review | | branch grid-results | 2026-11-23 | Job 12083578 (43:42) on main at 90cc1e1, clean tree: V0, V1, V2 applied to the R0 and R1 test drafts (runs `2026-11-22_r0_v0_7309952`, `2026-11-22_r1_v0_7309952`). Six `verified_*.jsonl` files, each covering all 107 test questions, 0 failed verifications. Questions revised / flagged: R0 V1 4 / 19, R0 V2 24 / 29, R1 V1 0 / 4, R1 V2 7 / 21 (V0 0 / 0). Not yet scored against gold (analysis). |
+| G4 | **GATE 4 (feature freeze)** | review | | branch grid-results | 2026-11-23 | All six cells complete (P4.8). Feature freeze from here: only bug fixes, analysis and writing. Test claims may now be exported for annotation (DECISIONS 2026-11-23). |
 
 
 ## Phase 5: Annotation
@@ -317,3 +317,4 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-11-23 · — · P4.6, P4.7 · Dev job 12075270 (17 min, 0 failed verifications, real-model V2 test passed). Planted errors: V1 caught 14/18 (11/15 checkable), V2 15/18 (15/15), no false alarms on the 5 controls for either. Dev accuracy unchanged by V1 (R0 9/20, R1 12/20; V1 revised no claim); V2 R0 9/20, R1 13/20 (1 wrong to right). V2 fixes from the dev flags (unstated table scales, percent recomputation, uncited claims flagged not revised; DECISIONS 2026-11-23); V2 dev and planted runs to be repeated
 - 2026-11-23 · — · P4.2, P4.6, P4.7 · V2 re-run after the fixes (job 12082410, 11 min, 0 failed): R0 V2 9/20 (2 revised, 2 flagged), R1 V2 13/20 (4 revised, 3 flagged; 1 wrong to right, 0 right to wrong); remaining flags all genuine. V1 and V2 prompts frozen; V2 design rules and metric aliases approved (DECISIONS 2026-11-23)
 - 2026-11-23 · — · P4.1–P4.7 · Verifiers merged to main in #33 (squash merge: the branch's two merges from main could not be rebased); V1 and V2 prompts frozen. Next: the test-split grid (P4.8)
+- 2026-11-26 · — · P4.8, G4 · Test-split grid done (job 12083578, main at 90cc1e1): six verified cells, 107/107 questions each, 0 failed verifications. Gate 4 met; feature freeze. Next: score the cells against gold (analysis) and annotation (Phase 5)
