@@ -81,3 +81,16 @@ Rule-based classifier (P2.5, `docs/LABELING_PROTOCOL.md`) on the 52 R0 answers s
 | Scope | 127 of 150 FinanceBench questions (10-K and 10-Q only; data/SCOPE.md) |
 | Model pilot: tool-call success | 55/55, 100.0% |
 | Model pilot: structured-output validity | 20/20, 100.0% |
+
+## Claim annotation agreement (P5.5, Gate 5)
+
+**AI labels, no human validation** (DECISIONS 2026-11-26 and 2026-11-27). A simple random sample of 200 of the 803 distinct test claims (seed 20261126) was labelled by two independent AI annotators, `ai_a` (claude-opus-5-5) and `ai_b` (claude-sonnet-5-5), following `annotation/guidelines.md`; the one disagreement was decided by an AI adjudicator (claude-opus-5-5). Kappa below is agreement between two AI models, not human inter-annotator reliability, and may be inflated by shared model biases. Source: `scripts/labels.py claim-agreement --name ai_double`.
+
+| Label | Comparisons | Agreement | Cohen's kappa |
+|---|---|---|---|
+| Correct (yes/no) | 200 | 199/200 | 0.98 |
+| Error type (a), combined label | 200 | 199/200 | 0.99 |
+| Error type (b), both said incorrect | 38 | 38/38 | 1.00 |
+
+Disagreements: 1/200, adjudicated 1. Final labels: 200 claims (161 correct, 39 incorrect), written as 537 annotations, one per claim and grid cell.
+

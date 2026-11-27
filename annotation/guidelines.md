@@ -1,6 +1,6 @@
 # Annotation guidelines
 
-**Status: for team approval before the pilot (P5.3).** The six open questions of the first draft are decided (`docs/DECISIONS.md`, 2026-11-26). Everything else restates rules already decided in `docs/LABELING_PROTOCOL.md` and `docs/DECISIONS.md`; if this file and those disagree, those win and this file is fixed. The pilot may still change these rules; every change is recorded in `docs/DECISIONS.md`.
+**Status: for team approval before the main round (P5.4).** The six open questions of the first draft are decided (`docs/DECISIONS.md`, 2026-11-26). Everything else restates rules already decided in `docs/LABELING_PROTOCOL.md` and `docs/DECISIONS.md`; if this file and those disagree, those win and this file is fixed. The pilot may still change these rules; every change is recorded in `docs/DECISIONS.md`.
 
 ## 1. What you are labelling
 
@@ -108,7 +108,7 @@ Several tags can apply; separate them with spaces (e.g. `unsupported irrelevant`
 
 ## 7. Process
 
-1. **Pilot (P5.3):** all five annotators label the same 15 dev claims. The team discusses every disagreement and revises these guidelines. Pilot labels are not used in the results.
+1. **Pilot (P5.3):** skipped for time (DECISIONS 2026-11-26). Read these guidelines in full before you start; questions go to the team, not to the other annotator of a row.
 2. **Main round (P5.4):** a random sample of 200 of the distinct test claims (DECISIONS 2026-11-26); each claim is labelled by two annotators, with pairs rotating so each pair shares about the same number of claims. Model-suggested error types are never shown (anchoring).
 3. **Agreement (P5.5):** Cohen's κ for `correct` and for `error_type`, reported with the number of claims. The aim is κ ≥ 0.7.
 4. **Adjudication (P5.6):** the pair discusses each disagreement; a third annotator decides any that remain. The adjudicated label is final.
