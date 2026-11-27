@@ -479,3 +479,9 @@ The other five candidates keep their golds (both annotators: `matches`): `05718`
 **Decision:** (1) The pilot uses **15** dev claims instead of 30, all five annotators (`claim-sheets --name pilot15 --everyone --sample 15 --split dev`, seed 20261126; the first 15 of the earlier 30-claim draw, which is not used). (2) The main round labels a **simple random sample of 200** of the 803 distinct test claims (`claim-sheets --sample 200`, seed 20261126, run on main), two annotators per claim in rotating pairs: 400 labels, about 80 per annotator. Every claim-level human result (correctness rates, error-type shares, verifier precision on claims, kappa) is reported as an estimate over this sample with its count and a bootstrap 95% CI, and the paper states that claims were sampled. Answer-level accuracy is unaffected: it is scored against gold for every question.
 
 **Why:** the team does not have time to label all 1,606 labels before the deadline. A uniform random sample keeps the estimates unbiased; 200 claims gives usable intervals on the main rates. The sample size and seed are fixed before any test claim is labelled, and are not changed in response to labels.
+
+## 2026-11-26 · Pratosh Karthikeyan · Annotation pilot skipped
+
+**Decision:** the pilot (P5.3) is not run; the team goes straight to the main round (P5.4) on the 200-claim test sample. The 15-claim pilot sheets (`runs/labels/pilot15/`) and the earlier 30-claim ones are not used. The guidelines are approved by the team before the main round instead of being revised after a pilot. Stated as a limitation: annotators did not calibrate on shared claims before labelling.
+
+**Why:** the team does not have time for both rounds. Pilot labels were never part of any result; adjudication of every main-round disagreement (P5.6) remains, so no claim's final label rests on one annotator's reading of an unclear rule.
