@@ -8,11 +8,11 @@ Live status of the project. **[ROADMAP.md](ROADMAP.md) says what to build; this 
 
 | | |
 |---|---|
-| **Current phase** | Phase 5 (Phase 4 complete) |
+| **Current phase** | Phase 6 (Phase 5 complete) |
 | **Next milestone** | M1: Midterm report — due *[date]* |
-| **Gates passed** | Gate 3, Gate 4 (Gates 0–2: see their rows) |
+| **Gates passed** | Gate 3, Gate 4, Gate 5 (Gates 0–2: see their rows) |
 | **Open blockers** | 0 |
-| **Last updated** | 2026-11-26 by — |
+| **Last updated** | 2026-11-27 by — |
 
 ---
 
@@ -167,13 +167,13 @@ Each runner downloads their own copy of the model and runs their own vLLM server
 
 | ID | Task | Status | Owner | Branch / PR | Updated | Notes |
 |---|---|---|---|---|---|---|
-| P5.1 | Guidelines | in-progress | | branch annotation | 2026-11-26 | `annotation/guidelines.md` drafted (by an AI assistant, for the team to edit and approve): what a claim row shows, number conventions, correctness, error types with synthetic examples, edge cases, note tags, process. Started before Gate 4 as an exception (DECISIONS 2026-11-23). The six open questions decided (DECISIONS 2026-11-26): non-answer claims against the filing; tags `unsupported`, `from-input`, `label-error`, `irrelevant`. Waiting: team approval. |
-| P5.2 | Export tooling | review | | branch annotation | 2026-11-26 | `src/finqa/eval/annotation.py`, `scripts/labels.py claim-sheets` / `claim-labels`: claims of all cells, de-duplicated within each draft run, blind shuffled CSV sheets (question, gold, answer, claim, inputs, cited text with headers, pre-label; no cell, verdicts or error types), two annotators per claim in rotating pairs or everyone for the pilot (`--everyone --sample N`); filled sheets checked and written as `Annotation`s, cell in `run_id` (DECISIONS 2026-11-26). 12 tests. Test cells: 803 distinct claims (1,606 labels at two per claim). |
-| P5.3 | Pilot | review | | branch annotation | 2026-11-26 | Skipped for time (DECISIONS 2026-11-26): no pilot round; guidelines approved by the team before the main round instead. Pilot sheets made (`runs/labels/pilot15/`) are not used. |
-| P5.4 | Main round | review | | branch annotation | 2026-11-27 | AI-labelled, disclosed (DECISIONS 2026-11-26): 200 of 200 sampled test claims labelled by annotator `ai` (`runs/labels/ai/labels.jsonl`, 0 invalid; all 23 pre-labelled answer claims agree with the gold pre-label). 33 rows the AI flagged as uncertain listed for a human check. Waiting: the team's confirmation and the human check. |
-| P5.5 | Agreement | in-progress | | branch annotation | 2026-11-26 | Tooling built: `scripts/labels.py claim-agreement` -> `agreement.md` (Cohen's kappa for correct and for error type (a) combined label, (b) among both-incorrect; pooled and per pair), `disagreements.csv`, and `final_labels.jsonl` from a filled `adjudication.csv` (DECISIONS 2026-11-26, proposed). `stats.cohen_kappa` now takes any categories. 13 tests. Waiting: the main-round labels (P5.4). |
-| P5.6 | Adjudication | todo | | | | |
-| G5 | **GATE 5** | todo | | | | |
+| P5.1 | Guidelines | done | | [#38](https://github.com/pratox1112/finqa-verify/pull/38) | 2026-11-27 | `annotation/guidelines.md` (AI-drafted; six open questions decided by the team member, DECISIONS 2026-11-26). Not separately approved by the whole team: no human review (DECISIONS 2026-11-27). |
+| P5.2 | Export tooling | done | | [#38](https://github.com/pratox1112/finqa-verify/pull/38) | 2026-11-27 | `src/finqa/eval/annotation.py`, `scripts/labels.py claim-sheets` / `claim-labels`: claims of all cells, de-duplicated within each draft run, blind and shuffled, rotating pairs; 803 distinct test claims. |
+| P5.3 | Pilot | done | | [#38](https://github.com/pratox1112/finqa-verify/pull/38) | 2026-11-27 | Skipped for time (DECISIONS 2026-11-26). |
+| P5.4 | Main round | done | | [#38](https://github.com/pratox1112/finqa-verify/pull/38) | 2026-11-27 | AI labels, disclosed, no human validation (DECISIONS 2026-11-26, 2026-11-27): 200 sampled test claims, two independent AI annotators (`ai_a` claude-opus-5-5, `ai_b` claude-sonnet-5-5); `runs/labels/ai_double/`. Six `ai_b` rows had tags in the error_type column, moved to the note (labels unchanged). |
+| P5.5 | Agreement | done | | [#38](https://github.com/pratox1112/finqa-verify/pull/38) | 2026-11-27 | `claim-agreement`: kappa 0.98 (correct), 0.99 (error type, combined), 1.00 (error type, both incorrect; 38 rows); AI-AI agreement, recorded in docs/RESULTS.md. |
+| P5.6 | Adjudication | done | | [#38](https://github.com/pratox1112/finqa-verify/pull/38) | 2026-11-27 | 1 disagreement (c00091), decided by an AI adjudicator (claude-opus-5-5); `final_labels.jsonl`: 200 claims, 537 annotations. |
+| G5 | **GATE 5** | done | | [#38](https://github.com/pratox1112/finqa-verify/pull/38) | 2026-11-27 | Every sampled claim has one final (AI) label; kappa recorded in docs/RESULTS.md. Claim-level results are AI-labelled estimates over the 200-claim sample. |
 
 
 ## Phase 6: RQ2a — Restatements
@@ -327,3 +327,4 @@ One line per merged PR or completed session, newest at the bottom: `YYYY-MM-DD �
 - 2026-11-26 · — · P5.3 · Pilot skipped for time; straight to the 200-claim main round after the guidelines are approved
 - 2026-11-26 · — · P5.4 · Main round switched to a disclosed AI annotator on the 200-claim sample (team to confirm); human check recommended
 - 2026-11-27 · — · P5.4 · 200 sampled test claims labelled by the disclosed AI annotator; 33 uncertain rows to check by a human
+- 2026-11-27 · — · P5.4–P5.6, G5 · No human review: second AI annotator, kappa 0.98 (correct), 1 disagreement AI-adjudicated; Gate 5 closed with AI labels (disclosed)
